@@ -1,5 +1,19 @@
-# Patstrap (work in progress, not everything uploaded yet!)
-An open hardware and software project which tries to implement haptic head pat feedback to the player in VR. This project focuses mainly on VRChat's OSC support but might in the future also support other games. The project consists of a hardware part the "Headpat-Strap" or just "Patstrap", a Server running on the PC and the required edits on a VRChat-Avatar to support the communication over OSC. Keep in mind that this is only a hobby project, but feel free to experiment, edit the code or tweak the hardware to your liking.
+# leb0-Patstrap
+
+An open hardware and software project which tries to implement haptic head pat feedback to the player in VR. This project focuses mainly on VRChat's OSC support.
+
+ ## This is a WIP fork!
+ 
+This a is a fork of [https://github.com/danielfvm/Patstrap](https://github.com/danielfvm/Patstrap) which will try to work on the following:
+
+- Rewrite ESP code in micropython for no particular reason
+- Switch to using osc over udp for the motor control data
+- Implement support for more then 3 touch points
+- (Maybe) add a 3d vizualizer (mostly for dev)
+  
+### Original Readme from here on for now
+
+---
 
 ### Goals
 * Designing a hardware that is cheap and easy for others to replicate
