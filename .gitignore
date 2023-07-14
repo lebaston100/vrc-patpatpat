@@ -13,3 +13,4 @@ icons/
 *.vscode
 package-lock.json
 *.exe
+.venv
