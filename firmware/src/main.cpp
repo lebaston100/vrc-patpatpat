@@ -2,25 +2,31 @@
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 #include <OSCMessage.h>
-#include <OSCBundle.h>
 #include <OSCData.h>
 
 #define INTERNAL_LED 2 // indicates if connected with server (low active)
-
 #define OSC_IN_PORT 8888    // local osc receive port
-#define OSC_SEND_TARGET_PORT 8888   // port of patstrap server
+#define VRC_UDP_PORT 9001   // reusing the vrc osc receiver so we need that port
 
 WiFiUDP Udp;
 OSCErrorCode error;
-unsigned int ledState = LOW;              // LOW means led is *on*
+unsigned int ledState = LOW;
+byte numMotors = 0;
+unsigned long lastPacketRecv = millis();
+unsigned long lastHeartbeatSend = 0;
 
-static unsigned int keep_alive = 0;
+// The only setting that should need adjustment aside from wifi stuff
+byte motorPins[] = {INTERNAL_LED, 3};
 
 void setup() {
-    pinMode(INTERNAL_LED, OUTPUT);
+    // Initialize outputs, we assume they are all valid and can drive pwm
+    numMotors = sizeof(motorPins) / sizeof(motorPins[0]);
+    for (byte i=0; i<numMotors; i++) {
+        pinMode(motorPins[i], OUTPUT);
+    }
 
+    // Startup Serial
     Serial.begin(115200);
-
 
     WiFi.mode(WIFI_STA);
     #if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
@@ -29,7 +35,7 @@ void setup() {
         #error "Missing defines WIFI_CREDS_SSID and WIFI_CREDS_PASSWD"
     #endif
     
-    // Wait for connection  
+    // Wait for wifi connection  
     Serial.println("Connecting to Wifi");
     while (WiFi.status() != WL_CONNECTED) {   
         delay(100);
@@ -52,11 +58,16 @@ void setup() {
     Udp.begin(OSC_IN_PORT);
 }
 
-void led(OSCMessage &msg) {
-    ledState = msg.getInt(0);
-    digitalWrite(INTERNAL_LED, ledState);
-    Serial.print("/led: ");
-    Serial.println(ledState);
+void osc_motors(OSCMessage &msg) {
+    // Get length of osc message and read values
+    byte msize = msg.size();
+    for (byte i=0; i<msize; i++) {
+        byte val = msg.getInt(i);
+        analogWrite(motorPins[i], val);
+        Serial.print(val);
+        Serial.print(",");
+    }
+    Serial.println();
 }
 
 void loop() {
@@ -70,7 +81,20 @@ void loop() {
             msg.fill(Udp.read());
         }
         if (!msg.hasError()) {
-            msg.dispatch("/led", led);
+            // drive motors
+            msg.dispatch("/m", osc_motors);
+
+            // handle heartbeat sending
+            lastPacketRecv = millis();
+            if (millis() - lastHeartbeatSend >= 1000) {
+                lastHeartbeatSend = millis();
+                OSCMessage txmsg("/patstrap/heartbeat");
+                txmsg.add((double)millis());
+                Udp.beginPacket(Udp.remoteIP(), VRC_UDP_PORT);
+                txmsg.send(Udp);
+                Udp.endPacket();
+                txmsg.empty();
+            }
         } else {
             error = msg.getError();
             Serial.print("error: ");

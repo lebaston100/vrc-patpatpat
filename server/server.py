@@ -24,14 +24,16 @@ class Server():
         threading.Thread(target=self._update_loop, args=()).start()
 
     def reset_values(self):
-        self.vrc_last_packet = time.time()
+        self.vrc_last_packet = self.patstrap_last_heartbeat = time.time()-5
         self.oscTx = None
+        self.numMotors = 2
+        self.oscMotorTxData = [255]*self.numMotors
 
     def _get_patstrap_ip_port(self):
         info = None
         while not info and self.running:
             info = Zeroconf().get_service_info("_osc._udp.local.", "patstrap._osc._udp.local.")
-            time.sleep(1)
+            time.sleep(0.2)
         return (socket.inet_ntoa(info.addresses[0]), info.port)
 
     def _discover_patstrap(self):
@@ -50,14 +52,16 @@ class Server():
             if self.oscTx == None:
                 break
             
-            #self.oscTx.send_message("/led", int(tmp))
+            self.oscTx.send_message("/m", self.oscMotorTxData)
+
             #intensity = self.window.get_intensity() # this gets the slider setting, ignore for now
 
             # update gui connection status with a 2 seconds timeout
-            self.window.set_vrchat_status(self.vrc_last_packet+2 >= time.time())
+            self.window.set_vrchat_status(self.vrc_last_packet+1 >= time.time())
+            self.window.set_patstrap_status(self.patstrap_last_heartbeat+2 >= time.time())
             time.sleep(1/tps) # replace with something better later
         
-        logging.error("No patstrap beep boop :( Exiting")
+        logging.error("Exiting")
 
     # handle vrchat osc receiving
     def _vrc_osc_recv(self):
@@ -65,6 +69,10 @@ class Server():
         def _recc_contact(cid, address, val):
             print(f"cid {cid} {address}: {val}")
             self.vrc_last_packet = time.time()
+        
+        def _recv_patstrap_heartbeat(_, val):
+            logging.debug(f"Received patstrap heartbeat with uptime {val/1000}s")
+            self.patstrap_last_heartbeat = time.time()
 
         # register vrchat osc endpoints
         dispatcher = Dispatcher()
@@ -72,6 +80,7 @@ class Server():
         dispatcher.map("/avatar/parameters/pat_1", partial(_recc_contact, 1))
         dispatcher.map("/avatar/parameters/pat_2", partial(_recc_contact, 2))
         dispatcher.map("/avatar/parameters/pat_3", partial(_recc_contact, 3))
+        dispatcher.map("/patstrap/heartbeat", _recv_patstrap_heartbeat)
 
         # setup and run osc server
         self.osc = BlockingOSCUDPServer(("", 9001), dispatcher)

@@ -16,7 +16,7 @@ class MainWindow(QWidget):
         self.prev_patstrap_status = False
         self.prev_vrchat_status = False
 
-        self.setWindowTitle("Patstrap Server 0.2")
+        self.setWindowTitle("leb-Patstrap Server 0.1")
         with open("global.css","r") as file:
             self.setStyleSheet(file.read())
 
@@ -140,11 +140,15 @@ class MainWindow(QWidget):
 
     def pat_left(self):
         logging.debug("Pat left")
-        self.server.strength_left = 2
+        self.server.oscMotorTxData[0] = 0
+        time.sleep(1)
+        self.server.oscMotorTxData[0] = 255
 
     def pat_right(self):
         logging.debug("Patt right")
-        self.server.strength_right = 2
+        self.server.oscMotorTxData[1] = 0
+        time.sleep(1)
+        self.server.oscMotorTxData[1] = 255
 
     def set_patstrap_status(self, status: bool):
         if self.prev_patstrap_status != status:
