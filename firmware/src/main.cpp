@@ -59,9 +59,10 @@ void setup() {
 }
 
 void osc_motors(OSCMessage &msg) {
-    // Get length of osc message and read values
+    // Get length of osc message
     byte msize = msg.size();
     for (byte i=0; i<msize; i++) {
+        // Get value for each pin and write to motors
         byte val = msg.getInt(i);
         analogWrite(motorPins[i], val);
         Serial.print(val);
@@ -87,6 +88,7 @@ void loop() {
             // handle heartbeat sending
             lastPacketRecv = millis();
             if (millis() - lastHeartbeatSend >= 1000) {
+                digitalWrite(INTERNAL_LED, LOW);
                 lastHeartbeatSend = millis();
                 OSCMessage txmsg("/patstrap/heartbeat");
                 txmsg.add((int)millis()/1000);
@@ -100,5 +102,10 @@ void loop() {
             Serial.print("error: ");
             Serial.println(error);
         }
+    }
+
+    // Disable led when we got no packets in the last 1.5s
+    if (millis()-lastPacketRecv > 1500) {
+        digitalWrite(INTERNAL_LED, HIGH);
     }
 }
