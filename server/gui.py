@@ -1,9 +1,11 @@
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QSlider
 from PyQt6.QtCore import Qt
 from server import Server
-
 import time
 import sys
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -27,7 +29,7 @@ class MainWindow(QWidget):
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         layout.addWidget(self.create_patstrap_status())
-        layout.addWidget(self.create_vrchat_status())
+        layout.addWidget(self.create_recv_vrchat_data_status())
         layout.addWidget(self.create_settings())
         layout.addWidget(self.create_test())
         
@@ -59,7 +61,7 @@ class MainWindow(QWidget):
         box.setLayout(layout)
         return box
 
-    def create_vrchat_status(self):
+    def create_recv_vrchat_data_status(self):
         box = QWidget()
         box.setObjectName("section")
         box.setFixedHeight(85)
@@ -68,7 +70,7 @@ class MainWindow(QWidget):
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         layout.setContentsMargins(20, 20, 20, 20)
 
-        title_label = QLabel("VRChat connection")
+        title_label = QLabel("VRChat data")
         title_label.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         layout.addWidget(title_label)
 
@@ -137,11 +139,11 @@ class MainWindow(QWidget):
         return box
 
     def pat_left(self):
-        print("Pat left")
+        logging.debug("Pat left")
         self.server.strength_left = 2
 
     def pat_right(self):
-        print("Patt right")
+        logging.debug("Patt right")
         self.server.strength_right = 2
 
     def set_patstrap_status(self, status: bool):

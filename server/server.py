@@ -1,132 +1,83 @@
 from zeroconf import Zeroconf
 from pythonosc.osc_server import BlockingOSCUDPServer
 from pythonosc.dispatcher import Dispatcher
+from pythonosc.udp_client import SimpleUDPClient
+from functools import partial
 
 import threading
-import struct
 import socket
 import time
+import logging
 
 class Server():
     def __init__(self, window) -> None:
         self.window = window
         self.running = True
-        self.reset()
-        threading.Thread(target=self._connect_socket, args=()).start()
-        threading.Thread(target=self._connect_osc, args=()).start()
+        self.reset_values()
+        # discover once for now, migrate later without waiting
+        self._discover_patstrap()
+
+        # vrchat osc receiver
+        threading.Thread(target=self._vrc_osc_recv, args=()).start()
+
+        # the "game loop" aka calculate stuff and send to hardware
         threading.Thread(target=self._update_loop, args=()).start()
 
-    def reset(self):
-        self.socket = None
-        self.strength_right = 0
-        self.strength_left = 0
-        self.prev_right_value = 0
-        self.prev_left_value = 0
-        self.prev_right = 0
-        self.prev_left = 0
-        self.last_time_right = time.time()
-        self.last_time_left = time.time()
-        self.keepAliveTimeout = time.time()
+    def reset_values(self):
+        self.vrc_last_packet = time.time()
+        self.oscTx = None
 
-    def set_pat(self, left: float, right: float):
-        if self.socket is None:
-            return
-        
-        left = int((1-left) * 15)
-        right = int((1-right) * 15)
-        data = (left << 4) | right
-
-        if left == self.prev_left and right == self.prev_right:
-            return
-
-        self.prev_left = left
-        self.prev_right = right
-
-        self.socket.sendall(struct.pack('B', data))
-        print(str(left) + " " + str(right) + " -> " + str(struct.pack('B', data)))
-
-    def _get_patstrap_ip(self):
+    def _get_patstrap_ip_port(self):
         info = None
         while not info and self.running:
-            info = Zeroconf().get_service_info("_http._tcp.local.", "patstrap._http._tcp.local.")
+            info = Zeroconf().get_service_info("_osc._udp.local.", "patstrap._osc._udp.local.")
             time.sleep(1)
+        return (socket.inet_ntoa(info.addresses[0]), info.port)
 
-        if not self.running:
-            return None
-
-        return socket.inet_ntoa(info.addresses[0])
-
-    def _connect_socket(self):
-        ip_address = self._get_patstrap_ip()
+    def _discover_patstrap(self):
+        ip_address, port = self._get_patstrap_ip_port()
 
         if ip_address is None:
-            return
+            return False
 
-        print("Patstrap address found: " + ip_address)
+        logging.debug(f"Patstrap found {ip_address} on port {port}")
+        self.oscTx = SimpleUDPClient(ip_address, port)
+        return True
+
+    def _update_loop(self, tps=2):
 
         while self.running:
-            time.sleep(1)
+            if self.oscTx == None:
+                break
+            
+            #self.oscTx.send_message("/led", int(tmp))
+            #intensity = self.window.get_intensity() # this gets the slider setting, ignore for now
 
-            try:
-                self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.socket.settimeout(2)
-                self.socket.connect((ip_address, 8888))
-                self.set_pat(0, 0)
+            # update gui connection status with a 2 seconds timeout
+            self.window.set_vrchat_status(self.vrc_last_packet+2 >= time.time())
+            time.sleep(1/tps) # replace with something better later
+        
+        logging.error("No patstrap beep boop :( Exiting")
 
-                # Set connection status to green
-                self.window.set_patstrap_status(True)
+    # handle vrchat osc receiving
+    def _vrc_osc_recv(self):
+        # handle incoming vrchat osc messages
+        def _recc_contact(cid, address, val):
+            print(f"cid {cid} {address}: {val}")
+            self.vrc_last_packet = time.time()
 
-                # Wait until connection is closed
-                while self.socket.recv(1) == b'k':
-                    pass
-            except:
-                pass
-
-            self.window.set_patstrap_status(False)
-            self.reset()
-            print("Connection failed")
-
-    def _update_loop(self):
-        while self.running:
-            intensity = self.window.get_intensity()
-            self.strength_right = max(0, min(1, self.strength_right-0.1))
-            self.strength_left = max(0, min(1, self.strength_left-0.1))
-
-            self.set_pat(self.strength_left * intensity, self.strength_right * intensity)
-            time.sleep(0.03)
-
-            self.window.set_vrchat_status(time.time() < self.keepAliveTimeout)
-
-    def _connect_osc(self):
-        def _hit_collider_right(_, value):
-            currentTime = time.time()
-            if currentTime > self.last_time_right:
-                self.strength_right = abs(self.prev_right_value-value)/(currentTime-self.last_time_right)
-                self.prev_right_value = value
-                self.last_time_right = currentTime
-
-        def _hit_collider_left(_, value):
-            currentTime = time.time()
-            if currentTime > self.last_time_left:
-                self.strength_left = abs(self.prev_left_value-value)/(currentTime-self.last_time_left)
-                self.prev_left_value = value
-                self.last_time_left = currentTime
-
-        def _recv_packet(_, value):
-            self.keepAliveTimeout = time.time() + 2
-
+        # register vrchat osc endpoints
         dispatcher = Dispatcher()
-        dispatcher.map("/avatar/parameters/pat_right", _hit_collider_right)
-        dispatcher.map("/avatar/parameters/pat_left", _hit_collider_left)
-        dispatcher.map("/avatar/parameters/*", _recv_packet)
+        dispatcher.map("/avatar/parameters/pat_neck", partial(_recc_contact, 0))
+        dispatcher.map("/avatar/parameters/pat_1", partial(_recc_contact, 1))
+        dispatcher.map("/avatar/parameters/pat_2", partial(_recc_contact, 2))
+        dispatcher.map("/avatar/parameters/pat_3", partial(_recc_contact, 3))
 
-        self.osc = BlockingOSCUDPServer(("127.0.0.1", 9001), dispatcher)
-        print("OSC serving on {}".format(self.osc.server_address)) # While server is active, receive messages
+        # setup and run osc server
+        self.osc = BlockingOSCUDPServer(("", 9001), dispatcher)
+        logging.debug(f"OSC serving on {self.osc.server_address}")
         self.osc.serve_forever()
 
     def shutdown(self):
         self.running = False
         self.osc.shutdown()
-        if self.socket is not None:
-            self.socket.shutdown(2)
-            self.socket.close()

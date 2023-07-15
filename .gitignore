@@ -14,3 +14,4 @@ icons/
 package-lock.json
 *.exe
 .venv
+__pycache__
