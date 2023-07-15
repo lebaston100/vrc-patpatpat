@@ -1,14 +1,19 @@
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QSlider
 from PyQt6.QtCore import Qt
 from server import Server
+from config import Config
 import time
 import sys
 import logging
+import pathlib
 
 logging.basicConfig(level=logging.DEBUG)
 
+# get local directory as path object
+LOCALDIR = pathlib.Path(__file__).parent.resolve()
+
 class MainWindow(QWidget):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.slider_strength = None
@@ -33,6 +38,8 @@ class MainWindow(QWidget):
         layout.addWidget(self.create_settings())
         layout.addWidget(self.create_test())
         
+        # create config handler
+        self.config = Config(file=LOCALDIR / "patstrap.cfg")
         self.server = Server(self)
 
         box.setLayout(layout)
@@ -40,7 +47,7 @@ class MainWindow(QWidget):
 
         self.setLayout(layoutMain)
 
-    def create_patstrap_status(self):
+    def create_patstrap_status(self) -> QWidget:
         box = QWidget()
         box.setObjectName("section")
         box.setFixedHeight(85)
@@ -61,7 +68,7 @@ class MainWindow(QWidget):
         box.setLayout(layout)
         return box
 
-    def create_recv_vrchat_data_status(self):
+    def create_recv_vrchat_data_status(self) -> QWidget:
         box = QWidget()
         box.setObjectName("section")
         box.setFixedHeight(85)
@@ -82,7 +89,7 @@ class MainWindow(QWidget):
         box.setLayout(layout)
         return box
 
-    def create_settings(self):
+    def create_settings(self) -> QWidget:
         box = QWidget()
         box.setObjectName("section")
         box.setFixedHeight(85)
@@ -110,7 +117,7 @@ class MainWindow(QWidget):
             return 0
         return self.slider_strength.value() / 100.0
 
-    def create_test(self):
+    def create_test(self) -> QWidget:
         box = QWidget()
         box.setObjectName("section")
         box.setFixedHeight(140)
@@ -138,19 +145,19 @@ class MainWindow(QWidget):
         box.setLayout(layoutV)
         return box
 
-    def pat_left(self):
+    def pat_left(self) -> None:
         logging.debug("Pat left")
         self.server.oscMotorTxData[0] = 0
         time.sleep(1)
         self.server.oscMotorTxData[0] = 255
 
-    def pat_right(self):
+    def pat_right(self) -> None:
         logging.debug("Patt right")
         self.server.oscMotorTxData[1] = 0
         time.sleep(1)
         self.server.oscMotorTxData[1] = 255
 
-    def set_patstrap_status(self, status: bool):
+    def set_patstrap_status(self, status: bool) -> None:
         if self.prev_patstrap_status != status:
             self.prev_patstrap_status = status
             self.status_hardware_connection.setStyleSheet("color: #29b980; font-size: 30px;" if status else "color: #b94029; font-size: 30px;")
@@ -158,12 +165,12 @@ class MainWindow(QWidget):
             self.test_right_button.setDisabled(not status)
             self.test_left_button.setDisabled(not status)
 
-    def set_vrchat_status(self, status: bool):
+    def set_vrchat_status(self, status: bool) -> None:
         if self.prev_vrchat_status != status:
             self.prev_vrchat_status = status
             self.status_vrchat_connection.setStyleSheet("color: #29b980; font-size: 30px;" if status else "color: #b94029; font-size: 30px;")
 
-    def closeEvent(self, _):
+    def closeEvent(self, _) -> None:
         self.server.shutdown()
 
 if __name__ == "__main__":
