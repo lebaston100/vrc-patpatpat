@@ -17,8 +17,8 @@ class Server():
         # discover once for now, migrate later without waiting
         self._discover_patstrap()
 
-        # vrchat osc receiver
-        threading.Thread(target=self._vrc_osc_recv, args=()).start()
+        # vrchat and patstrap osc receiver
+        threading.Thread(target=self._osc_recv, args=()).start()
 
         # the "game loop" aka calculate stuff and send to hardware
         threading.Thread(target=self._update_loop, args=()).start()
@@ -28,6 +28,9 @@ class Server():
         self.oscTx = None
         self.numMotors = 2
         self.oscMotorTxData = [255]*self.numMotors
+        self.vrcInValues = {}
+        for i in range(4):
+            self.vrcInValues[i] = {"v": 0, "ts": 0}
 
     def _get_patstrap_ip_port(self):
         info = None
@@ -59,19 +62,21 @@ class Server():
             # update gui connection status with a 2 seconds timeout
             self.window.set_vrchat_status(self.vrc_last_packet+1 >= time.time())
             self.window.set_patstrap_status(self.patstrap_last_heartbeat+2 >= time.time())
+            logging.debug(self.vrcInValues)
             time.sleep(1/tps) # replace with something better later
         
         logging.error("Exiting")
 
     # handle vrchat osc receiving
-    def _vrc_osc_recv(self):
+    def _osc_recv(self):
         # handle incoming vrchat osc messages
         def _recc_contact(cid, address, val):
-            print(f"cid {cid} {address}: {val}")
+            #print(f"cid {cid} {address}: {val}")
+            self.vrcInValues[cid] = {"v": val, "ts": time.time()}
             self.vrc_last_packet = time.time()
         
         def _recv_patstrap_heartbeat(_, val):
-            logging.debug(f"Received patstrap heartbeat with uptime {val/1000}s")
+            logging.debug(f"Received patstrap heartbeat with uptime {val}s")
             self.patstrap_last_heartbeat = time.time()
 
         # register vrchat osc endpoints

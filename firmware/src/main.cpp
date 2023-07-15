@@ -89,7 +89,7 @@ void loop() {
             if (millis() - lastHeartbeatSend >= 1000) {
                 lastHeartbeatSend = millis();
                 OSCMessage txmsg("/patstrap/heartbeat");
-                txmsg.add((double)millis());
+                txmsg.add((int)millis()/1000);
                 Udp.beginPacket(Udp.remoteIP(), VRC_UDP_PORT);
                 txmsg.send(Udp);
                 Udp.endPacket();
