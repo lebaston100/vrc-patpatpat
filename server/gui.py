@@ -1,5 +1,7 @@
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QSlider
-from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QSlider, QSizePolicy
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtDataVisualization import Q3DScatter, QScatter3DSeries, QScatterDataProxy, QScatterDataItem
+from PyQt6.QtGui import QVector3D
 from server import Server
 from config import Config
 import time
@@ -37,9 +39,11 @@ class MainWindow(QWidget):
         layout.addWidget(self.create_recv_vrchat_data_status())
         layout.addWidget(self.create_settings())
         layout.addWidget(self.create_test())
+        layout.addWidget(self.create_visualizer())
         
         # create config handler
         self.config = Config(file=LOCALDIR / "patstrap.cfg")
+        # create server part
         self.server = Server(self)
 
         box.setLayout(layout)
@@ -145,6 +149,34 @@ class MainWindow(QWidget):
         box.setLayout(layoutV)
         return box
 
+    def create_visualizer(self):
+        self.qt3dplot = Q3DScatter()
+        series = QScatter3DSeries()
+        data = [QScatterDataItem(QVector3D(0,0,0)), QScatterDataItem(QVector3D(1,1,1))]
+        proxy = QScatterDataProxy()
+        proxy.addItems(data)
+        series.setDataProxy(proxy)
+        self.qt3dplot.addSeries(series)
+
+        layout = QVBoxLayout()
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        layout.setContentsMargins(10, 10, 10, 10)
+
+        info_label = QLabel("3D View")
+        info_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        info_label.setFixedHeight(40)
+        layout.addWidget(info_label)
+        
+        t = QWidget.createWindowContainer(self.qt3dplot)
+        t.setObjectName("section")
+        t.setFixedHeight(700)
+        layout.addWidget(t)
+
+        box = QWidget()
+        box.setObjectName("section")
+        box.setLayout(layout)
+        return box
+
     def pat_left(self) -> None:
         logging.debug("Pat left")
         self.server.oscMotorTxData[0] = 0
@@ -177,6 +209,6 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     window = MainWindow()
-    window.setFixedSize(400, 425)
+    window.setFixedSize(1200, 1200)
     window.show()
     sys.exit(app.exec())
