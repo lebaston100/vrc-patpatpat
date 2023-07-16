@@ -6,7 +6,7 @@ An open hardware and software project which tries to implement haptic head pat f
  
 This a is a fork of [https://github.com/danielfvm/Patstrap](https://github.com/danielfvm/Patstrap) which will try to work on the following:
 
-- Switch to using osc over udp for the motor control data
+- (Done) Switch to using osc over udp for the motor control data
 - Implement support for more then 3 touch points
 - (Maybe) add a 3d vizualizer (mostly for dev)
   

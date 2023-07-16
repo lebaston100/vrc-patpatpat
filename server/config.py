@@ -14,9 +14,9 @@ class Config:
 
     def get(self, key, fallback=None):
         """return a config option by the given key"""
-        try:
+        if self.has(key):
             return self._configOptions[key]
-        except:
+        else:
             return fallback
 
     def has(self, key):

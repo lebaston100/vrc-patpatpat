@@ -152,7 +152,7 @@ class MainWindow(QWidget):
         self.server.oscMotorTxData[0] = 255
 
     def pat_right(self) -> None:
-        logging.debug("Patt right")
+        logging.debug("Pat right")
         self.server.oscMotorTxData[1] = 0
         time.sleep(1)
         self.server.oscMotorTxData[1] = 255

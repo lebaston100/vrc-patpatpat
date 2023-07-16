@@ -30,7 +30,7 @@ class Server():
         # the "game loop" aka calculate stuff and send to hardware
         threading.Thread(target=self._update_loop, args=()).start()
 
-        # leb0-specific control interface
+        # leb0-specific mqtt control interface
         threading.Thread(target=self._run_mqtt, args=()).start()
 
     def reset_values(self) -> None:
@@ -60,8 +60,8 @@ class Server():
         return True
 
     def _update_loop(self, tps=2) -> None:
-
         while self.running:
+            loopStart = time.perf_counter_ns()
             if self.oscTx == None:
                 break
             
@@ -77,20 +77,26 @@ class Server():
             self.window.set_vrchat_status(self.vrc_last_packet+1 >= time.time())
             self.window.set_patstrap_status(self.patstrap_last_heartbeat+2 >= time.time())
             logging.debug(self.vrcInValues)
-            time.sleep(1/tps) # replace with something better later
+
+            # calculate loop time
+            loopEnd = time.perf_counter_ns()
+            #logging.debug(f"current main loop time: {(loopEnd-loopStart)/1000000}ms")
+            #self._mqtt_send("dev/patstrap/out/loopperf", (loopEnd-loopStart)/1000000)
+            time.sleep((1/tps)-(loopEnd-loopStart)/1000000000)
         
-        logging.error("Exiting")
+        logging.error("Exiting...")
 
     # handle vrchat osc receiving
     def _osc_recv(self) -> None:
         # handle incoming vrchat osc messages
         def _recv_contact(cid, address, val) -> None:
-            #print(f"cid {cid} {address}: {val}")
+            #logging.debug(f"cid {cid} {address}: {val}")
             self.vrcInValues[cid] = {"v": val, "ts": time.time()}
             self.vrc_last_packet = time.time()
         
         def _recv_patstrap_heartbeat(_, val) -> None:
-            logging.debug(f"Received patstrap heartbeat with uptime {val}s")
+            #logging.debug(f"Received patstrap heartbeat with uptime {val}s")
+            self._mqtt_send("dev/patstrap/out/heartbeat", val)
             self.patstrap_last_heartbeat = time.time()
 
         # register vrchat osc endpoints
@@ -108,7 +114,7 @@ class Server():
 
     def _run_mqtt(self) -> None:
         def _on_connect(client, userdata, flags, rc) -> None:
-            logging.debug(f"Connected to mqtt with result code {rc}")
+            logging.debug(f"Connected to mqtt with code {rc}")
             client.subscribe("/dev/patstrap/in/#")
 
         def _on_message(client, userdata, msg) -> None:
@@ -125,9 +131,11 @@ class Server():
         self.mqtt.connect(self.config.get("mqttServerIp"), 1883, 60)
         self.mqtt.loop_forever()
 
-        #self.mqtt.publish("dev/patstrap/out/endpoint", 1)
+    def _mqtt_send(self, addr, data):
+        if self.mqtt.is_connected():
+            self.mqtt.publish(addr, data)
 
     def shutdown(self) -> None:
         self.running = False
         self.osc.shutdown()
-        time.sleep(0.2)
+        self.mqtt.disconnect()
