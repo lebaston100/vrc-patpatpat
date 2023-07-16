@@ -44,8 +44,9 @@ class Server():
 
     def _get_patstrap_ip_port(self) -> tuple[str, int]:
         info = None
+        zc = Zeroconf()
         while not info and self.running:
-            info = Zeroconf().get_service_info("_osc._udp.local.", "patstrap._osc._udp.local.")
+            info = zc.get_service_info("_osc._udp.local.", "patstrap._osc._udp.local.")
             time.sleep(0.2)
         return (socket.inet_ntoa(info.addresses[0]), info.port)
 
