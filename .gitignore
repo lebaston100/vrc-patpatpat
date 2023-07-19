@@ -15,3 +15,4 @@ package-lock.json
 *.exe
 .venv
 __pycache__
+recording.json
