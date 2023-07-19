@@ -38,7 +38,6 @@ def recorderLoop(server):
     
 def runRecorder():
     global startTime
-    time.sleep(args.delay)
     dispatcher = Dispatcher()
     dispatcher.set_default_handler(osc_recv_handler)
     server = BlockingOSCUDPServer((args.ip, args.port), dispatcher)
@@ -75,6 +74,7 @@ def runReplayer():
     logging.info("Exiting...")
 
 def main():
+    time.sleep(args.delay)
     if args.mode == "rec":
         runRecorder()
     elif args.mode == "play":
