@@ -1,15 +1,25 @@
 # leb0-Patstrap
 
-An open hardware and software project which tries to implement haptic head pat feedback to the player in VR. This project focuses mainly on VRChat's OSC support.
+An open hardware and software project which tries to implement haptic head pat feedback to the player in VR. This project focuses only on VRChat's OSC support.
 
  ## This is a WIP fork!
  
-This a is a fork of [https://github.com/danielfvm/Patstrap](https://github.com/danielfvm/Patstrap) which will try to work on the following:
+This a is a in-development fork of [https://github.com/danielfvm/Patstrap](https://github.com/danielfvm/Patstrap) which will try to work on the following:
 
-- (Done) Switch to using osc over udp for the motor control data
-- Implement support for more then 3 touch points
-- (Maybe) add a 3d vizualizer (mostly for dev)
-  
+- (Done) switch to using osc over udp for the motor control data
+- (Done) add config file to configure/load/save parameters
+- implement support for more then 3 touch points
+- (started) add mqtt control/feedback to server (for further integration purposes in my setup)
+- (Done) add a simple osc recorder and player (for dev) (server/oscRecReplayer.py)
+- (Done) add a 3d vizualizer (mostly for dev)
+
+Other stuff to later add to the readme:
+
+- Using ULN2003 board to drive motors
+- Using [motors](https://www.aliexpress.com/item/4000245243914.html) from aliexpress
+- Obv. 3d printed part won't fit more motors, revise head mounting options for > 2 motors
+- Update unity guide for positioning and coordinates
+
 ### Original Readme from here on for now
 
 ---
