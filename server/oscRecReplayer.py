@@ -1,4 +1,7 @@
 # a hacked together utility to record and replay osc data
+# help for command line options are available via -h
+# timing is not 100% accurate but good enough(TM) for testing purposes
+# recorded data is limited to 1 parameter per address
 
 from pythonosc.osc_server import BlockingOSCUDPServer
 from pythonosc.dispatcher import Dispatcher
@@ -17,20 +20,22 @@ parser = ArgumentParser(prog="OSCrecreplay", description="Record and replay OSC 
 parser.add_argument("mode", choices=["rec", "play"], help="The mode the script will run in")
 parser.add_argument("-i", "--ip", required=False, default="" ,help="The osc ip to use")
 parser.add_argument("-p", "--port", required=False, type=int, default=9001, help="The osc port to use")
-parser.add_argument("-f", "--filename", required=False, type=str, default="recording.json", help="The filename to use for recording or reading data")
+parser.add_argument("-n", "--name", required=False, type=str, default="recording.json", help="The filename to use for recording or reading data")
 parser.add_argument("-d", "--delay", required=False, type=int, default=0, help="Number of seconds to wait before starting the recording (rec only)")
 parser.add_argument("-t", "--timeout", required=False, type=int, default=20, help="Limit runtime to a pecific number of seconds (rec only)")
+parser.add_argument("-f", "--filter", required=False, type=str, default="", help="Filter only osc paths containing this string")
 args = parser.parse_args()
 
 # init vars
-file = fileHelper(args.filename)
+file = fileHelper(args.name)
 dataBuffer = []
 startTime = 0
 
-def osc_recv_handler(address, *args):
+def osc_recv_handler(address, *argss):
     global startTime
-    logging.debug(f"OSC IN {address}: {args}")
-    dataBuffer.append([time.time()-startTime, address, args[0]])
+    if not args.filter or (args.filter and args.filter in address):
+        logging.debug(f"OSC IN {address}: {argss}")
+        dataBuffer.append([time.time()-startTime, address, argss[0]])
 
 def recorderLoop(server):
     server.serve_forever()
@@ -69,7 +74,7 @@ def runReplayer():
     t1 = time.time()
     for m in data:
         t, addr, d = m
-        time.sleep(t1-time.time()+t)
+        time.sleep(max(t1-time.time()+t, 0))
         oscClient.send_message(addr, d)
     logging.info("Exiting...")
 
