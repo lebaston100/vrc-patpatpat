@@ -4,6 +4,7 @@ from pythonosc.dispatcher import Dispatcher
 from pythonosc.udp_client import SimpleUDPClient
 from functools import partial
 import paho.mqtt.client as mqtt
+import numpy as np
 
 # for docstrings
 from config import Config
@@ -28,7 +29,7 @@ class Server():
         threading.Thread(target=self._osc_recv, args=()).start()
 
         # the "game loop" aka calculate stuff and send to hardware
-        threading.Thread(target=self._update_loop, args=()).start()
+        threading.Thread(target=self._main_loop, args=()).start()
 
         # leb0-specific mqtt control interface
         threading.Thread(target=self._run_mqtt, args=()).start()
@@ -56,17 +57,43 @@ class Server():
         if ip_address is None or port is None:
             return False
 
-        logging.debug(f"Patstrap found {ip_address} on port {port}")
+        logging.info(f"Patstrap found {ip_address} on port {port}")
         self.oscTx = SimpleUDPClient(ip_address, port)
         return True
 
-    def _update_loop(self, tps=2) -> None:
+    def _validate_data_age(self, d: dict) -> bool:
+        """Check that all received points are fresh"""
+        maxAge = time.time()-0.5
+        return all(e["ts"] > maxAge for e in d.values())
+
+    def _process_3d_position(self, d: dict) -> tuple:
+        """Calculate the 3d point"""
+        logging.debug(d)
+        if self._validate_data_age(d):
+            logging.debug("data is old enough, processing further")
+
+            return (1,)
+        return None
+    
+    # we need a server and gui function to update the 3d visualizer
+
+    def _main_loop(self, tps: int=2) -> None:
+        # load points from config
+        # i also guess we need to normalize them
+        # either https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html
+        # or https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.normalize.html
         while self.running:
             loopStart = time.perf_counter_ns()
             if self.oscTx == None:
-                break
+                continue
             
-            self.oscTx.send_message("/m", self.oscMotorTxData)
+            # calculate the 3d position from the input data
+            pos = self._process_3d_position(self.vrcInValues)
+
+            # project 3d point onto motor sphere
+
+            # send out motor speeds
+            #self.oscTx.send_message("/m", self.oscMotorTxData)
 
             #intensity = self.window.get_intensity() # this gets the slider setting, ignore for now
 
@@ -77,15 +104,14 @@ class Server():
             # update gui connection status with a 2 seconds timeout
             self.window.set_vrchat_status(self.vrc_last_packet+1 >= time.time())
             self.window.set_patstrap_status(self.patstrap_last_heartbeat+2 >= time.time())
-            logging.debug(self.vrcInValues)
 
             # calculate loop time
             loopEnd = time.perf_counter_ns()
-            #logging.debug(f"current main loop time: {(loopEnd-loopStart)/1000000}ms")
+            logging.debug(f"loop time: {(loopEnd-loopStart)/1000000}ms")
             #self._mqtt_send("dev/patstrap/out/loopperf", (loopEnd-loopStart)/1000000)
             time.sleep((1/tps)-(loopEnd-loopStart)/1000000000)
         
-        logging.error("Exiting...")
+        logging.info("Exiting...")
 
     # handle vrchat osc receiving
     def _osc_recv(self) -> None:
@@ -102,7 +128,7 @@ class Server():
 
         # register vrchat osc endpoints
         dispatcher = Dispatcher()
-        dispatcher.map("/avatar/parameters/pat_neck", partial(_recv_contact, 0))
+        dispatcher.map("/avatar/parameters/pat_center", partial(_recv_contact, 0))
         dispatcher.map("/avatar/parameters/pat_1", partial(_recv_contact, 1))
         dispatcher.map("/avatar/parameters/pat_2", partial(_recv_contact, 2))
         dispatcher.map("/avatar/parameters/pat_3", partial(_recv_contact, 3))
@@ -110,12 +136,12 @@ class Server():
 
         # setup and run osc server
         self.osc = BlockingOSCUDPServer(("", self.config.get("vrcOscPort")), dispatcher)
-        logging.debug(f"OSC serving on {self.osc.server_address}")
+        logging.info(f"OSC serving on {self.osc.server_address}")
         self.osc.serve_forever()
 
     def _run_mqtt(self) -> None:
         def _on_connect(client, userdata, flags, rc) -> None:
-            logging.debug(f"Connected to mqtt with code {rc}")
+            logging.info(f"Connected to mqtt with code {rc}")
             client.subscribe("/dev/patstrap/in/#")
 
         def _on_message(client, userdata, msg) -> None:

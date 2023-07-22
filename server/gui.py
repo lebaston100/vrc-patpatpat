@@ -155,6 +155,7 @@ class MainWindow(QWidget):
         data = [QScatterDataItem(QVector3D(0,0,0)), QScatterDataItem(QVector3D(1,1,1))]
         proxy = QScatterDataProxy()
         proxy.addItems(data)
+        series.setItemSize(0.2)
         series.setDataProxy(proxy)
         self.qt3dplot.addSeries(series)
 
