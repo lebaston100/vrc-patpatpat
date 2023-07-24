@@ -6,8 +6,10 @@ from functools import partial
 import paho.mqtt.client as mqtt
 import numpy as np
 
-# for docstrings
-from config import Config
+# for docstrings and typing
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from config import Config
 
 import threading
 import socket
@@ -22,8 +24,8 @@ class Server():
         self.oscTx = None
         self.mqtt = None
         self.reset_values()
-        # discover once for now, migrate later without waiting
-        self._discover_patstrap()
+        # run hardware discovery in seperate thread to not wait for it
+        threading.Thread(target=self._discover_patstrap, args=()).start()
 
         # vrchat and patstrap osc receiver
         threading.Thread(target=self._osc_recv, args=()).start()
@@ -35,8 +37,10 @@ class Server():
         threading.Thread(target=self._run_mqtt, args=()).start()
 
     def reset_values(self) -> None:
+        """Initialize some internal values"""
         self.vrc_last_packet = self.patstrap_last_heartbeat = time.time()-5
-        self.enableVrcTx = False
+        self.enableVrcTx = True
+        self.battery = 0
         self.numMotors = self.config.get("numMotors", 2)
         self.oscMotorTxData = [0]*self.numMotors
         self.vrcInValues = {}
@@ -49,17 +53,18 @@ class Server():
         while not info and self.running:
             info = self.zc.get_service_info("_osc._udp.local.", "patstrap._osc._udp.local.")
             time.sleep(0.2)
-        return (socket.inet_ntoa(info.addresses[0]), info.port)
+        if info:
+            return (socket.inet_ntoa(info.addresses[0]), info.port)
+        return (None, None)
 
     def _discover_patstrap(self) -> bool:
         ip_address, port = self._get_patstrap_ip_port()
 
         if ip_address is None or port is None:
-            return False
+            return
 
         logging.info(f"Patstrap found {ip_address} on port {port}")
         self.oscTx = SimpleUDPClient(ip_address, port)
-        return True
 
     def _validate_data_age(self, d: dict) -> bool:
         """Check that all received points are fresh"""
@@ -70,8 +75,8 @@ class Server():
         """Calculate the 3d point"""
         logging.debug(d)
         if self._validate_data_age(d):
-            logging.debug("data is old enough, processing further")
-
+            logging.debug("data is new enough, processing further")
+            # do calc here
             return (1,)
         return None
     
@@ -82,6 +87,7 @@ class Server():
         # i also guess we need to normalize them
         # either https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html
         # or https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.normalize.html
+        # OR maybe we don't because then the colider distances won't line up?
         while self.running:
             loopStart = time.perf_counter_ns()
             if self.oscTx == None:
@@ -92,13 +98,12 @@ class Server():
 
             # project 3d point onto motor sphere
 
-            # send out motor speeds
-            #self.oscTx.send_message("/m", self.oscMotorTxData)
-
             #intensity = self.window.get_intensity() # this gets the slider setting, ignore for now
 
             if self.enableVrcTx:
                 # Only send data here
+                # send out motor speeds
+                self.oscTx.send_message("/m", self.oscMotorTxData)
                 pass
 
             # update gui connection status with a 2 seconds timeout
@@ -125,6 +130,13 @@ class Server():
             #logging.debug(f"Received patstrap heartbeat with uptime {val}s")
             self._mqtt_send("dev/patstrap/out/heartbeat", val)
             self.patstrap_last_heartbeat = time.time()
+        
+        # TODO: add this as a 2nd value to the heartbeat instead
+        def _recv_patstrap_battery(_, val) -> None:
+            #logging.debug(f"Received patstrap battery with value {val}")
+            # for now this is just the raw value, we later need to do some light processing to it
+            self.battery = int(val)
+            self.window.set_patstrap_battery(self.battery)
 
         # register vrchat osc endpoints
         dispatcher = Dispatcher()
@@ -133,6 +145,7 @@ class Server():
         dispatcher.map("/avatar/parameters/pat_2", partial(_recv_contact, 2))
         dispatcher.map("/avatar/parameters/pat_3", partial(_recv_contact, 3))
         dispatcher.map("/patstrap/heartbeat", _recv_patstrap_heartbeat)
+        dispatcher.map("/patstrap/battery", _recv_patstrap_battery)
 
         # setup and run osc server
         self.osc = BlockingOSCUDPServer(("", self.config.get("vrcOscPort")), dispatcher)

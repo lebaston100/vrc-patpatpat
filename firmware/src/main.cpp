@@ -18,6 +18,9 @@ unsigned long lastHeartbeatSend = 0;
 // The only setting that should need adjustment aside from wifi stuff
 byte motorPins[] = {INTERNAL_LED, 3};
 
+// Set adc mode to read the internal voltage
+ADC_MODE(ADC_VCC);
+
 void setup() {
     // Initialize outputs, we assume they are all valid and can drive pwm
     numMotors = sizeof(motorPins) / sizeof(motorPins[0]);
@@ -96,6 +99,12 @@ void loop() {
                 txmsg.send(Udp);
                 Udp.endPacket();
                 txmsg.empty();
+                OSCMessage txmsg2("/patstrap/battery");
+                txmsg2.add(ESP.getVcc());
+                Udp.beginPacket(Udp.remoteIP(), VRC_UDP_PORT);
+                txmsg2.send(Udp);
+                Udp.endPacket();
+                txmsg2.empty();
             }
         } else {
             error = msg.getError();

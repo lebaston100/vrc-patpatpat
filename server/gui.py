@@ -36,6 +36,7 @@ class MainWindow(QWidget):
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         layout.addWidget(self.create_patstrap_status())
+        layout.addWidget(self.create_patstrap_battery())
         layout.addWidget(self.create_recv_vrchat_data_status())
         layout.addWidget(self.create_settings())
         layout.addWidget(self.create_test())
@@ -71,6 +72,30 @@ class MainWindow(QWidget):
 
         box.setLayout(layout)
         return box
+
+    def create_patstrap_battery(self) -> QWidget:
+        box = QWidget()
+        box.setObjectName("section")
+        box.setFixedHeight(85)
+
+        layout = QHBoxLayout()
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        layout.setContentsMargins(20, 20, 20, 20)
+
+        title_label = QLabel("Patstrap battery")
+        title_label.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        layout.addWidget(title_label)
+
+        self.battery_text = QLabel("-")
+        self.battery_text.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.battery_text.setStyleSheet("color: #b94029; font-size: 30px;")
+        layout.addWidget(self.battery_text)
+
+        box.setLayout(layout)
+        return box
+
+    def set_patstrap_battery(self, val):
+        self.battery_text.setText(str(val))
 
     def create_recv_vrchat_data_status(self) -> QWidget:
         box = QWidget()
@@ -155,7 +180,7 @@ class MainWindow(QWidget):
         data = [QScatterDataItem(QVector3D(0,0,0)), QScatterDataItem(QVector3D(1,1,1))]
         proxy = QScatterDataProxy()
         proxy.addItems(data)
-        series.setItemSize(0.2)
+        series.setItemSize(0.1)
         series.setDataProxy(proxy)
         self.qt3dplot.addSeries(series)
 
