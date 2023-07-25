@@ -95,16 +95,11 @@ void loop() {
                 lastHeartbeatSend = millis();
                 OSCMessage txmsg("/patstrap/heartbeat");
                 txmsg.add((int)millis()/1000);
+                txmsg.add(ESP.getVcc());
                 Udp.beginPacket(Udp.remoteIP(), VRC_UDP_PORT);
                 txmsg.send(Udp);
                 Udp.endPacket();
                 txmsg.empty();
-                OSCMessage txmsg2("/patstrap/battery");
-                txmsg2.add(ESP.getVcc());
-                Udp.beginPacket(Udp.remoteIP(), VRC_UDP_PORT);
-                txmsg2.send(Udp);
-                Udp.endPacket();
-                txmsg2.empty();
             }
         } else {
             error = msg.getError();

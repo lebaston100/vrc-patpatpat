@@ -19,6 +19,8 @@ Other stuff to later add to the readme:
 - Using [motors](https://www.aliexpress.com/item/4000245243914.html) from aliexpress
 - Obv. 3d printed part won't fit more motors, revise head mounting options for > 2 motors
 - Update unity guide for positioning and coordinates
+- Add wiring for battery voltage measurement
+- Mention that server connection indicator for hardware only is active when comms in both directions work
 
 ### Original Readme from here on for now
 

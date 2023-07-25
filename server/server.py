@@ -121,31 +121,27 @@ class Server():
     # handle vrchat osc receiving
     def _osc_recv(self) -> None:
         # handle incoming vrchat osc messages
-        def _recv_contact(cid, address, val) -> None:
-            #logging.debug(f"cid {cid} {address}: {val}")
-            self.vrcInValues[cid] = {"v": val, "ts": time.time()}
+        def _recv_contact(address, cid, val) -> None:
+            #logging.debug(f"cid {cid[0]} {address}: {val}")
+            self.vrcInValues[cid[0]] = {"v": val, "ts": time.time()}
             self.vrc_last_packet = time.time()
         
-        def _recv_patstrap_heartbeat(_, val) -> None:
-            #logging.debug(f"Received patstrap heartbeat with uptime {val}s")
-            self._mqtt_send("dev/patstrap/out/heartbeat", val)
+        def _recv_patstrap_heartbeat(_, uptime, voltage) -> None:
+            #logging.debug(f"Received patstrap heartbeat with uptime {uptime}s and voltage {voltage}")
+            self._mqtt_send("dev/patstrap/out/heartbeat", uptime)
             self.patstrap_last_heartbeat = time.time()
-        
-        # TODO: add this as a 2nd value to the heartbeat instead
-        def _recv_patstrap_battery(_, val) -> None:
-            #logging.debug(f"Received patstrap battery with value {val}")
-            # for now this is just the raw value, we later need to do some light processing to it
-            self.battery = int(val)
-            self.window.set_patstrap_battery(self.battery)
 
+            # for now this is just the raw value, we later need to do some light processing to it
+            self.battery = int(voltage)
+            self.window.set_patstrap_battery(self.battery)
+            
         # register vrchat osc endpoints
         dispatcher = Dispatcher()
-        dispatcher.map("/avatar/parameters/pat_center", partial(_recv_contact, 0))
-        dispatcher.map("/avatar/parameters/pat_1", partial(_recv_contact, 1))
-        dispatcher.map("/avatar/parameters/pat_2", partial(_recv_contact, 2))
-        dispatcher.map("/avatar/parameters/pat_3", partial(_recv_contact, 3))
+        dispatcher.map("/avatar/parameters/pat_center", _recv_contact, 0)
+        dispatcher.map("/avatar/parameters/pat_1", _recv_contact, 1)
+        dispatcher.map("/avatar/parameters/pat_2", _recv_contact, 2)
+        dispatcher.map("/avatar/parameters/pat_3", _recv_contact, 3)
         dispatcher.map("/patstrap/heartbeat", _recv_patstrap_heartbeat)
-        dispatcher.map("/patstrap/battery", _recv_patstrap_battery)
 
         # setup and run osc server
         self.osc = BlockingOSCUDPServer(("", self.config.get("vrcOscPort")), dispatcher)
