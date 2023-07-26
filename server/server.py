@@ -33,7 +33,7 @@ class Server():
         # the "game loop" aka calculate stuff and send to hardware
         threading.Thread(target=self._main_loop, args=()).start()
 
-        # leb0-specific mqtt control interface
+        # mqtt control interface (might expand or remove in the future)
         threading.Thread(target=self._run_mqtt, args=()).start()
 
     def reset_values(self) -> None:

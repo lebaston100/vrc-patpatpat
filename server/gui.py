@@ -1,8 +1,9 @@
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QSlider, QSizePolicy
-from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QSlider
+from PyQt6.QtCore import Qt
 from PyQt6.QtDataVisualization import Q3DScatter, QScatter3DSeries, QScatterDataProxy, QScatterDataItem
 from PyQt6.QtGui import QVector3D
 from server import Server
+from guiClasses import CGui2Row
 from config import Config
 import time
 import sys
@@ -52,94 +53,36 @@ class MainWindow(QWidget):
 
         self.setLayout(layoutMain)
 
-    def create_patstrap_status(self) -> QWidget:
-        box = QWidget()
-        box.setObjectName("section")
-        box.setFixedHeight(85)
-
-        layout = QHBoxLayout()
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        layout.setContentsMargins(20, 20, 20, 20)
-
-        title_label = QLabel("Patstrap connection")
-        title_label.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-        layout.addWidget(title_label)
-
+    def create_patstrap_status(self) -> CGui2Row:
         self.status_hardware_connection = QLabel(" ⬤")
-        self.status_hardware_connection.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.status_hardware_connection.setStyleSheet("color: #b94029; font-size: 30px;")
-        layout.addWidget(self.status_hardware_connection)
 
-        box.setLayout(layout)
-        return box
+        row = CGui2Row(title="Patstrap connection", content=self.status_hardware_connection)
+        return row
 
-    def create_patstrap_battery(self) -> QWidget:
-        box = QWidget()
-        box.setObjectName("section")
-        box.setFixedHeight(85)
-
-        layout = QHBoxLayout()
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        layout.setContentsMargins(20, 20, 20, 20)
-
-        title_label = QLabel("Patstrap battery")
-        title_label.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-        layout.addWidget(title_label)
-
+    def create_patstrap_battery(self) -> CGui2Row:
         self.battery_text = QLabel("-")
-        self.battery_text.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.battery_text.setStyleSheet("color: #b94029; font-size: 30px;")
-        layout.addWidget(self.battery_text)
 
-        box.setLayout(layout)
-        return box
+        row = CGui2Row(title="Patstrap battery", content=self.battery_text)
+        return row
 
     def set_patstrap_battery(self, val):
         self.battery_text.setText(str(val))
 
-    def create_recv_vrchat_data_status(self) -> QWidget:
-        box = QWidget()
-        box.setObjectName("section")
-        box.setFixedHeight(85)
-
-        layout = QHBoxLayout()
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        layout.setContentsMargins(20, 20, 20, 20)
-
-        title_label = QLabel("VRChat data")
-        title_label.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-        layout.addWidget(title_label)
-
+    def create_recv_vrchat_data_status(self) -> CGui2Row:
         self.status_vrchat_connection = QLabel("  ⬤")
-        self.status_vrchat_connection.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.status_vrchat_connection.setStyleSheet("color: #b94029; font-size: 30px;")
-        layout.addWidget(self.status_vrchat_connection)
 
-        box.setLayout(layout)
-        return box
+        row = CGui2Row(title="VRChat data", content=self.status_vrchat_connection)
+        return row
 
-    def create_settings(self) -> QWidget:
-        box = QWidget()
-        box.setObjectName("section")
-        box.setFixedHeight(85)
-
-        layout = QHBoxLayout()
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        layout.setContentsMargins(20, 20, 20, 20)
-
-        title_label = QLabel("Intensity")
-        title_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        layout.addWidget(title_label)
-
+    def create_settings(self) -> CGui2Row:
         self.slider_strength = QSlider(Qt.Orientation.Horizontal)
         self.slider_strength.setMaximumWidth(200)
         self.slider_strength.setMinimum(0)
         self.slider_strength.setMaximum(100)
         self.slider_strength.setValue(50)
-        layout.addWidget(self.slider_strength)
 
-        box.setLayout(layout)
-        return box
+        row = CGui2Row(title="Intensity", content=self.slider_strength, AlignRight=False, DefaultColor=False)
+        return row
 
     def get_intensity(self) -> float:
         if self.slider_strength is None:
@@ -174,7 +117,7 @@ class MainWindow(QWidget):
         box.setLayout(layoutV)
         return box
 
-    def create_visualizer(self):
+    def create_visualizer(self) -> QWidget:
         self.qt3dplot = Q3DScatter()
         series = QScatter3DSeries()
         data = [QScatterDataItem(QVector3D(0,0,0)), QScatterDataItem(QVector3D(1,1,1))]
