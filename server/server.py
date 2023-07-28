@@ -1,10 +1,14 @@
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QSlider
+from PyQt6.QtCore import Qt
+from PyQt6.QtDataVisualization import Q3DScatter, QScatter3DSeries, QScatterDataProxy, QScatterDataItem
+from PyQt6.QtGui import QVector3D, QColorConstants
 from zeroconf import Zeroconf
 from pythonosc.osc_server import BlockingOSCUDPServer
 from pythonosc.dispatcher import Dispatcher
 from pythonosc.udp_client import SimpleUDPClient
 from functools import partial
 import paho.mqtt.client as mqtt
-import numpy as np
+import random
 
 # for docstrings and typing
 from typing import TYPE_CHECKING
@@ -47,6 +51,21 @@ class Server():
         for i in range(4):
             self.vrcInValues[i] = {"v": 0, "ts": 0}
 
+        self.avatarPoints = [self.config.get(f"avatarPoint{avatarPointId}") for avatarPointId in range(4)]
+        self.avatarPointsAsTuple = [(p["x"], p["y"], p["z"]) for p in self.avatarPoints]
+        logging.debug(self.avatarPoints)
+        # Show avatar points in visualizer
+        self.window.qt3dplot.addSeries(self._generateAvatarPointSeries([QScatterDataItem(QVector3D(*p)) for p in self.avatarPointsAsTuple]))
+    
+    def _generateAvatarPointSeries(self, data) -> QScatter3DSeries:
+        proxy = QScatterDataProxy()
+        proxy.addItems(data)
+        series = QScatter3DSeries()
+        series.setItemSize(0.2)
+        series.setBaseColor(QColorConstants.Yellow)
+        series.setDataProxy(proxy)
+        return series
+
     def _get_patstrap_ip_port(self) -> tuple[str, int]:
         info = None
         self.zc = Zeroconf()
@@ -77,6 +96,18 @@ class Server():
         if self._validate_data_age(d):
             logging.debug("data is new enough, processing further")
             # do calc here
+            #self.scatterData = [QScatterDataItem(QVector3D(random.random(),random.random(),random.random()))]
+            #proxy = QScatterDataProxy()
+            #proxy.addItems(self.scatterData)
+
+            #series = QScatter3DSeries()
+            #series.setItemSize(0.2)
+            #series.setBaseColor(QColorConstants.Yellow)
+            #series.setDataProxy(proxy)
+            #logging.debug(self.window.qt3dplot.seriesList())
+            #if len(self.window.qt3dplot.seriesList()) > 1:
+            #    self.window.qt3dplot.removeSeries(self.window.qt3dplot.seriesList()[1])
+            #self.window.qt3dplot.addSeries(series)
             return (1,)
         return None
     
@@ -88,6 +119,7 @@ class Server():
         # either https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html
         # or https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.normalize.html
         # OR maybe we don't because then the colider distances won't line up?
+
         while self.running:
             loopStart = time.perf_counter_ns()
             if self.oscTx == None:

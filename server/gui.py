@@ -24,7 +24,7 @@ class MainWindow(QWidget):
         self.prev_patstrap_status = False
         self.prev_vrchat_status = False
 
-        self.setWindowTitle("leb-Patstrap Server 0.1")
+        self.setWindowTitle("vrc-patpatpat 0.1")
         with open("global.css","r") as file:
             self.setStyleSheet(file.read())
 
@@ -50,7 +50,6 @@ class MainWindow(QWidget):
 
         box.setLayout(layout)
         layoutMain.addWidget(box)
-
         self.setLayout(layoutMain)
 
     def create_patstrap_status(self) -> CGui2Row:
@@ -119,13 +118,6 @@ class MainWindow(QWidget):
 
     def create_visualizer(self) -> QWidget:
         self.qt3dplot = Q3DScatter()
-        series = QScatter3DSeries()
-        data = [QScatterDataItem(QVector3D(0,0,0)), QScatterDataItem(QVector3D(1,1,1))]
-        proxy = QScatterDataProxy()
-        proxy.addItems(data)
-        series.setItemSize(0.1)
-        series.setDataProxy(proxy)
-        self.qt3dplot.addSeries(series)
 
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
