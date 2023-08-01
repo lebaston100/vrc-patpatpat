@@ -70,8 +70,8 @@ class Server():
         info = None
         self.zc = Zeroconf()
         while not info and self.running:
-            info = self.zc.get_service_info("_osc._udp.local.", "patstrap._osc._udp.local.")
-            time.sleep(0.2)
+            info = self.zc.get_service_info("_osc._udp.local.", "patstrap._osc._udp.local.", timeout=1500)
+            time.sleep(0.1)
         if info:
             return (socket.inet_ntoa(info.addresses[0]), info.port)
         return (None, None)
@@ -139,6 +139,7 @@ class Server():
                 pass
 
             # update gui connection status with a 2 seconds timeout
+            # once i learn qt signals maybe this can be event based?
             self.window.set_vrchat_status(self.vrc_last_packet+1 >= time.time())
             self.window.set_patstrap_status(self.patstrap_last_heartbeat+2 >= time.time())
 

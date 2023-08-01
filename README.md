@@ -21,6 +21,7 @@ Other stuff to later add to the readme:
 - Update unity guide for positioning and coordinates
 - Add wiring for battery voltage measurement
 - Mention that server connection indicator for hardware only is active when comms in both directions work
+- To compile the wifi credentials into the esp code the wifi.ini.template needs to be renamed to wifi.ini and the values filled out with the ssid and password 
 
 ### Original Readme from here on for now
 

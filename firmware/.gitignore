@@ -4,4 +4,4 @@
 .vscode/launch.json
 .vscode/ipch
 extensions.json
-platformio.ini
+wifi.ini
