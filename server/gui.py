@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QSlider
 from PyQt6.QtCore import Qt
 from PyQt6.QtDataVisualization import Q3DScatter, QScatter3DSeries, QScatterDataProxy, QScatterDataItem
-from PyQt6.QtGui import QVector3D
+from PyQt6.QtGui import QColorConstants
 from server import Server
 from guiClasses import CGui2Row
 from config import Config
@@ -107,6 +107,10 @@ class MainWindow(QWidget):
         self.test_right_button.setDisabled(True)
         layoutH.addWidget(self.test_right_button)
 
+        self.clear_plot_button = QPushButton("Clear Plot")
+        self.clear_plot_button.clicked.connect(self.clear_plot)
+        layoutH.addWidget(self.clear_plot_button)
+
         info_label = QLabel("Test hardware")
         info_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         info_label.setFixedHeight(40)
@@ -149,6 +153,9 @@ class MainWindow(QWidget):
         self.server.oscMotorTxData[1] = 0
         time.sleep(1)
         self.server.oscMotorTxData[1] = 255
+    
+    def clear_plot(self) -> None:
+        self.qt3dplot.seriesList()[1].dataProxy().resetArray([])
 
     def set_patstrap_status(self, status: bool) -> None:
         if self.prev_patstrap_status != status:

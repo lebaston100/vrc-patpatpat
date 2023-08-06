@@ -6,9 +6,9 @@ from zeroconf import Zeroconf
 from pythonosc.osc_server import BlockingOSCUDPServer
 from pythonosc.dispatcher import Dispatcher
 from pythonosc.udp_client import SimpleUDPClient
-from functools import partial
 import paho.mqtt.client as mqtt
-import random
+from multilateration import Engine
+from multilateration import Point as mlatPoint
 
 # for docstrings and typing
 from typing import TYPE_CHECKING
@@ -48,16 +48,17 @@ class Server():
         self.numMotors = self.config.get("numMotors", 2)
         self.oscMotorTxData = [0]*self.numMotors
         self.vrcInValues = {}
+        self.patstrapIsConnected = False
         for i in range(4):
             self.vrcInValues[i] = {"v": 0, "ts": 0}
-
         self.avatarPoints = [self.config.get(f"avatarPoint{avatarPointId}") for avatarPointId in range(4)]
         self.avatarPointsAsTuple = [(p["x"], p["y"], p["z"]) for p in self.avatarPoints]
-        logging.debug(self.avatarPoints)
         # Show avatar points in visualizer
         self.window.qt3dplot.addSeries(self._generateAvatarPointSeries([QScatterDataItem(QVector3D(*p)) for p in self.avatarPointsAsTuple]))
-    
+        self._generateCalculatedPointSeries()
+
     def _generateAvatarPointSeries(self, data) -> QScatter3DSeries:
+        """A scatter serie to display the contact receiver positions"""
         proxy = QScatterDataProxy()
         proxy.addItems(data)
         series = QScatter3DSeries()
@@ -65,6 +66,15 @@ class Server():
         series.setBaseColor(QColorConstants.Yellow)
         series.setDataProxy(proxy)
         return series
+
+    def _generateCalculatedPointSeries(self) -> None:
+        """A scatter series to hold the calculated 3d positions"""
+        resultProxy = QScatterDataProxy()
+        resultSeries = QScatter3DSeries()
+        resultSeries.setItemSize(0.05)
+        resultSeries.setBaseColor(QColorConstants.Red)
+        resultSeries.setDataProxy(resultProxy)
+        self.window.qt3dplot.addSeries(resultSeries)
 
     def _get_patstrap_ip_port(self) -> tuple[str, int]:
         info = None
@@ -87,38 +97,32 @@ class Server():
 
     def _validate_data_age(self, d: dict) -> bool:
         """Check that all received points are fresh"""
-        maxAge = time.time()-0.5
+        maxAge = time.time()-0.2
         return all(e["ts"] > maxAge for e in d.values())
 
     def _process_3d_position(self, d: dict) -> tuple:
         """Calculate the 3d point"""
-        logging.debug(d)
         if self._validate_data_age(d):
-            logging.debug("data is new enough, processing further")
-            # do calc here
-            #self.scatterData = [QScatterDataItem(QVector3D(random.random(),random.random(),random.random()))]
-            #proxy = QScatterDataProxy()
-            #proxy.addItems(self.scatterData)
-
-            #series = QScatter3DSeries()
-            #series.setItemSize(0.2)
-            #series.setBaseColor(QColorConstants.Yellow)
-            #series.setDataProxy(proxy)
-            #logging.debug(self.window.qt3dplot.seriesList())
-            #if len(self.window.qt3dplot.seriesList()) > 1:
-            #    self.window.qt3dplot.removeSeries(self.window.qt3dplot.seriesList()[1])
-            #self.window.qt3dplot.addSeries(series)
-            return (1,)
+            # run a mlat solver over the anchor points and the reported distances
+            solver = Engine()
+            for id, point in enumerate(self.avatarPointsAsTuple):
+                solver.add_anchor(f"anchor_{id}", point)
+                solver.add_measure_id(f"anchor_{id}", d[id]["v"])
+            result = solver.solve()
+            if result:
+                return result
         return None
+    
+    def _mplatPointToQ3DScatterItem(self, point: mlatPoint):
+        """Convert the 3D Resolver point to a QT Point"""
+        return QScatterDataItem(QVector3D(point.x, point.y, point.z))
     
     # we need a server and gui function to update the 3d visualizer
 
-    def _main_loop(self, tps: int=2) -> None:
-        # load points from config
-        # i also guess we need to normalize them
-        # either https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html
-        # or https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.normalize.html
-        # OR maybe we don't because then the colider distances won't line up?
+    def _main_loop(self, tps: int=60) -> None:
+        
+        # add some static points just for axis scaling
+        self.window.qt3dplot.seriesList()[0].dataProxy().addItems([QScatterDataItem(QVector3D(-0.5,-0.5,-0.5)),QScatterDataItem(QVector3D(0.5,0.5,0.5))])
 
         while self.running:
             loopStart = time.perf_counter_ns()
@@ -127,8 +131,17 @@ class Server():
             
             # calculate the 3d position from the input data
             pos = self._process_3d_position(self.vrcInValues)
+            if pos:
+                # we got a position from our calculations back
+                logging.debug(pos)
+                # add to visualizer
+                # TODO: Cleanup
+                if len(self.window.qt3dplot.seriesList()[1].dataProxy().array()) > 150:
+                    self.window.qt3dplot.seriesList()[1].dataProxy().removeItems(0, 1) # create trail
+                self.window.qt3dplot.seriesList()[1].dataProxy().addItem(self._mplatPointToQ3DScatterItem(pos))
 
             # project 3d point onto motor sphere
+            # TODO
 
             #intensity = self.window.get_intensity() # this gets the slider setting, ignore for now
 
@@ -141,13 +154,14 @@ class Server():
             # update gui connection status with a 2 seconds timeout
             # once i learn qt signals maybe this can be event based?
             self.window.set_vrchat_status(self.vrc_last_packet+1 >= time.time())
-            self.window.set_patstrap_status(self.patstrap_last_heartbeat+2 >= time.time())
+            self.patstrapIsConnected = self.patstrap_last_heartbeat+2 >= time.time()
+            self.window.set_patstrap_status(self.patstrapIsConnected)
 
             # calculate loop time
             loopEnd = time.perf_counter_ns()
             logging.debug(f"loop time: {(loopEnd-loopStart)/1000000}ms")
             #self._mqtt_send("dev/patstrap/out/loopperf", (loopEnd-loopStart)/1000000)
-            time.sleep((1/tps)-(loopEnd-loopStart)/1000000000)
+            time.sleep(max((1/tps)-(loopEnd-loopStart)/1000000000, 0))
         
         logging.info("Exiting...")
 
@@ -156,7 +170,9 @@ class Server():
         # handle incoming vrchat osc messages
         def _recv_contact(address, cid, val) -> None:
             #logging.debug(f"cid {cid[0]} {address}: {val}")
-            self.vrcInValues[cid[0]] = {"v": val, "ts": time.time()}
+            # invert value and scale it according to the colliders size
+            scaledval = (1.0-val)*self.avatarPoints[cid[0]]["r"]
+            self.vrcInValues[cid[0]] = {"v": scaledval, "ts": time.time()}
             self.vrc_last_packet = time.time()
         
         def _recv_patstrap_heartbeat(_, uptime, voltage) -> None:
