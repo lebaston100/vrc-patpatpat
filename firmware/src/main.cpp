@@ -77,10 +77,10 @@ void osc_motors(OSCMessage &msg) {
 void loop() {
     MDNS.update();
     
-    OSCMessage msg;
     int size = Udp.parsePacket();
 
     if (size > 0) {
+        OSCMessage msg;
         while (size--) {
             msg.fill(Udp.read());
         }
@@ -111,5 +111,9 @@ void loop() {
     // Disable led when we got no packets in the last 1.5s
     if (millis()-lastPacketRecv > 1500) {
         digitalWrite(INTERNAL_LED, HIGH);
+        // Make sure the motors don't keep running on connection loss
+        for (byte i=0; i<numMotors; i++) {
+            analogWrite(motorPins[i], 0);
+        }
     }
 }
