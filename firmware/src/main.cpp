@@ -51,8 +51,8 @@ void setup() {
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());  
 
-    // Start the mDNS responder for patstrap.local
-    if (!MDNS.begin("patstrap")) {
+    // Start the mDNS responder for patpatpat.local
+    if (!MDNS.begin("patpatpat")) {
         Serial.println("Error setting up MDNS responder!");
     }
     MDNS.addService("osc", "udp", OSC_IN_PORT);
@@ -93,7 +93,7 @@ void loop() {
             if (millis() - lastHeartbeatSend >= 1000) {
                 digitalWrite(INTERNAL_LED, LOW);
                 lastHeartbeatSend = millis();
-                OSCMessage txmsg("/patstrap/heartbeat");
+                OSCMessage txmsg("/patpatpat/heartbeat");
                 txmsg.add((int)millis()/1000);
                 txmsg.add(ESP.getVcc());
                 Udp.beginPacket(Udp.remoteIP(), VRC_UDP_PORT);

@@ -20,7 +20,7 @@ class MainWindow(QWidget):
         super().__init__()
 
         self.slider_strength = None
-        self.prev_patstrap_status = False
+        self.prev_patpatpat_status = False
         self.prev_vrchat_status = False
 
         self.setWindowTitle("vrc-patpatpat 0.2")
@@ -56,12 +56,12 @@ class MainWindow(QWidget):
     def createGuiHardwareStatus(self) -> CGui2Row:
         self.status_hardware_connection = QLabel(" ⬤")
 
-        row = CGui2Row(title="Patstrap connection", content=self.status_hardware_connection)
+        row = CGui2Row(title="patpatpat connection", content=self.status_hardware_connection)
         return row
 
     def setGuiHardwareConnectionStatus(self, status: bool) -> None:
-        if self.prev_patstrap_status != status:
-            self.prev_patstrap_status = status
+        if self.prev_patpatpat_status != status:
+            self.prev_patpatpat_status = status
             self.status_hardware_connection.setStyleSheet("color: #29b980; font-size: 30px;" if status else "color: #b94029; font-size: 30px;")
 
             self.test_right_button.setDisabled(not status)
@@ -71,7 +71,7 @@ class MainWindow(QWidget):
     def createGuiBattery(self) -> CGui2Row:
         self.battery_text = QLabel("-")
 
-        row = CGui2Row(title="Patstrap battery", content=self.battery_text)
+        row = CGui2Row(title="patpatpat battery", content=self.battery_text)
         return row
 
     def setGuiBattery(self, val):

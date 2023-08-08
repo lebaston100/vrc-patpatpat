@@ -32,7 +32,7 @@ class Server():
         # run hardware discovery in seperate thread to not wait for it
         threading.Thread(target=self._discoverHardware, args=()).start()
 
-        # vrchat and patstrap osc receiver
+        # vrchat and patpatpat osc receiver
         threading.Thread(target=self._OscReceiverThread, args=()).start()
 
         # the "game loop" aka calculate stuff and send to hardware
@@ -43,13 +43,13 @@ class Server():
 
     def _resetValues(self) -> None:
         """Initialize some internal values"""
-        self.vrc_last_packet = self.patstrap_last_heartbeat = time.time()-5
+        self.vrc_last_packet = self.patpatpat_last_heartbeat = time.time()-5
         self.enableVrcTx = True
         self.battery = 0
         self.numMotors = self.config.get("numMotors", 2)
         self.oscMotorTxData = [0]*self.numMotors
         self.vrcInValues = {}
-        self.patstrapIsConnected = False
+        self.patpatpatIsConnected = False
         for i in range(4):
             self.vrcInValues[i] = {"v": 0, "ts": 0}
         self.avatarPoints = [self.config.get(f"avatarPoint{avatarPointId}") for avatarPointId in range(4)]
@@ -82,7 +82,7 @@ class Server():
         info = None
         self.zc = Zeroconf()
         while not info and self.running:
-            info = self.zc.get_service_info("_osc._udp.local.", "patstrap._osc._udp.local.", timeout=1500)
+            info = self.zc.get_service_info("_osc._udp.local.", "patpatpat._osc._udp.local.", timeout=1500)
             time.sleep(0.1)
         if info:
             return (socket.inet_ntoa(info.addresses[0]), info.port)
@@ -94,7 +94,7 @@ class Server():
         if ip_address is None or port is None:
             return
 
-        logging.info(f"Patstrap found {ip_address} on port {port}")
+        logging.info(f"patpatpat found {ip_address} on port {port}")
         self.oscTx = SimpleUDPClient(ip_address, port)
 
     def _validateIncomingDataAge(self, d: dict) -> bool:
@@ -144,7 +144,8 @@ class Server():
                 self.window.visualizerPlot.seriesList()[1].dataProxy().addItem(QScatterDataItem(pos))
 
             # project 3d point onto motor sphere
-            # TODO
+            # TODO: is this actually needed. why don't we just calculate the distance between the touch point and motor positions, it has to be 3d anyway?
+            # might save a bunch of calulcations
 
             #intensity = self.window.get_intensity() # this gets the slider setting, ignore for now
 
@@ -157,13 +158,13 @@ class Server():
             # update gui connection status with a 2 seconds timeout
             # once i learn qt signals maybe this can be event based?
             self.window.setGuiVrcRecvStatus(self.vrc_last_packet+1 >= time.time())
-            self.patstrapIsConnected = self.patstrap_last_heartbeat+2 >= time.time()
-            self.window.setGuiHardwareConnectionStatus(self.patstrapIsConnected)
+            self.patpatpatIsConnected = self.patpatpat_last_heartbeat+2 >= time.time()
+            self.window.setGuiHardwareConnectionStatus(self.patpatpatIsConnected)
 
             # calculate loop time
             loopEnd = time.perf_counter_ns()
             logging.debug(f"loop time: {(loopEnd-loopStart)/1000000}ms")
-            #self._mqtt_send("dev/patstrap/out/loopperf", (loopEnd-loopStart)/1000000)
+            #self._mqtt_send("dev/patpatpat/out/loopperf", (loopEnd-loopStart)/1000000)
             time.sleep(max((1/tps)-(loopEnd-loopStart)/1000000000, 0))
         
         logging.info("Exiting Application...")
@@ -178,10 +179,10 @@ class Server():
             self.vrcInValues[cid[0]] = {"v": scaledval, "ts": time.time()}
             self.vrc_last_packet = time.time()
         
-        def _recv_patstrap_heartbeat(_, uptime, voltage) -> None:
-            #logging.debug(f"Received patstrap heartbeat with uptime {uptime}s and voltage {voltage}")
-            self._mqttPublish("dev/patstrap/out/heartbeat", uptime)
-            self.patstrap_last_heartbeat = time.time()
+        def _recv_patpatpat_heartbeat(_, uptime, voltage) -> None:
+            #logging.debug(f"Received patpatpat heartbeat with uptime {uptime}s and voltage {voltage}")
+            self._mqttPublish("dev/patpatpat/out/heartbeat", uptime)
+            self.patpatpat_last_heartbeat = time.time()
 
             # for now this is just the raw value, we later need to do some light processing to it
             self.battery = int(voltage)
@@ -193,7 +194,7 @@ class Server():
         dispatcher.map("/avatar/parameters/pat_1", _recv_contact, 1)
         dispatcher.map("/avatar/parameters/pat_2", _recv_contact, 2)
         dispatcher.map("/avatar/parameters/pat_3", _recv_contact, 3)
-        dispatcher.map("/patstrap/heartbeat", _recv_patstrap_heartbeat)
+        dispatcher.map("/patpatpat/heartbeat", _recv_patpatpat_heartbeat)
 
         # setup and run osc server
         self.oscRecv = BlockingOSCUDPServer(("", self.config.get("vrcOscPort")), dispatcher)
@@ -203,17 +204,17 @@ class Server():
     def _MqttReceiverThread(self) -> None:
         def _onMqttConnect(client, userdata, flags, rc) -> None:
             logging.info(f"Connected to mqtt with code {rc}")
-            client.subscribe("/dev/patstrap/in/#")
+            client.subscribe("/dev/patpatpat/in/#")
 
         def _onMqttMessage(client, userdata, msg) -> None:
             logging.debug(f"{msg.topic} {str(msg.payload)}")
-            if msg.topic == "/dev/patstrap/in/enable":
-                # toggle sending of data to the patstrap hardware
+            if msg.topic == "/dev/patpatpat/in/enable":
+                # toggle sending of data to the patpatpat hardware
                 self.enableVrcTx = bool(int(msg.payload.decode()))
                 logging.debug(self.enableVrcTx)
 
         # setup and connect to mqtt
-        self.mqtt = mqtt.Client(client_id="patstrap-server")
+        self.mqtt = mqtt.Client(client_id="patpatpat-server")
         self.mqtt.on_connect = _onMqttConnect
         self.mqtt.on_message = _onMqttMessage
         self.mqtt.connect(self.config.get("mqttServerIp"), 1883, 60)
