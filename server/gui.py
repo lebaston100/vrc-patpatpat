@@ -20,11 +20,10 @@ class MainWindow(QWidget):
         super().__init__()
 
         self.slider_strength = None
-
         self.prev_patstrap_status = False
         self.prev_vrchat_status = False
 
-        self.setWindowTitle("vrc-patpatpat 0.1")
+        self.setWindowTitle("vrc-patpatpat 0.2")
         with open("global.css","r") as file:
             self.setStyleSheet(file.read())
 
@@ -34,17 +33,18 @@ class MainWindow(QWidget):
         box = QWidget()
         box.setObjectName("mainbackground")
 
+        # create all the gui rows
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        layout.addWidget(self.create_patstrap_status())
-        layout.addWidget(self.create_patstrap_battery())
-        layout.addWidget(self.create_recv_vrchat_data_status())
-        layout.addWidget(self.create_settings())
-        layout.addWidget(self.create_test())
-        layout.addWidget(self.create_visualizer())
-        
+        layout.addWidget(self.createGuiHardwareStatus())
+        layout.addWidget(self.createGuiBattery())
+        layout.addWidget(self.createGuiVrcRecvStatus())
+        layout.addWidget(self.createGuiSettingsSlider())
+        layout.addWidget(self.createGuiButtonRow1())
+        layout.addWidget(self.createGuiVisualizer())
+
         # create config handler
-        self.config = Config(file=LOCALDIR / "patstrap.cfg")
+        self.config = Config(file=LOCALDIR / "patpatpat.cfg")
         # create server part
         self.server = Server(self)
 
@@ -52,28 +52,45 @@ class MainWindow(QWidget):
         layoutMain.addWidget(box)
         self.setLayout(layoutMain)
 
-    def create_patstrap_status(self) -> CGui2Row:
+# Row 1: Hardware connection status "led"
+    def createGuiHardwareStatus(self) -> CGui2Row:
         self.status_hardware_connection = QLabel(" ⬤")
 
         row = CGui2Row(title="Patstrap connection", content=self.status_hardware_connection)
         return row
 
-    def create_patstrap_battery(self) -> CGui2Row:
+    def setGuiHardwareConnectionStatus(self, status: bool) -> None:
+        if self.prev_patstrap_status != status:
+            self.prev_patstrap_status = status
+            self.status_hardware_connection.setStyleSheet("color: #29b980; font-size: 30px;" if status else "color: #b94029; font-size: 30px;")
+
+            self.test_right_button.setDisabled(not status)
+            self.test_left_button.setDisabled(not status)
+
+# Row 2: Hardware battery voltage
+    def createGuiBattery(self) -> CGui2Row:
         self.battery_text = QLabel("-")
 
         row = CGui2Row(title="Patstrap battery", content=self.battery_text)
         return row
 
-    def set_patstrap_battery(self, val):
+    def setGuiBattery(self, val):
         self.battery_text.setText(str(val))
 
-    def create_recv_vrchat_data_status(self) -> CGui2Row:
+# Row 3: VRC data receive status
+    def createGuiVrcRecvStatus(self) -> CGui2Row:
         self.status_vrchat_connection = QLabel("  ⬤")
 
         row = CGui2Row(title="VRChat data", content=self.status_vrchat_connection)
         return row
 
-    def create_settings(self) -> CGui2Row:
+    def setGuiVrcRecvStatus(self, status: bool) -> None:
+        if self.prev_vrchat_status != status:
+            self.prev_vrchat_status = status
+            self.status_vrchat_connection.setStyleSheet("color: #29b980; font-size: 30px;" if status else "color: #b94029; font-size: 30px;")
+
+# Row 4: A slider that currently does nothing
+    def createGuiSettingsSlider(self) -> CGui2Row:
         self.slider_strength = QSlider(Qt.Orientation.Horizontal)
         self.slider_strength.setMaximumWidth(200)
         self.slider_strength.setMinimum(0)
@@ -83,12 +100,13 @@ class MainWindow(QWidget):
         row = CGui2Row(title="Intensity", content=self.slider_strength, AlignRight=False, DefaultColor=False)
         return row
 
-    def get_intensity(self) -> float:
+    def getGuiSettingsSlider(self) -> float:
         if self.slider_strength is None:
             return 0
         return self.slider_strength.value() / 100.0
 
-    def create_test(self) -> QWidget:
+# Row 5: 2 test buttons and one button to clear the plot
+    def createGuiButtonRow1(self) -> QWidget:
         box = QWidget()
         box.setObjectName("section")
         box.setFixedHeight(140)
@@ -98,17 +116,17 @@ class MainWindow(QWidget):
         layoutV.setContentsMargins(20, 20, 20, 20)
 
         self.test_left_button = QPushButton("Pat left")
-        self.test_left_button.clicked.connect(self.pat_left)
+        self.test_left_button.clicked.connect(self.signalGuiButtonPatLeft)
         self.test_left_button.setDisabled(True)
         layoutH.addWidget(self.test_left_button)
 
         self.test_right_button = QPushButton("Pat right")
-        self.test_right_button.clicked.connect(self.pat_right)
+        self.test_right_button.clicked.connect(self.signalGuiButtonPatRight)
         self.test_right_button.setDisabled(True)
         layoutH.addWidget(self.test_right_button)
 
         self.clear_plot_button = QPushButton("Clear Plot")
-        self.clear_plot_button.clicked.connect(self.clear_plot)
+        self.clear_plot_button.clicked.connect(self.signalGuiClearVisualizerPlot)
         layoutH.addWidget(self.clear_plot_button)
 
         info_label = QLabel("Test hardware")
@@ -120,8 +138,25 @@ class MainWindow(QWidget):
         box.setLayout(layoutV)
         return box
 
-    def create_visualizer(self) -> QWidget:
-        self.qt3dplot = Q3DScatter()
+    def signalGuiButtonPatLeft(self) -> None:
+        logging.debug("Pat left")
+        self.server.oscMotorTxData[0] = 0
+        time.sleep(1)
+        self.server.oscMotorTxData[0] = 255
+
+    def signalGuiButtonPatRight(self) -> None:
+        logging.debug("Pat right")
+        self.server.oscMotorTxData[1] = 0
+        time.sleep(1)
+        self.server.oscMotorTxData[1] = 255
+
+    def signalGuiClearVisualizerPlot(self) -> None:
+        self.visualizerPlot.seriesList()[1].dataProxy().resetArray([])
+
+# Row 6: The 3D visualizer
+    def createGuiVisualizer(self) -> QWidget:
+        self.visualizerPlot = Q3DScatter()
+        self.visualizerPlot.setAspectRatio(1.0)
 
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -131,8 +166,8 @@ class MainWindow(QWidget):
         info_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         info_label.setFixedHeight(40)
         layout.addWidget(info_label)
-        
-        t = QWidget.createWindowContainer(self.qt3dplot)
+
+        t = QWidget.createWindowContainer(self.visualizerPlot)
         t.setObjectName("section")
         t.setFixedHeight(700)
         layout.addWidget(t)
@@ -141,34 +176,6 @@ class MainWindow(QWidget):
         box.setObjectName("section")
         box.setLayout(layout)
         return box
-
-    def pat_left(self) -> None:
-        logging.debug("Pat left")
-        self.server.oscMotorTxData[0] = 0
-        time.sleep(1)
-        self.server.oscMotorTxData[0] = 255
-
-    def pat_right(self) -> None:
-        logging.debug("Pat right")
-        self.server.oscMotorTxData[1] = 0
-        time.sleep(1)
-        self.server.oscMotorTxData[1] = 255
-    
-    def clear_plot(self) -> None:
-        self.qt3dplot.seriesList()[1].dataProxy().resetArray([])
-
-    def set_patstrap_status(self, status: bool) -> None:
-        if self.prev_patstrap_status != status:
-            self.prev_patstrap_status = status
-            self.status_hardware_connection.setStyleSheet("color: #29b980; font-size: 30px;" if status else "color: #b94029; font-size: 30px;")
-
-            self.test_right_button.setDisabled(not status)
-            self.test_left_button.setDisabled(not status)
-
-    def set_vrchat_status(self, status: bool) -> None:
-        if self.prev_vrchat_status != status:
-            self.prev_vrchat_status = status
-            self.status_vrchat_connection.setStyleSheet("color: #29b980; font-size: 30px;" if status else "color: #b94029; font-size: 30px;")
 
     def closeEvent(self, _) -> None:
         self.server.shutdown()

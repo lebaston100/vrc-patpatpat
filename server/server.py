@@ -9,6 +9,7 @@ from pythonosc.udp_client import SimpleUDPClient
 import paho.mqtt.client as mqtt
 from multilateration import Engine
 from multilateration import Point as mlatPoint
+from typing import Union
 
 # for docstrings and typing
 from typing import TYPE_CHECKING
@@ -27,20 +28,20 @@ class Server():
         self.running = True
         self.oscTx = None
         self.mqtt = None
-        self.reset_values()
+        self._resetValues()
         # run hardware discovery in seperate thread to not wait for it
-        threading.Thread(target=self._discover_patstrap, args=()).start()
+        threading.Thread(target=self._discoverHardware, args=()).start()
 
         # vrchat and patstrap osc receiver
-        threading.Thread(target=self._osc_recv, args=()).start()
+        threading.Thread(target=self._OscReceiverThread, args=()).start()
 
         # the "game loop" aka calculate stuff and send to hardware
-        threading.Thread(target=self._main_loop, args=()).start()
+        threading.Thread(target=self._mainLoopThread, args=()).start()
 
         # mqtt control interface (might expand or remove in the future)
-        threading.Thread(target=self._run_mqtt, args=()).start()
+        threading.Thread(target=self._MqttReceiverThread, args=()).start()
 
-    def reset_values(self) -> None:
+    def _resetValues(self) -> None:
         """Initialize some internal values"""
         self.vrc_last_packet = self.patstrap_last_heartbeat = time.time()-5
         self.enableVrcTx = True
@@ -54,7 +55,7 @@ class Server():
         self.avatarPoints = [self.config.get(f"avatarPoint{avatarPointId}") for avatarPointId in range(4)]
         self.avatarPointsAsTuple = [(p["x"], p["y"], p["z"]) for p in self.avatarPoints]
         # Show avatar points in visualizer
-        self.window.qt3dplot.addSeries(self._generateAvatarPointSeries([QScatterDataItem(QVector3D(*p)) for p in self.avatarPointsAsTuple]))
+        self.window.visualizerPlot.addSeries(self._generateAvatarPointSeries([QScatterDataItem(QVector3D(*p)) for p in self.avatarPointsAsTuple]))
         self._generateCalculatedPointSeries()
 
     def _generateAvatarPointSeries(self, data) -> QScatter3DSeries:
@@ -74,9 +75,10 @@ class Server():
         resultSeries.setItemSize(0.05)
         resultSeries.setBaseColor(QColorConstants.Red)
         resultSeries.setDataProxy(resultProxy)
-        self.window.qt3dplot.addSeries(resultSeries)
+        self.window.visualizerPlot.addSeries(resultSeries)
 
-    def _get_patstrap_ip_port(self) -> tuple[str, int]:
+    def _checkMdnsServices(self) -> tuple[str, int]:
+        """Run MDNS discovery and look for our hardware"""
         info = None
         self.zc = Zeroconf()
         while not info and self.running:
@@ -86,8 +88,8 @@ class Server():
             return (socket.inet_ntoa(info.addresses[0]), info.port)
         return (None, None)
 
-    def _discover_patstrap(self) -> bool:
-        ip_address, port = self._get_patstrap_ip_port()
+    def _discoverHardware(self) -> bool:
+        ip_address, port = self._checkMdnsServices()
 
         if ip_address is None or port is None:
             return
@@ -95,34 +97,36 @@ class Server():
         logging.info(f"Patstrap found {ip_address} on port {port}")
         self.oscTx = SimpleUDPClient(ip_address, port)
 
-    def _validate_data_age(self, d: dict) -> bool:
+    def _validateIncomingDataAge(self, d: dict) -> bool:
         """Check that all received points are fresh"""
-        maxAge = time.time()-0.2
+        maxAge = time.time()-0.2 # this needs to be lower, not sure how fast vrc network sync is yet
         return all(e["ts"] > maxAge for e in d.values())
 
-    def _process_3d_position(self, d: dict) -> tuple:
+    def _calculateMlatPosition(self, distances: dict, anchorpoints: list[tuple]) -> Union[QVector3D, None]:
         """Calculate the 3d point"""
-        if self._validate_data_age(d):
+        if self._validateIncomingDataAge(distances):
             # run a mlat solver over the anchor points and the reported distances
             solver = Engine()
-            for id, point in enumerate(self.avatarPointsAsTuple):
+            for id, point in enumerate(anchorpoints):
                 solver.add_anchor(f"anchor_{id}", point)
-                solver.add_measure_id(f"anchor_{id}", d[id]["v"])
-            result = solver.solve()
-            if result:
-                return result
+                solver.add_measure_id(f"anchor_{id}", distances[id]["v"])
+            
+            if result := solver.solve():
+                return QVector3D(result.x, result.y, result.z)
         return None
     
-    def _mplatPointToQ3DScatterItem(self, point: mlatPoint):
-        """Convert the 3D Resolver point to a QT Point"""
-        return QScatterDataItem(QVector3D(point.x, point.y, point.z))
+    def _validateMlatPoint(self, point: QVector3D, center) -> bool:
+        """Validate that the calulcated point makes sense"""
+        """TODO: Distance from center point to calculcated point <= center["r"]*1.2"""
+        """TODO: Maybe? Check that z of calulcated point is >= center z"""
+        return
     
-    # we need a server and gui function to update the 3d visualizer
+    # we need a gui function to update the 3d visualizer
 
-    def _main_loop(self, tps: int=60) -> None:
+    def _mainLoopThread(self, tps: int=60) -> None:
         
         # add some static points just for axis scaling
-        self.window.qt3dplot.seriesList()[0].dataProxy().addItems([QScatterDataItem(QVector3D(-0.5,-0.5,-0.5)),QScatterDataItem(QVector3D(0.5,0.5,0.5))])
+        self.window.visualizerPlot.seriesList()[0].dataProxy().addItems([QScatterDataItem(QVector3D(-0.5,-0.5,-0.5)),QScatterDataItem(QVector3D(0.5,0.5,0.5))])
 
         while self.running:
             loopStart = time.perf_counter_ns()
@@ -130,15 +134,14 @@ class Server():
                 continue
             
             # calculate the 3d position from the input data
-            pos = self._process_3d_position(self.vrcInValues)
-            if pos:
+            if pos := self._calculateMlatPosition(self.vrcInValues, self.avatarPointsAsTuple):
                 # we got a position from our calculations back
                 logging.debug(pos)
                 # add to visualizer
                 # TODO: Cleanup
-                if len(self.window.qt3dplot.seriesList()[1].dataProxy().array()) > 150:
-                    self.window.qt3dplot.seriesList()[1].dataProxy().removeItems(0, 1) # create trail
-                self.window.qt3dplot.seriesList()[1].dataProxy().addItem(self._mplatPointToQ3DScatterItem(pos))
+                if len(self.window.visualizerPlot.seriesList()[1].dataProxy().array()) > 150:
+                    self.window.visualizerPlot.seriesList()[1].dataProxy().removeItems(0, 1) # create trail
+                self.window.visualizerPlot.seriesList()[1].dataProxy().addItem(QScatterDataItem(pos))
 
             # project 3d point onto motor sphere
             # TODO
@@ -153,9 +156,9 @@ class Server():
 
             # update gui connection status with a 2 seconds timeout
             # once i learn qt signals maybe this can be event based?
-            self.window.set_vrchat_status(self.vrc_last_packet+1 >= time.time())
+            self.window.setGuiVrcRecvStatus(self.vrc_last_packet+1 >= time.time())
             self.patstrapIsConnected = self.patstrap_last_heartbeat+2 >= time.time()
-            self.window.set_patstrap_status(self.patstrapIsConnected)
+            self.window.setGuiHardwareConnectionStatus(self.patstrapIsConnected)
 
             # calculate loop time
             loopEnd = time.perf_counter_ns()
@@ -163,10 +166,10 @@ class Server():
             #self._mqtt_send("dev/patstrap/out/loopperf", (loopEnd-loopStart)/1000000)
             time.sleep(max((1/tps)-(loopEnd-loopStart)/1000000000, 0))
         
-        logging.info("Exiting...")
+        logging.info("Exiting Application...")
 
     # handle vrchat osc receiving
-    def _osc_recv(self) -> None:
+    def _OscReceiverThread(self) -> None:
         # handle incoming vrchat osc messages
         def _recv_contact(address, cid, val) -> None:
             #logging.debug(f"cid {cid[0]} {address}: {val}")
@@ -177,14 +180,14 @@ class Server():
         
         def _recv_patstrap_heartbeat(_, uptime, voltage) -> None:
             #logging.debug(f"Received patstrap heartbeat with uptime {uptime}s and voltage {voltage}")
-            self._mqtt_send("dev/patstrap/out/heartbeat", uptime)
+            self._mqttPublish("dev/patstrap/out/heartbeat", uptime)
             self.patstrap_last_heartbeat = time.time()
 
             # for now this is just the raw value, we later need to do some light processing to it
             self.battery = int(voltage)
-            self.window.set_patstrap_battery(self.battery)
+            self.window.setGuiBattery(self.battery)
             
-        # register vrchat osc endpoints
+        # register required osc endpoints
         dispatcher = Dispatcher()
         dispatcher.map("/avatar/parameters/pat_center", _recv_contact, 0)
         dispatcher.map("/avatar/parameters/pat_1", _recv_contact, 1)
@@ -193,16 +196,16 @@ class Server():
         dispatcher.map("/patstrap/heartbeat", _recv_patstrap_heartbeat)
 
         # setup and run osc server
-        self.osc = BlockingOSCUDPServer(("", self.config.get("vrcOscPort")), dispatcher)
-        logging.info(f"OSC serving on {self.osc.server_address}")
-        self.osc.serve_forever()
+        self.oscRecv = BlockingOSCUDPServer(("", self.config.get("vrcOscPort")), dispatcher)
+        logging.info(f"OSC serving on {self.oscRecv.server_address}")
+        self.oscRecv.serve_forever()
 
-    def _run_mqtt(self) -> None:
-        def _on_connect(client, userdata, flags, rc) -> None:
+    def _MqttReceiverThread(self) -> None:
+        def _onMqttConnect(client, userdata, flags, rc) -> None:
             logging.info(f"Connected to mqtt with code {rc}")
             client.subscribe("/dev/patstrap/in/#")
 
-        def _on_message(client, userdata, msg) -> None:
+        def _onMqttMessage(client, userdata, msg) -> None:
             logging.debug(f"{msg.topic} {str(msg.payload)}")
             if msg.topic == "/dev/patstrap/in/enable":
                 # toggle sending of data to the patstrap hardware
@@ -211,16 +214,16 @@ class Server():
 
         # setup and connect to mqtt
         self.mqtt = mqtt.Client(client_id="patstrap-server")
-        self.mqtt.on_connect = _on_connect
-        self.mqtt.on_message = _on_message
+        self.mqtt.on_connect = _onMqttConnect
+        self.mqtt.on_message = _onMqttMessage
         self.mqtt.connect(self.config.get("mqttServerIp"), 1883, 60)
         self.mqtt.loop_forever()
 
-    def _mqtt_send(self, addr, data):
+    def _mqttPublish(self, addr, data):
         if self.mqtt.is_connected():
             self.mqtt.publish(addr, data)
 
     def shutdown(self) -> None:
         self.running = False
-        self.osc.shutdown()
+        self.oscRecv.shutdown()
         self.mqtt.disconnect()
