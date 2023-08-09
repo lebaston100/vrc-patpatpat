@@ -48,14 +48,15 @@ class Server():
         self.battery = 0
         self.numMotors = self.config.get("numMotors", 2)
         self.oscMotorTxData = [0]*self.numMotors
-        self.vrcInValues = {}
         self.patpatpatIsConnected = False
-        for i in range(4):
-            self.vrcInValues[i] = {"v": 0, "ts": 0}
-        self.avatarPoints = [self.config.get(f"avatarPoint{avatarPointId}") for avatarPointId in range(4)]
-        self.avatarPointsAsTuple = [(p["x"], p["y"], p["z"]) for p in self.avatarPoints]
+        self.vrcInValues = {k: {"v": 0, "ts": 0} for k in range(4)}
+        # at some point change this to be a single dict each with the QVector3D and leftover data
+        self.avatarAnchorPoints = [self.config.get(f"avatarPoint{avatarPointId}") for avatarPointId in range(4)]
+        self.avatarPointsAsQVector3D = [QVector3D(p["x"], p["y"], p["z"]) for p in self.avatarAnchorPoints]
+        self.motorPositions = [self.config.get(f"motor{motorPointId}") for motorPointId in range(self.numMotors)]
+        self.motorPositionsAsQVector3D = [QVector3D(m["x"], m["y"], m["z"]) for m in self.motorPositions]
         # Show avatar points in visualizer
-        self.window.visualizerPlot.addSeries(self._generateAvatarPointSeries([QScatterDataItem(QVector3D(*p)) for p in self.avatarPointsAsTuple]))
+        self.window.visualizerPlot.addSeries(self._generateAvatarPointSeries([QScatterDataItem(p) for p in self.avatarPointsAsQVector3D]))
         self._generateCalculatedPointSeries()
 
     def _generateAvatarPointSeries(self, data) -> QScatter3DSeries:
@@ -102,26 +103,53 @@ class Server():
         maxAge = time.time()-0.15 # this needs to be lower, not sure how fast vrc network sync is yet
         return all(e["ts"] > maxAge for e in d.values())
 
-    def _calculateMlatPosition(self, distances: dict, anchorpoints: list[tuple]) -> Union[QVector3D, None]:
+    def _calculateMlatPosition(self, distances: dict, anchorpoints: list[QVector3D]) -> Union[QVector3D, None]:
         """Calculate the 3d point"""
         if self._validateIncomingDataAge(distances):
             # run a mlat solver over the anchor points and the reported distances
             solver = Engine()
             for id, point in enumerate(anchorpoints):
-                solver.add_anchor(f"anchor_{id}", point)
+                solver.add_anchor(f"anchor_{id}", (point.x(), point.y(), point.z()))
                 solver.add_measure_id(f"anchor_{id}", distances[id]["v"])
 
             if result := solver.solve():
                 return QVector3D(result.x, result.y, result.z)
         return None
 
-    def _validateMlatPoint(self, point: QVector3D, center) -> bool:
-        """Validate that the calulcated point makes sense"""
-        """TODO: Distance from center point to calculcated point <= center["r"]*1.2"""
-        """TODO: Maybe? Check that z of calulcated point is >= center z"""
-        return
+    def _validateMlatPoint(self, point: QVector3D, center: QVector3D, centerRadius: float) -> bool:
+        """Validate that the calculcated point makes sense"""
+        # Distance from center point to calculcated point <= center radius + some margin
+        return center.distanceToPoint(point) <= centerRadius*1.2
 
     # we need a gui function to update the 3d visualizer
+
+    def _mainLoop(self):
+        if self.oscTx == None:
+            return
+
+        # calculate the 3d position from the input data
+        if pos := self._calculateMlatPosition(self.vrcInValues, self.avatarPointsAsQVector3D):
+            if not self._validateMlatPoint(pos, self.avatarPointsAsQVector3D[0], self.avatarAnchorPoints[0]["r"]):
+                return
+            
+            # we got a position from our calculations back
+            logging.debug(pos)
+            # add to visualizer
+            # TODO: Cleanup
+            if len(self.window.visualizerPlot.seriesList()[1].dataProxy().array()) > 150:
+                self.window.visualizerPlot.seriesList()[1].dataProxy().removeItems(0, 1) # create trail
+            self.window.visualizerPlot.seriesList()[1].dataProxy().addItem(QScatterDataItem(pos))
+
+        # project 3d point onto motor sphere
+        # TODO: is this actually needed. why don't we just calculate the distance between the touch point and motor positions, it has to be 3d anyway?
+        # might save a bunch of calulcations
+
+        #intensity = self.window.get_intensity() # this gets the slider setting, ignore for now
+
+        if self.enableVrcTx:
+            # Only send data here
+            # send out motor speeds
+            self.oscTx.send_message("/m", self.oscMotorTxData)        
 
     def _mainLoopThread(self, tps: int=60) -> None:
 
@@ -130,30 +158,9 @@ class Server():
 
         while self.running:
             loopStart = time.perf_counter_ns()
-            if self.oscTx == None:
-                continue
-
-            # calculate the 3d position from the input data
-            if pos := self._calculateMlatPosition(self.vrcInValues, self.avatarPointsAsTuple):
-                # we got a position from our calculations back
-                logging.debug(pos)
-                # add to visualizer
-                # TODO: Cleanup
-                if len(self.window.visualizerPlot.seriesList()[1].dataProxy().array()) > 150:
-                    self.window.visualizerPlot.seriesList()[1].dataProxy().removeItems(0, 1) # create trail
-                self.window.visualizerPlot.seriesList()[1].dataProxy().addItem(QScatterDataItem(pos))
-
-            # project 3d point onto motor sphere
-            # TODO: is this actually needed. why don't we just calculate the distance between the touch point and motor positions, it has to be 3d anyway?
-            # might save a bunch of calulcations
-
-            #intensity = self.window.get_intensity() # this gets the slider setting, ignore for now
-
-            if self.enableVrcTx:
-                # Only send data here
-                # send out motor speeds
-                self.oscTx.send_message("/m", self.oscMotorTxData)
-                pass
+            
+            # run actual calulcations in different function so we can just early return without messing up the performance counter
+            self._mainLoop()
 
             # update gui connection status with a 2 seconds timeout
             # once i learn qt signals maybe this can be event based?
@@ -175,7 +182,7 @@ class Server():
         def _recv_contact(address, cid, val) -> None:
             #logging.debug(f"cid {cid[0]} {address}: {val}")
             # invert value and scale it according to the colliders size
-            scaledval = (1.0-val)*self.avatarPoints[cid[0]]["r"]
+            scaledval = (1.0-val)*self.avatarAnchorPoints[cid[0]]["r"]
             self.vrcInValues[cid[0]] = {"v": scaledval, "ts": time.time()}
             self.vrc_last_packet = time.time()
 
