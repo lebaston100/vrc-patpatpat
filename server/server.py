@@ -63,7 +63,7 @@ class Server():
         proxy = QScatterDataProxy()
         proxy.addItems(data)
         series = QScatter3DSeries()
-        series.setItemSize(0.2)
+        series.setItemSize(0.1)
         series.setBaseColor(QColorConstants.Yellow)
         series.setDataProxy(proxy)
         return series
@@ -99,7 +99,7 @@ class Server():
 
     def _validateIncomingDataAge(self, d: dict) -> bool:
         """Check that all received points are fresh"""
-        maxAge = time.time()-0.2 # this needs to be lower, not sure how fast vrc network sync is yet
+        maxAge = time.time()-0.15 # this needs to be lower, not sure how fast vrc network sync is yet
         return all(e["ts"] > maxAge for e in d.values())
 
     def _calculateMlatPosition(self, distances: dict, anchorpoints: list[tuple]) -> Union[QVector3D, None]:
@@ -110,21 +110,21 @@ class Server():
             for id, point in enumerate(anchorpoints):
                 solver.add_anchor(f"anchor_{id}", point)
                 solver.add_measure_id(f"anchor_{id}", distances[id]["v"])
-            
+
             if result := solver.solve():
                 return QVector3D(result.x, result.y, result.z)
         return None
-    
+
     def _validateMlatPoint(self, point: QVector3D, center) -> bool:
         """Validate that the calulcated point makes sense"""
         """TODO: Distance from center point to calculcated point <= center["r"]*1.2"""
         """TODO: Maybe? Check that z of calulcated point is >= center z"""
         return
-    
+
     # we need a gui function to update the 3d visualizer
 
     def _mainLoopThread(self, tps: int=60) -> None:
-        
+
         # add some static points just for axis scaling
         self.window.visualizerPlot.seriesList()[0].dataProxy().addItems([QScatterDataItem(QVector3D(-0.5,-0.5,-0.5)),QScatterDataItem(QVector3D(0.5,0.5,0.5))])
 
@@ -132,7 +132,7 @@ class Server():
             loopStart = time.perf_counter_ns()
             if self.oscTx == None:
                 continue
-            
+
             # calculate the 3d position from the input data
             if pos := self._calculateMlatPosition(self.vrcInValues, self.avatarPointsAsTuple):
                 # we got a position from our calculations back
@@ -166,7 +166,7 @@ class Server():
             logging.debug(f"loop time: {(loopEnd-loopStart)/1000000}ms")
             #self._mqtt_send("dev/patpatpat/out/loopperf", (loopEnd-loopStart)/1000000)
             time.sleep(max((1/tps)-(loopEnd-loopStart)/1000000000, 0))
-        
+
         logging.info("Exiting Application...")
 
     # handle vrchat osc receiving
@@ -178,16 +178,16 @@ class Server():
             scaledval = (1.0-val)*self.avatarPoints[cid[0]]["r"]
             self.vrcInValues[cid[0]] = {"v": scaledval, "ts": time.time()}
             self.vrc_last_packet = time.time()
-        
-        def _recv_patpatpat_heartbeat(_, uptime, voltage) -> None:
-            #logging.debug(f"Received patpatpat heartbeat with uptime {uptime}s and voltage {voltage}")
+
+        def _recv_patpatpat_heartbeat(_, uptime, voltage, rssi) -> None:
+            #logging.debug(f"Received patpatpat heartbeat with uptime {uptime}s and voltage {voltage} and wifi rssi {rssi}dBm")
             self._mqttPublish("dev/patpatpat/out/heartbeat", uptime)
             self.patpatpat_last_heartbeat = time.time()
 
             # for now this is just the raw value, we later need to do some light processing to it
             self.battery = int(voltage)
             self.window.setGuiBattery(self.battery)
-            
+
         # register required osc endpoints
         dispatcher = Dispatcher()
         dispatcher.map("/avatar/parameters/pat_center", _recv_contact, 0)

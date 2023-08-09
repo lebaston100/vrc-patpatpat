@@ -7,6 +7,7 @@
 #define INTERNAL_LED 2 // indicates if connected with server (low active)
 #define OSC_IN_PORT 8888    // local osc receive port
 #define VRC_UDP_PORT 9001   // reusing the vrc osc receiver so we need that port
+#define USE_STATIC_IP 0     // Set to 0 to use dhcp, otherwise set to 1 and define your static ip below
 
 WiFiUDP Udp;
 OSCErrorCode error;
@@ -14,6 +15,13 @@ unsigned int ledState = LOW;
 byte numMotors = 0;
 unsigned long lastPacketRecv = millis();
 unsigned long lastHeartbeatSend = 0;
+
+// Only needed if you want to use a static ip
+#if USE_STATIC_IP
+    IPAddress staticIP(10,3,1,5);
+    IPAddress gateway(10,1,1,1);
+    IPAddress subnet(255,0,0,0);
+#endif
 
 // The only setting that should need adjustment aside from wifi stuff
 byte motorPins[] = {INTERNAL_LED, 3};
@@ -32,6 +40,9 @@ void setup() {
     Serial.begin(115200);
 
     WiFi.mode(WIFI_STA);
+    #if USE_STATIC_IP
+        WiFi.config(staticIP, gateway, subnet);
+    #endif
     #if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
         WiFi.begin(WIFI_CREDS_SSID, WIFI_CREDS_PASSWD); //Connect to wifi
     #else
@@ -96,6 +107,7 @@ void loop() {
                 OSCMessage txmsg("/patpatpat/heartbeat");
                 txmsg.add((int)millis()/1000);
                 txmsg.add(ESP.getVcc());
+                txmsg.add(WiFi.RSSI());
                 Udp.beginPacket(Udp.remoteIP(), VRC_UDP_PORT);
                 txmsg.send(Udp);
                 Udp.endPacket();
