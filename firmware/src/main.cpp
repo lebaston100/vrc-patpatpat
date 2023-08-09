@@ -50,7 +50,7 @@ void setup() {
     #endif
     
     // Wait for wifi connection  
-    Serial.println("Connecting to Wifi");
+    Serial.print(F("\n\nConnecting to Wifi "));
     while (WiFi.status() != WL_CONNECTED) {   
         delay(100);
         digitalWrite(INTERNAL_LED, LOW);
@@ -59,16 +59,16 @@ void setup() {
         digitalWrite(INTERNAL_LED, HIGH);
     }
 
-    Serial.print("IP address: ");
+    Serial.print(F("\nIP address: "));
     Serial.println(WiFi.localIP());  
 
     // Start the mDNS responder for patpatpat.local
     if (!MDNS.begin("patpatpat")) {
-        Serial.println("Error setting up MDNS responder!");
+        Serial.println(F("Error setting up MDNS responder!"));
     }
     MDNS.addService("osc", "udp", OSC_IN_PORT);
-    Serial.println("mDNS responder started");
-    Serial.println("Starting UDP");
+    Serial.println(F("mDNS responder started"));
+    Serial.println(F("Starting UDP OSC Receiver"));
     Udp.begin(OSC_IN_PORT);
 }
 
@@ -116,7 +116,7 @@ void loop() {
             }
         } else {
             error = msg.getError();
-            Serial.print("error: ");
+            Serial.print(F("error: "));
             Serial.println(error);
         }
     }
