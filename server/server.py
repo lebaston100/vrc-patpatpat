@@ -179,8 +179,8 @@ class Server():
             self.vrcInValues[cid[0]] = {"v": scaledval, "ts": time.time()}
             self.vrc_last_packet = time.time()
 
-        def _recv_patpatpat_heartbeat(_, uptime, voltage, rssi) -> None:
-            #logging.debug(f"Received patpatpat heartbeat with uptime {uptime}s and voltage {voltage} and wifi rssi {rssi}dBm")
+        def _recv_patpatpat_heartbeat(_, mac, uptime, voltage, rssi) -> None:
+            #logging.debug(f"Received patpatpat heartbeat from mac {mac} with uptime {uptime}s and voltage {voltage}mV and wifi rssi {rssi}dBm")
             self._mqttPublish("dev/patpatpat/out/heartbeat", uptime)
             self.patpatpat_last_heartbeat = time.time()
 

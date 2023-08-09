@@ -105,6 +105,7 @@ void loop() {
                 digitalWrite(INTERNAL_LED, LOW);
                 lastHeartbeatSend = millis();
                 OSCMessage txmsg("/patpatpat/heartbeat");
+                txmsg.add(WiFi.macAddress().c_str());
                 txmsg.add((int)millis()/1000);
                 txmsg.add(ESP.getVcc());
                 txmsg.add(WiFi.RSSI());
