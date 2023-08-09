@@ -8,7 +8,7 @@ This is an in-development fork of [https://github.com/danielfvm/Patstrap](https:
 
 - (Done) switch to using osc over udp for the motor control data
 - (Done) add config file to configure/load/save parameters
-- implement support for more then 3 touch points
+- (in progress) implement support for more then 3 touch points
 - (started) add mqtt control/feedback to server (for further integration purposes in my setup)
 - (Done) add a simple osc recorder and player (for dev) (server/oscRecReplayer.py)
 - (Done) add a 3d vizualizer (mostly for dev)
@@ -21,7 +21,8 @@ Other stuff to later add to the readme:
 - Update unity guide for positioning and coordinates
 - Add wiring for battery voltage measurement
 - Mention that server connection indicator for hardware only is active when comms in both directions work
-- To compile the wifi credentials into the esp code the wifi.ini.template needs to be renamed to wifi.ini and the values filled out with the ssid and password 
+- To compile the wifi credentials into the esp code the wifi.ini.template needs to be renamed to wifi.ini and the values filled out with the ssid and password
+- Python 3.9 or greater should be used
 
 ### Original Readme from here on for now
 
