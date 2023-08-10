@@ -157,6 +157,7 @@ class MainWindow(QWidget):
     def createGuiVisualizer(self) -> QWidget:
         self.visualizerPlot = Q3DScatter()
         self.visualizerPlot.setAspectRatio(1.0)
+        self.visualizerPlot.setShadowQuality(Q3DScatter.ShadowQuality.ShadowQualityNone)
 
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)

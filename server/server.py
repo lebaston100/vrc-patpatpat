@@ -10,6 +10,7 @@ import paho.mqtt.client as mqtt
 from multilateration import Engine
 from multilateration import Point as mlatPoint
 from typing import Union
+from math import ceil
 
 # for docstrings and typing
 from typing import TYPE_CHECKING
@@ -55,17 +56,21 @@ class Server():
         self.avatarPointsAsQVector3D = [QVector3D(p["x"], p["y"], p["z"]) for p in self.avatarAnchorPoints]
         self.motorPositions = [self.config.get(f"motor{motorPointId}") for motorPointId in range(self.numMotors)]
         self.motorPositionsAsQVector3D = [QVector3D(m["x"], m["y"], m["z"]) for m in self.motorPositions]
+        logging.debug(self.motorPositions)
+        logging.debug(self.motorPositionsAsQVector3D)
         # Show avatar points in visualizer
-        self.window.visualizerPlot.addSeries(self._generateAvatarPointSeries([QScatterDataItem(p) for p in self.avatarPointsAsQVector3D]))
+        self.window.visualizerPlot.addSeries(self._generatePointSeries([QScatterDataItem(p) for p in self.avatarPointsAsQVector3D], QColorConstants.Yellow))
         self._generateCalculatedPointSeries()
+        self.window.visualizerPlot.addSeries(self._generatePointSeries([QScatterDataItem(p) for p in self.motorPositionsAsQVector3D], QColorConstants.Green))
 
-    def _generateAvatarPointSeries(self, data) -> QScatter3DSeries:
-        """A scatter serie to display the contact receiver positions"""
+    # move these 3 functions to frontend some point
+    def _generatePointSeries(self, data: QScatterDataItem, color: QColorConstants) -> QScatter3DSeries:
+        """A scatter serie to display generic points"""
         proxy = QScatterDataProxy()
         proxy.addItems(data)
         series = QScatter3DSeries()
         series.setItemSize(0.1)
-        series.setBaseColor(QColorConstants.Yellow)
+        series.setBaseColor(color)
         series.setDataProxy(proxy)
         return series
 
@@ -120,8 +125,7 @@ class Server():
         """Validate that the calculcated point makes sense"""
         # Distance from center point to calculcated point <= center radius + some margin
         return center.distanceToPoint(point) <= centerRadius*1.2
-
-    # we need a gui function to update the 3d visualizer
+        # others can be added later
 
     def _mainLoop(self):
         if self.oscTx == None:
@@ -140,9 +144,17 @@ class Server():
                 self.window.visualizerPlot.seriesList()[1].dataProxy().removeItems(0, 1) # create trail
             self.window.visualizerPlot.seriesList()[1].dataProxy().addItem(QScatterDataItem(pos))
 
-        # project 3d point onto motor sphere
-        # TODO: is this actually needed. why don't we just calculate the distance between the touch point and motor positions, it has to be 3d anyway?
-        # might save a bunch of calulcations
+            # calculcate distance from point to each motor
+            # TODO: when point outside of radius set motor to 0, or when we don't have a valid point for a little bit?
+            # TODO: refactor out
+            for id, motor in enumerate(self.motorPositionsAsQVector3D):
+                # calculate the distance and normalize it so > 1 outside radius
+                # a slider value could maybe be put in here to adjust the radius?
+                distance = pos.distanceToPoint(motor)/self.motorPositions[id]["r"]
+                distance = 0.1 if distance <= 0.1 else distance # little deadband in the middle, maybe not needed, not sure yet
+                motorPwm = 255-min(ceil(255*distance), 255)
+                self.oscMotorTxData[id] = motorPwm
+                logging.debug(f"motor {id} distance {distance} motorPwm {motorPwm}")
 
         #intensity = self.window.get_intensity() # this gets the slider setting, ignore for now
 
@@ -154,13 +166,16 @@ class Server():
     def _mainLoopThread(self, tps: int=60) -> None:
 
         # add some static points just for axis scaling
-        self.window.visualizerPlot.seriesList()[0].dataProxy().addItems([QScatterDataItem(QVector3D(-0.5,-0.5,-0.5)),QScatterDataItem(QVector3D(0.5,0.5,0.5))])
+        self.window.visualizerPlot.seriesList()[0].dataProxy().addItems([QScatterDataItem(QVector3D(-0.3,0,-0.3)),QScatterDataItem(QVector3D(0.3,0.3,0.3))])
 
         while self.running:
             loopStart = time.perf_counter_ns()
             
             # run actual calulcations in different function so we can just early return without messing up the performance counter
-            self._mainLoop()
+            try:
+                self._mainLoop()
+            except Exception as E:
+                logging.exception(E)
 
             # update gui connection status with a 2 seconds timeout
             # once i learn qt signals maybe this can be event based?
@@ -170,8 +185,8 @@ class Server():
 
             # calculate loop time
             loopEnd = time.perf_counter_ns()
-            logging.debug(f"loop time: {(loopEnd-loopStart)/1000000}ms")
-            #self._mqtt_send("dev/patpatpat/out/loopperf", (loopEnd-loopStart)/1000000)
+            #self._mqttPublish("dev/patpatpat/out/loopperf", (loopEnd-loopStart)/1000000)
+            #logging.debug(f"loop time: {(loopEnd-loopStart)/1000000}ms")
             time.sleep(max((1/tps)-(loopEnd-loopStart)/1000000000, 0))
 
         logging.info("Exiting Application...")
@@ -228,7 +243,7 @@ class Server():
         self.mqtt.loop_forever()
 
     def _mqttPublish(self, addr, data):
-        if self.mqtt.is_connected():
+        if self.mqtt and self.mqtt.is_connected():
             self.mqtt.publish(addr, data)
 
     def shutdown(self) -> None:

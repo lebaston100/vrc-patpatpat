@@ -23,6 +23,7 @@ Other stuff to later add to the readme:
 - Mention that server connection indicator for hardware only is active when comms in both directions work
 - To compile the wifi credentials into the esp code the wifi.ini.template needs to be renamed to wifi.ini and the values filled out with the ssid and password
 - Python 3.9 or greater should be used
+- Firewall might make issues if network access to python is denied (maybe add a firewall.bat?)
 
 ### Original Readme from here on for now
 
