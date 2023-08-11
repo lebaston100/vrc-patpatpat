@@ -4,7 +4,7 @@
 #include <OSCMessage.h>
 #include <OSCData.h>
 
-#define INTERNAL_LED 2 // indicates if connected with server (low active)
+#define INTERNAL_LED LED_BUILTIN // indicates if connected with server (low active)
 #define OSC_IN_PORT 8888    // local osc receive port
 #define VRC_UDP_PORT 9001   // reusing the vrc osc receiver so we need that port
 #define USE_STATIC_IP 0     // Set to 0 to use dhcp, otherwise set to 1 and define your static ip below
@@ -24,7 +24,7 @@ unsigned long lastHeartbeatSend = 0;
 #endif
 
 // The only setting that should need adjustment aside from wifi stuff
-byte motorPins[] = {INTERNAL_LED, 3};
+byte motorPins[] = {D1, D2};
 
 // Set adc mode to read the internal voltage
 ADC_MODE(ADC_VCC);
@@ -35,6 +35,7 @@ void setup() {
     for (byte i=0; i<numMotors; i++) {
         pinMode(motorPins[i], OUTPUT);
     }
+    pinMode(INTERNAL_LED, OUTPUT);
 
     // Startup Serial
     Serial.begin(115200);
@@ -103,7 +104,6 @@ void loop() {
             lastPacketRecv = millis();
             if (millis() - lastHeartbeatSend >= 1000) {
                 digitalWrite(INTERNAL_LED, LOW);
-                lastHeartbeatSend = millis();
                 OSCMessage txmsg("/patpatpat/heartbeat");
                 txmsg.add(WiFi.macAddress().c_str());
                 txmsg.add((int)millis()/1000);
@@ -113,6 +113,7 @@ void loop() {
                 txmsg.send(Udp);
                 Udp.endPacket();
                 txmsg.empty();
+                lastHeartbeatSend = millis();
             }
         } else {
             error = msg.getError();
@@ -122,7 +123,7 @@ void loop() {
     }
 
     // Disable led when we got no packets in the last 1.5s
-    if (millis()-lastPacketRecv > 1500) {
+    if (millis()-lastPacketRecv > 600) {
         digitalWrite(INTERNAL_LED, HIGH);
         // Make sure the motors don't keep running on connection loss
         for (byte i=0; i<numMotors; i++) {

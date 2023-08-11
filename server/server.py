@@ -1,6 +1,4 @@
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QSlider
-from PyQt6.QtCore import Qt
-from PyQt6.QtDataVisualization import Q3DScatter, QScatter3DSeries, QScatterDataProxy, QScatterDataItem
+from PyQt6.QtDataVisualization import QScatter3DSeries, QScatterDataProxy, QScatterDataItem
 from PyQt6.QtGui import QVector3D, QColorConstants
 from zeroconf import Zeroconf
 from pythonosc.osc_server import BlockingOSCUDPServer
@@ -22,6 +20,9 @@ import socket
 import time
 import logging
 
+class BasePoint():
+    pass
+
 class Server():
     def __init__(self, window):
         self.window = window
@@ -31,13 +32,13 @@ class Server():
         self.mqtt = None
         self._resetValues()
         # run hardware discovery in seperate thread to not wait for it
-        threading.Thread(target=self._discoverHardware, args=()).start()
+        threading.Thread(target=self._DiscoverHardware, args=()).start()
 
         # vrchat and patpatpat osc receiver
         threading.Thread(target=self._OscReceiverThread, args=()).start()
 
         # the "game loop" aka calculate stuff and send to hardware
-        threading.Thread(target=self._mainLoopThread, args=()).start()
+        threading.Thread(target=self._MainLoopThread, args=()).start()
 
         # mqtt control interface (might expand or remove in the future)
         threading.Thread(target=self._MqttReceiverThread, args=()).start()
@@ -64,7 +65,7 @@ class Server():
         self.window.visualizerPlot.addSeries(self._generatePointSeries([QScatterDataItem(p) for p in self.motorPositionsAsQVector3D], QColorConstants.Green))
 
     # move these 3 functions to frontend some point
-    def _generatePointSeries(self, data: QScatterDataItem, color: QColorConstants) -> QScatter3DSeries:
+    def _generatePointSeries(self, data: list[QScatterDataItem], color: QColorConstants) -> QScatter3DSeries:
         """A scatter serie to display generic points"""
         proxy = QScatterDataProxy()
         proxy.addItems(data)
@@ -94,7 +95,7 @@ class Server():
             return (socket.inet_ntoa(info.addresses[0]), info.port)
         return (None, None)
 
-    def _discoverHardware(self) -> bool:
+    def _DiscoverHardware(self) -> bool:
         ip_address, port = self._checkMdnsServices()
 
         if ip_address is None or port is None:
@@ -153,17 +154,18 @@ class Server():
                 distance = pos.distanceToPoint(motor)/self.motorPositions[id]["r"]
                 distance = 0.1 if distance <= 0.1 else distance # little deadband in the middle, maybe not needed, not sure yet
                 motorPwm = 255-min(ceil(255*distance), 255)
+                motorPwm = 75 if motorPwm < 75 and motorPwm > 0 else motorPwm
+                # the motor likes at least ~75 to start up and run. need to factor this in
                 self.oscMotorTxData[id] = motorPwm
                 logging.debug(f"motor {id} distance {distance} motorPwm {motorPwm}")
 
         #intensity = self.window.get_intensity() # this gets the slider setting, ignore for now
 
         if self.enableVrcTx:
-            # Only send data here
             # send out motor speeds
             self.oscTx.send_message("/m", self.oscMotorTxData)        
 
-    def _mainLoopThread(self, tps: int=60) -> None:
+    def _MainLoopThread(self, tps: int=60) -> None:
 
         # add some static points just for axis scaling
         self.window.visualizerPlot.seriesList()[0].dataProxy().addItems([QScatterDataItem(QVector3D(-0.3,0,-0.3)),QScatterDataItem(QVector3D(0.3,0.3,0.3))])
@@ -248,5 +250,6 @@ class Server():
 
     def shutdown(self) -> None:
         self.running = False
+        self.zc.close()
         self.oscRecv.shutdown()
         self.mqtt.disconnect()

@@ -140,15 +140,15 @@ class MainWindow(QWidget):
 
     def signalGuiButtonPatLeft(self) -> None:
         logging.debug("Pat left")
-        self.server.oscMotorTxData[0] = 0
-        time.sleep(1)
         self.server.oscMotorTxData[0] = 255
+        time.sleep(1)
+        self.server.oscMotorTxData[0] = 0
 
     def signalGuiButtonPatRight(self) -> None:
         logging.debug("Pat right")
-        self.server.oscMotorTxData[1] = 0
-        time.sleep(1)
         self.server.oscMotorTxData[1] = 255
+        time.sleep(1)
+        self.server.oscMotorTxData[1] = 0
 
     def signalGuiClearVisualizerPlot(self) -> None:
         self.visualizerPlot.seriesList()[1].dataProxy().resetArray([])
