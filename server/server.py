@@ -20,7 +20,7 @@ import socket
 import time
 import logging
 
-class BasePoint():
+class APoint(QVector3D):
     pass
 
 class Server():
@@ -57,8 +57,6 @@ class Server():
         self.avatarPointsAsQVector3D = [QVector3D(p["x"], p["y"], p["z"]) for p in self.avatarAnchorPoints]
         self.motorPositions = [self.config.get(f"motor{motorPointId}") for motorPointId in range(self.numMotors)]
         self.motorPositionsAsQVector3D = [QVector3D(m["x"], m["y"], m["z"]) for m in self.motorPositions]
-        logging.debug(self.motorPositions)
-        logging.debug(self.motorPositionsAsQVector3D)
         # Show avatar points in visualizer
         self.window.visualizerPlot.addSeries(self._generatePointSeries([QScatterDataItem(p) for p in self.avatarPointsAsQVector3D], QColorConstants.Yellow))
         self._generateCalculatedPointSeries()
@@ -125,7 +123,7 @@ class Server():
     def _validateMlatPoint(self, point: QVector3D, center: QVector3D, centerRadius: float) -> bool:
         """Validate that the calculcated point makes sense"""
         # Distance from center point to calculcated point <= center radius + some margin
-        return center.distanceToPoint(point) <= centerRadius*1.2
+        return center.distanceToPoint(point) <= centerRadius*1.2 and point.y() >= center.y()
         # others can be added later
 
     def _mainLoop(self):
@@ -146,7 +144,6 @@ class Server():
             self.window.visualizerPlot.seriesList()[1].dataProxy().addItem(QScatterDataItem(pos))
 
             # calculcate distance from point to each motor
-            # TODO: when point outside of radius set motor to 0, or when we don't have a valid point for a little bit?
             # TODO: refactor out
             for id, motor in enumerate(self.motorPositionsAsQVector3D):
                 # calculate the distance and normalize it so > 1 outside radius
@@ -154,16 +151,19 @@ class Server():
                 distance = pos.distanceToPoint(motor)/self.motorPositions[id]["r"]
                 distance = 0.1 if distance <= 0.1 else distance # little deadband in the middle, maybe not needed, not sure yet
                 motorPwm = 255-min(ceil(255*distance), 255)
+                # the motor likes at least ~75 to start up and run
                 motorPwm = 75 if motorPwm < 75 and motorPwm > 0 else motorPwm
-                # the motor likes at least ~75 to start up and run. need to factor this in
                 self.oscMotorTxData[id] = motorPwm
                 logging.debug(f"motor {id} distance {distance} motorPwm {motorPwm}")
+        elif any(self.oscMotorTxData):
+            for i, v in enumerate(self.oscMotorTxData):
+                self.oscMotorTxData[i] = v-1 if v > 0 else v
 
         #intensity = self.window.get_intensity() # this gets the slider setting, ignore for now
 
         if self.enableVrcTx:
             # send out motor speeds
-            self.oscTx.send_message("/m", self.oscMotorTxData)        
+            self.oscTx.send_message("/m", self.oscMotorTxData)
 
     def _MainLoopThread(self, tps: int=60) -> None:
 
@@ -172,7 +172,7 @@ class Server():
 
         while self.running:
             loopStart = time.perf_counter_ns()
-            
+
             # run actual calulcations in different function so we can just early return without messing up the performance counter
             try:
                 self._mainLoop()
