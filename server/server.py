@@ -122,9 +122,9 @@ class Server():
 
     def _validateMlatPoint(self, point: QVector3D, center: QVector3D, centerRadius: float) -> bool:
         """Validate that the calculcated point makes sense"""
-        # Distance from center point to calculcated point <= center radius + some margin
-        return center.distanceToPoint(point) <= centerRadius*1.2 and point.y() >= center.y()
-        # others can be added later
+        # distance from center point to calculcated point <= center radius + some margin
+        # and the point's y is not below half the radius of the center y
+        return center.distanceToPoint(point) <= centerRadius*1.2 and point.y() >= center.y()-centerRadius*0.5
 
     def _mainLoop(self):
         if self.oscTx == None:
@@ -136,7 +136,7 @@ class Server():
                 return
             
             # we got a position from our calculations back
-            logging.debug(pos)
+            #logging.debug(pos)
             # add to visualizer
             # TODO: Cleanup
             if len(self.window.visualizerPlot.seriesList()[1].dataProxy().array()) > 150:
@@ -146,18 +146,19 @@ class Server():
             # calculcate distance from point to each motor
             # TODO: refactor out
             for id, motor in enumerate(self.motorPositionsAsQVector3D):
-                # calculate the distance and normalize it so > 1 outside radius
+                # calculate the distance and normalize it so >1 = outside radius
                 # a slider value could maybe be put in here to adjust the radius?
                 distance = pos.distanceToPoint(motor)/self.motorPositions[id]["r"]
-                distance = 0.1 if distance <= 0.1 else distance # little deadband in the middle, maybe not needed, not sure yet
+                distance = max(distance, 0.1) # little deadband in the middle, maybe not needed, not sure yet
                 motorPwm = 255-min(ceil(255*distance), 255)
                 # the motor likes at least ~75 to start up and run
                 motorPwm = 75 if motorPwm < 75 and motorPwm > 0 else motorPwm
                 self.oscMotorTxData[id] = motorPwm
-                logging.debug(f"motor {id} distance {distance} motorPwm {motorPwm}")
+                #logging.debug(f"motor {id} distance {distance} motorPwm {motorPwm}")
         elif any(self.oscMotorTxData):
             for i, v in enumerate(self.oscMotorTxData):
-                self.oscMotorTxData[i] = v-1 if v > 0 else v
+                self.oscMotorTxData[i] = max(v-2,0) if v > 0 else v
+        #logging.debug(self.oscMotorTxData)
 
         #intensity = self.window.get_intensity() # this gets the slider setting, ignore for now
 
@@ -168,7 +169,7 @@ class Server():
     def _MainLoopThread(self, tps: int=60) -> None:
 
         # add some static points just for axis scaling
-        self.window.visualizerPlot.seriesList()[0].dataProxy().addItems([QScatterDataItem(QVector3D(-0.3,0,-0.3)),QScatterDataItem(QVector3D(0.3,0.3,0.3))])
+        self.window.visualizerPlot.seriesList()[0].dataProxy().addItems([QScatterDataItem(QVector3D(-0.3,0,-0.3)),QScatterDataItem(QVector3D(0.3,0.6,0.3))])
 
         while self.running:
             loopStart = time.perf_counter_ns()
@@ -221,7 +222,7 @@ class Server():
         dispatcher.map("/patpatpat/heartbeat", _recv_patpatpat_heartbeat)
 
         # setup and run osc server
-        self.oscRecv = BlockingOSCUDPServer(("", self.config.get("vrcOscPort")), dispatcher)
+        self.oscRecv = BlockingOSCUDPServer(("", self.config.get("vrcOscTxPort")), dispatcher)
         logging.info(f"OSC serving on {self.oscRecv.server_address}")
         self.oscRecv.serve_forever()
 
@@ -241,7 +242,7 @@ class Server():
         self.mqtt = mqtt.Client(client_id="patpatpat-server")
         self.mqtt.on_connect = _onMqttConnect
         self.mqtt.on_message = _onMqttMessage
-        self.mqtt.connect(self.config.get("mqttServerIp"), 1883, 60)
+        self.mqtt.connect(self.config.get("mqttBrokerIp"), 1883, 60)
         self.mqtt.loop_forever()
 
     def _mqttPublish(self, addr, data):

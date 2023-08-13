@@ -96,6 +96,7 @@ class MainWindow(QWidget):
         self.slider_strength.setMinimum(0)
         self.slider_strength.setMaximum(100)
         self.slider_strength.setValue(50)
+        self.slider_strength.setEnabled(False)
 
         row = CGui2Row(title="Intensity", content=self.slider_strength, AlignRight=False, DefaultColor=False)
         return row
@@ -141,13 +142,13 @@ class MainWindow(QWidget):
     def signalGuiButtonPatLeft(self) -> None:
         logging.debug("Pat left")
         self.server.oscMotorTxData[0] = 255
-        time.sleep(1)
+        time.sleep(0.5)
         self.server.oscMotorTxData[0] = 0
 
     def signalGuiButtonPatRight(self) -> None:
         logging.debug("Pat right")
         self.server.oscMotorTxData[1] = 255
-        time.sleep(1)
+        time.sleep(0.5)
         self.server.oscMotorTxData[1] = 0
 
     def signalGuiClearVisualizerPlot(self) -> None:
