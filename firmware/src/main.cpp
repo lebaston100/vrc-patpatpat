@@ -1,5 +1,12 @@
-#include <ESP8266mDNS.h>        // Include the mDNS library
-#include <ESP8266WiFi.h>
+#ifdef ARDUINO_ARCH_ESP8266
+    #include <ESP8266mDNS.h>        // Include the mDNS library
+    #include <ESP8266WiFi.h>
+#endif
+#ifdef ARDUINO_ARCH_ESP32
+    #include <WiFi.h>
+    #include <ESPmDNS.h>
+    #include <WiFiClient.h>
+#endif
 #include <WiFiUdp.h>
 #include <OSCMessage.h>
 #include <OSCData.h>
@@ -23,11 +30,19 @@ unsigned long lastHeartbeatSend = 0;
     IPAddress subnet(255,0,0,0);
 #endif
 
-// The only setting that should need adjustment aside from wifi stuff
-byte motorPins[] = {D1, D2};
+#ifdef ARDUINO_ARCH_ESP8266
+    // The only setting that should need adjustment aside from wifi stuff
+    byte motorPins[] = {D1, D2};
+#endif
+#ifdef ARDUINO_ARCH_ESP32
+    // The only setting that should need adjustment aside from wifi stuff
+    byte motorPins[] = {2, 3};
+#endif
 
-// Set adc mode to read the internal voltage
-ADC_MODE(ADC_VCC);
+#ifdef ARDUINO_ARCH_ESP8266
+    // Set adc mode to read the internal voltage
+    ADC_MODE(ADC_VCC);
+#endif
 
 void setup() {
     // Initialize outputs, we assume they are all valid and can drive pwm
@@ -87,7 +102,9 @@ void osc_motors(OSCMessage &msg) {
 }
 
 void loop() {
-    MDNS.update();
+    #ifdef ARDUINO_ARCH_ESP8266
+        MDNS.update();
+    #endif
     
     int size = Udp.parsePacket();
 
@@ -107,7 +124,12 @@ void loop() {
                 OSCMessage txmsg("/patpatpat/heartbeat");
                 txmsg.add(WiFi.macAddress().c_str());
                 txmsg.add((int)millis()/1000);
-                txmsg.add(ESP.getVcc());
+                // This will be replaced with reading the external battery voltage later
+                #ifdef ARDUINO_ARCH_ESP8266
+                    txmsg.add(ESP.getVcc());
+                #else
+                    txmsg.add(0);
+                #endif
                 txmsg.add(WiFi.RSSI());
                 Udp.beginPacket(Udp.remoteIP(), VRC_UDP_PORT);
                 txmsg.send(Udp);
