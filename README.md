@@ -10,18 +10,20 @@ This is an in-development fork of [https://github.com/danielfvm/Patstrap](https:
 - (done) add config file to configure/load/save parameters
 - (done) add a 3d vizualizer
 - (done) add a simple osc recorder and player (for dev) (server/oscRecReplayer.py)
-- (initial implementation working) implement support for more then 3 touch points
-- (started) add mqtt control/feedback to server (for further integration purposes in my setup)
-- (started) design pcb to hold all the driver hardware
+- (working) implement support for more then 3 touch points
+- (started/paused) add mqtt control/feedback to server (for further integration purposes in my setup)
+- (started) design custom pcb to hold all the hardware
 - (todo) completely revamp gui
 - (todo) implement independent zones for additional simple colider -> motor mappings
+- (future possible improvement) add CI job to build gui/server automatically
+- (future possible improvement) add slipserial support for completely wired operation
 
 Other stuff to later add to the readme:
 
 - Using ULN2003 board to drive motors
 - Using [motors](https://www.aliexpress.com/item/4000245243914.html) from aliexpress
-- mention to use a wemos d1 mini with usb-c
-- Obv. 3d printed part won't fit more motors, revise head mounting options for > 2 motors
+- use a wemos s2 mini
+- Obv. 3d printed part won't fit more motors, revise head mounting options for > 2 motors (idea-prototype beeing worked on)
 - Update unity guide for positioning and coordinates
 - Add wiring for battery voltage measurement
 - Mention that server connection indicator for hardware only is active when comms in both directions work
@@ -29,6 +31,7 @@ Other stuff to later add to the readme:
 - Python 3.9 or greater should be used
 - Firewall might make issues if network access to python is denied (maybe add a firewall.bat?)
 - Document motor mounting ideas
+- Don't forget pcb BOM
 
 ### Original Readme from here on for now
 
