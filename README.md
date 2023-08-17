@@ -12,10 +12,10 @@ This is an in-development fork of [https://github.com/danielfvm/Patstrap](https:
 - (done) add a simple osc recorder and player (for dev) (server/oscRecReplayer.py)
 - (working) implement support for more then 3 touch points
 - (started/paused) add mqtt control/feedback to server (for further integration purposes in my setup)
-- (started) design custom pcb to hold all the hardware
+- (mostly done) design custom pcb to hold all the hardware
 - (todo) completely revamp gui
 - (todo) implement independent zones for additional simple colider -> motor mappings
-- (future possible improvement) add CI job to build gui/server automatically
+- (started) add CI job to build gui/server automatically
 - (future possible improvement) add slipserial support for completely wired operation
 
 Other stuff to later add to the readme:
