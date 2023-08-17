@@ -13,7 +13,8 @@ import pathlib
 logging.basicConfig(level=logging.DEBUG)
 
 # get local directory as path object
-LOCALDIR = pathlib.Path(__file__).parent.resolve()
+BUNDLEDIR = pathlib.Path(__file__).parent.resolve()
+CWDIR = pathlib.Path().cwd()
 
 class MainWindow(QWidget):
     def __init__(self) -> None:
@@ -24,7 +25,7 @@ class MainWindow(QWidget):
         self.prev_vrchat_status = False
 
         self.setWindowTitle("vrc-patpatpat 0.2")
-        with open("global.css","r") as file:
+        with open(BUNDLEDIR / "global.css","r") as file:
             self.setStyleSheet(file.read())
 
         layoutMain = QVBoxLayout()
@@ -44,7 +45,7 @@ class MainWindow(QWidget):
         layout.addWidget(self.createGuiVisualizer())
 
         # create config handler
-        self.config = Config(file=LOCALDIR / "patpatpat.cfg")
+        self.config = Config(file=CWDIR / "patpatpat.cfg")
         # create server part
         self.server = Server(self)
 
