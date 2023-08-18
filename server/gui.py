@@ -12,7 +12,13 @@ import pathlib
 
 logging.basicConfig(level=logging.DEBUG)
 
-# get local directory as path object
+# get local directorys as path objects
+# this is seperated because while bundled they are different,
+# run from source they are the same
+# when frozen:
+# -> BUNDLEDIR is the %temp% polder
+# -> CWDIR is the path of the .exe file
+# otherwise both are the .py's current directory
 BUNDLEDIR = pathlib.Path(__file__).parent.resolve()
 CWDIR = pathlib.Path().cwd()
 
