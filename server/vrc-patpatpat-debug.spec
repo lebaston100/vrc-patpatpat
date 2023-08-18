@@ -44,4 +44,6 @@ exe = EXE(
 )
 
 import shutil
-shutil.copyfile("patpatpat.cfg", f"{DISTPATH}/patpatpat.cfg")
+import os
+p = "firmware/" if os.getenv("CI") else ""
+shutil.copyfile(p + "patpatpat.cfg", f"{DISTPATH}/patpatpat.cfg")
