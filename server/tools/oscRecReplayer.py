@@ -7,7 +7,10 @@ from pythonosc.osc_server import BlockingOSCUDPServer
 from pythonosc.dispatcher import Dispatcher
 from pythonosc.udp_client import SimpleUDPClient
 from argparse import ArgumentParser
-from jsonFile import fileHelper
+import sys
+import pathlib
+sys.path.append(pathlib.Path("../").resolve().as_posix())
+from modules.jsonFile import fileHelper
 import threading
 import time
 

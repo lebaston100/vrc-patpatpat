@@ -6,14 +6,13 @@ from pythonosc.dispatcher import Dispatcher
 from pythonosc.udp_client import SimpleUDPClient
 import paho.mqtt.client as mqtt
 from multilateration import Engine
-from multilateration import Point as mlatPoint
 from typing import Union
 from math import ceil
 
 # for docstrings and typing
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from config import Config
+    from modules.config import Config
 
 import threading
 import socket

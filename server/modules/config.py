@@ -1,5 +1,5 @@
 import logging
-from jsonFile import fileHelper
+from modules.jsonFile import fileHelper
 
 class Config:
     """A helper class to handle the bot config file"""

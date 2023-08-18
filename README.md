@@ -9,7 +9,7 @@ This is an in-development fork of [https://github.com/danielfvm/Patstrap](https:
 - (done) switch to using osc over udp for the motor control data
 - (done) add config file to configure/load/save parameters
 - (done) add a 3d vizualizer
-- (done) add a simple osc recorder and player (for dev) (server/oscRecReplayer.py)
+- (done) add a simple osc recorder and player (for dev) (server/tools/oscRecReplayer.py)
 - (working) implement support for more then 3 touch points
 - (started/paused) add mqtt control/feedback to server (for further integration purposes in my setup)
 - (mostly done) design custom pcb to hold all the hardware
