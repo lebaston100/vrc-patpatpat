@@ -1,6 +1,6 @@
 # vrc-patpatpat
 
-An open hardware and software project which tries to implement haptic head pat feedback to the player in VR. This project targets only VRChat's OSC support for now.
+An open hardware and software project which tries to implement haptic head pat feedback to the player in VRchat.
 
  ## This is a WIP fork!
  
@@ -15,7 +15,7 @@ This is an in-development fork of [https://github.com/danielfvm/Patstrap](https:
 - (mostly done) design custom pcb to hold all the hardware
 - (todo) completely revamp gui
 - (todo) implement independent zones for additional simple colider -> motor mappings
-- (started) add CI job to build gui/server automatically
+- (done) add CI job to build gui/server automatically
 - (future possible improvement) add slipserial support for completely wired operation
 
 Other stuff to later add to the readme:
