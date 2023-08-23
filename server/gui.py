@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.DEBUG)
 # otherwise both are the .py's current directory
 BUNDLEDIR = pathlib.Path(__file__).parent.resolve()
 CWDIR = pathlib.Path().cwd()
-RESOURCEDIR = CWDIR / "resources"
+RESOURCEDIR = BUNDLEDIR / "resources"
 
 class MainWindow(QWidget):
     def __init__(self) -> None:
