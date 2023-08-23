@@ -8,7 +8,7 @@ a = Analysis(
     ['gui.py'],
     pathex=[],
     binaries=[],
-    datas=[('global.css', '.')],
+    datas=[('resources/global.css', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
