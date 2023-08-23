@@ -4,6 +4,7 @@ from PyQt6.QtDataVisualization import Q3DScatter
 from modules.server import Server
 from modules.guiClasses import CGui2Row
 from modules.config import Config
+from modules.visualizerWindow import VisualizerWindow
 import time
 import sys
 import logging
@@ -20,6 +21,7 @@ logging.basicConfig(level=logging.DEBUG)
 # otherwise both are the .py's current directory
 BUNDLEDIR = pathlib.Path(__file__).parent.resolve()
 CWDIR = pathlib.Path().cwd()
+RESOURCEDIR = CWDIR / "resources"
 
 class MainWindow(QWidget):
     def __init__(self) -> None:
@@ -30,7 +32,7 @@ class MainWindow(QWidget):
         self.prev_vrchat_status = False
 
         self.setWindowTitle("vrc-patpatpat 0.2")
-        with open(BUNDLEDIR / "global.css","r") as file:
+        with open(RESOURCEDIR / "global.css","r") as file:
             self.setStyleSheet(file.read())
 
         layoutMain = QVBoxLayout()
