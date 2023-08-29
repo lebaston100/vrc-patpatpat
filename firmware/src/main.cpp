@@ -1,15 +1,20 @@
-#ifdef ARDUINO_ARCH_ESP8266
+#ifdef TARGET_D1_MINI
     #include <ESP8266mDNS.h>        // Include the mDNS library
     #include <ESP8266WiFi.h>
+    #define LEDON LOW
+    #define LEDOFF HIGH
 #endif
-#ifdef ARDUINO_ARCH_ESP32
+#ifdef TARGET_S2_MINI
     #include <WiFi.h>
     #include <ESPmDNS.h>
     #include <WiFiClient.h>
+    #define LEDON HIGH
+    #define LEDOFF LOW
 #endif
 #include <WiFiUdp.h>
 #include <OSCMessage.h>
 #include <OSCData.h>
+#include <ArduinoOTA.h>
 
 #define INTERNAL_LED LED_BUILTIN // indicates if connected with server (low active)
 #define OSC_IN_PORT 8888    // local osc receive port
@@ -69,10 +74,10 @@ void setup() {
     Serial.print(F("\n\nConnecting to Wifi "));
     while (WiFi.status() != WL_CONNECTED) {   
         delay(100);
-        digitalWrite(INTERNAL_LED, LOW);
+        digitalWrite(INTERNAL_LED, LEDON);
         Serial.print(".");
         delay(100);
-        digitalWrite(INTERNAL_LED, HIGH);
+        digitalWrite(INTERNAL_LED, LEDOFF);
     }
 
     Serial.print(F("\nIP address: "));
@@ -120,7 +125,7 @@ void loop() {
             // handle heartbeat sending
             lastPacketRecv = millis();
             if (millis() - lastHeartbeatSend >= 1000) {
-                digitalWrite(INTERNAL_LED, LOW);
+                digitalWrite(INTERNAL_LED, LEDON);
                 OSCMessage txmsg("/patpatpat/heartbeat");
                 txmsg.add(WiFi.macAddress().c_str());
                 txmsg.add((int)millis()/1000);
@@ -144,9 +149,9 @@ void loop() {
         }
     }
 
-    // Disable led when we got no packets in the last 1.5s
+    // Disable led when we got no packets in the last 600ms
     if (millis()-lastPacketRecv > 600) {
-        digitalWrite(INTERNAL_LED, HIGH);
+        digitalWrite(INTERNAL_LED, LEDOFF);
         // Make sure the motors don't keep running on connection loss
         for (byte i=0; i<numMotors; i++) {
             analogWrite(motorPins[i], 0);
