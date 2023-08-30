@@ -1,5 +1,5 @@
 #ifdef TARGET_D1_MINI
-    #include <ESP8266mDNS.h>        // Include the mDNS library
+    #include <ESP8266mDNS.h>
     #include <ESP8266WiFi.h>
     #define LEDON LOW
     #define LEDOFF HIGH
@@ -14,7 +14,6 @@
 #include <WiFiUdp.h>
 #include <OSCMessage.h>
 #include <OSCData.h>
-#include <ArduinoOTA.h>
 
 #define INTERNAL_LED LED_BUILTIN // indicates if connected with server (low active)
 #define OSC_IN_PORT 8888    // local osc receive port
@@ -35,13 +34,15 @@ unsigned long lastHeartbeatSend = 0;
     IPAddress subnet(255,0,0,0);
 #endif
 
-#ifdef ARDUINO_ARCH_ESP8266
+#ifdef TARGET_D1_MINI
     // The only setting that should need adjustment aside from wifi stuff
+    // TODO: find usable pins on d1 mini
     byte motorPins[] = {D1, D2};
 #endif
-#ifdef ARDUINO_ARCH_ESP32
+#ifdef TARGET_S2_MINI
     // The only setting that should need adjustment aside from wifi stuff
-    byte motorPins[] = {2, 3};
+    // For now these are the pins used on the pcb
+    byte motorPins[] = {2, 3, 4, 5, 6, 7, 8};
 #endif
 
 #ifdef ARDUINO_ARCH_ESP8266
@@ -50,6 +51,9 @@ unsigned long lastHeartbeatSend = 0;
 #endif
 
 void setup() {
+    #ifdef TARGET_S2_MINI
+        while (!Serial && millis()<5000) {}
+    #endif
     // Initialize outputs, we assume they are all valid and can drive pwm
     numMotors = sizeof(motorPins) / sizeof(motorPins[0]);
     for (byte i=0; i<numMotors; i++) {
@@ -61,6 +65,7 @@ void setup() {
     Serial.begin(115200);
 
     WiFi.mode(WIFI_STA);
+    WiFi.setSleep(false); // Not sure if this is needed, testing because mdns discovery issues on esp32
     #if USE_STATIC_IP
         WiFi.config(staticIP, gateway, subnet);
     #endif
@@ -81,14 +86,20 @@ void setup() {
     }
 
     Serial.print(F("\nIP address: "));
-    Serial.println(WiFi.localIP());  
+    Serial.println(WiFi.localIP());
 
-    // Start the mDNS responder for patpatpat.local
-    if (!MDNS.begin("patpatpat")) {
+    // Start the mDNS responder for patpatpat-<last6digitsofmac>.local
+    byte mac [6];
+    char hostname[11];
+    WiFi.macAddress(mac);
+    sprintf(hostname, "ppp-%02x%02x%02x", mac[3], mac[4], mac[5]);
+    if (!MDNS.begin(hostname)) {
         Serial.println(F("Error setting up MDNS responder!"));
     }
     MDNS.addService("osc", "udp", OSC_IN_PORT);
-    Serial.println(F("mDNS responder started"));
+    MDNS.addServiceTxt("osc", "udp", "version", "1");
+    Serial.print(F("mDNS responder started with hostname "));
+    Serial.println(hostname);
     Serial.println(F("Starting UDP OSC Receiver"));
     Udp.begin(OSC_IN_PORT);
 }
@@ -110,7 +121,7 @@ void loop() {
     #ifdef ARDUINO_ARCH_ESP8266
         MDNS.update();
     #endif
-    
+
     int size = Udp.parsePacket();
 
     if (size > 0) {
@@ -119,6 +130,7 @@ void loop() {
             msg.fill(Udp.read());
         }
         if (!msg.hasError()) {
+            Serial.println("osc message is valid");
             // drive motors
             msg.dispatch("/m", osc_motors);
 
@@ -144,7 +156,7 @@ void loop() {
             }
         } else {
             error = msg.getError();
-            Serial.print(F("error: "));
+            Serial.print(F("osc message error: "));
             Serial.println(error);
         }
     }
