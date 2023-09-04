@@ -1,6 +1,6 @@
 from PyQt6.QtDataVisualization import QScatter3DSeries, QScatterDataProxy, QScatterDataItem
 from PyQt6.QtGui import QVector3D, QColorConstants
-from zeroconf import Zeroconf
+from zeroconf import Zeroconf, IPVersion, DNSQuestionType
 from pythonosc.osc_server import BlockingOSCUDPServer
 from pythonosc.dispatcher import Dispatcher
 from pythonosc.udp_client import SimpleUDPClient
@@ -83,12 +83,16 @@ class Server():
 
     def _checkMdnsServices(self) -> tuple[str, int]:
         """Run MDNS discovery and look for our hardware"""
+        # THERE IS CURRENTLY SOME RANDOM DISCOVERY ISSUE WITH THE ESP32! NOT SURE WHATS GOING ON THERE
         info = None
-        self.zc = Zeroconf()
+        self.zc = Zeroconf(ip_version=IPVersion.V4Only)
         while not info and self.running:
-            info = self.zc.get_service_info("_osc._udp.local.", "patpatpat._osc._udp.local.", timeout=1500)
-            time.sleep(0.1)
+            info = self.zc.get_service_info("_osc._udp.local.", "patpatpat._osc._udp.local.", timeout=3000, question_type=DNSQuestionType.QU)
+            logging.debug(self.zc.cache.names())
+            logging.debug(info)
+            time.sleep(0.5)
         if info:
+            logging.debug(info)
             return (socket.inet_ntoa(info.addresses[0]), info.port)
         return (None, None)
 
