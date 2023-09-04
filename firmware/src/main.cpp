@@ -15,10 +15,10 @@
 #include <OSCMessage.h>
 #include <OSCData.h>
 
-#define INTERNAL_LED LED_BUILTIN // indicates if connected with server (low active)
-#define OSC_IN_PORT 8888    // local osc receive port
-#define VRC_UDP_PORT 9001   // reusing the vrc osc receiver so we need that port
-#define USE_STATIC_IP 0     // Set to 0 to use dhcp, otherwise set to 1 and define your static ip below
+#define INTERNAL_LED LED_BUILTIN    // indicates if connected with server
+#define OSC_IN_PORT 8888            // local osc receive port
+#define VRC_UDP_PORT 9001           // reusing the vrc osc receiver so we need that port
+#define USE_STATIC_IP 0             // Set to 0 to use dhcp, otherwise set to 1 and define your static ip below
 
 WiFiUDP Udp;
 OSCErrorCode error;
@@ -35,18 +35,16 @@ unsigned long lastHeartbeatSend = 0;
 #endif
 
 #ifdef TARGET_D1_MINI
-    // The only setting that should need adjustment aside from wifi stuff
     // TODO: find usable pins on d1 mini
     byte motorPins[] = {D1, D2};
 #endif
 #ifdef TARGET_S2_MINI
-    // The only setting that should need adjustment aside from wifi stuff
-    // For now these are the pins used on the pcb
+    // These are the pins used on the "official" pcb
     byte motorPins[] = {2, 3, 4, 5, 6, 7, 8};
 #endif
 
 #ifdef ARDUINO_ARCH_ESP8266
-    // Set adc mode to read the internal voltage
+    // Set adc mode to read the internal voltage (esp8266 only)
     ADC_MODE(ADC_VCC);
 #endif
 
@@ -59,7 +57,7 @@ void setup() {
     for (byte i=0; i<numMotors; i++) {
         pinMode(motorPins[i], OUTPUT);
     }
-    pinMode(INTERNAL_LED, OUTPUT);
+    pinMode(INTERNAL_LED, OUTPUT);    
 
     // Startup Serial
     Serial.begin(115200);
@@ -122,7 +120,7 @@ void loop() {
         MDNS.update();
     #endif
 
-    int size = Udp.parsePacket();
+    unsigned int size = Udp.parsePacket();
 
     if (size > 0) {
         OSCMessage msg;
