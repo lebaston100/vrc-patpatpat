@@ -19,8 +19,10 @@ import socket
 import time
 import logging
 
+
 class APoint(QVector3D):
     pass
+
 
 class Server():
     def __init__(self, window):
@@ -52,14 +54,20 @@ class Server():
         self.patpatpatIsConnected = False
         self.vrcInValues = {k: {"v": 0, "ts": 0} for k in range(4)}
         # at some point change this to be a single dict each with the QVector3D and leftover data
-        self.avatarAnchorPoints = [self.config.get(f"avatarPoint{avatarPointId}") for avatarPointId in range(4)]
-        self.avatarPointsAsQVector3D = [QVector3D(p["x"], p["y"], p["z"]) for p in self.avatarAnchorPoints]
-        self.motorPositions = [self.config.get(f"motor{motorPointId}") for motorPointId in range(self.numMotors)]
-        self.motorPositionsAsQVector3D = [QVector3D(m["x"], m["y"], m["z"]) for m in self.motorPositions]
+        self.avatarAnchorPoints = [self.config.get(
+            f"avatarPoint{avatarPointId}") for avatarPointId in range(4)]
+        self.avatarPointsAsQVector3D = [
+            QVector3D(p["x"], p["y"], p["z"]) for p in self.avatarAnchorPoints]
+        self.motorPositions = [self.config.get(
+            f"motor{motorPointId}") for motorPointId in range(self.numMotors)]
+        self.motorPositionsAsQVector3D = [
+            QVector3D(m["x"], m["y"], m["z"]) for m in self.motorPositions]
         # Show avatar points in visualizer
-        self.window.visualizerPlot.addSeries(self._generatePointSeries([QScatterDataItem(p) for p in self.avatarPointsAsQVector3D], QColorConstants.Yellow))
+        self.window.visualizerPlot.addSeries(self._generatePointSeries(
+            [QScatterDataItem(p) for p in self.avatarPointsAsQVector3D], QColorConstants.Yellow))
         self._generateCalculatedPointSeries()
-        self.window.visualizerPlot.addSeries(self._generatePointSeries([QScatterDataItem(p) for p in self.motorPositionsAsQVector3D], QColorConstants.Green))
+        self.window.visualizerPlot.addSeries(self._generatePointSeries(
+            [QScatterDataItem(p) for p in self.motorPositionsAsQVector3D], QColorConstants.Green))
 
     # move these 3 functions to frontend some point
     def _generatePointSeries(self, data: list[QScatterDataItem], color: QColorConstants) -> QScatter3DSeries:
@@ -87,7 +95,8 @@ class Server():
         info = None
         self.zc = Zeroconf(ip_version=IPVersion.V4Only)
         while not info and self.running:
-            info = self.zc.get_service_info("_osc._udp.local.", "patpatpat._osc._udp.local.", timeout=3000, question_type=DNSQuestionType.QU)
+            info = self.zc.get_service_info(
+                "_osc._udp.local.", "patpatpat._osc._udp.local.", timeout=3000, question_type=DNSQuestionType.QU)
             logging.debug(self.zc.cache.names())
             logging.debug(info)
             time.sleep(0.5)
@@ -107,7 +116,7 @@ class Server():
 
     def _validateIncomingDataAge(self, d: dict) -> bool:
         """Check that all received points are fresh"""
-        maxAge = time.time()-0.15 # this needs to be lower, not sure how fast vrc network sync is yet
+        maxAge = time.time()-0.15  # this needs to be lower, not sure how fast vrc network sync is yet
         return all(e["ts"] > maxAge for e in d.values())
 
     def _calculateMlatPosition(self, distances: dict, anchorpoints: list[QVector3D]) -> Union[QVector3D, None]:
@@ -116,7 +125,8 @@ class Server():
             # run a mlat solver over the anchor points and the reported distances
             solver = Engine()
             for id, point in enumerate(anchorpoints):
-                solver.add_anchor(f"anchor_{id}", (point.x(), point.y(), point.z()))
+                solver.add_anchor(
+                    f"anchor_{id}", (point.x(), point.y(), point.z()))
                 solver.add_measure_id(f"anchor_{id}", distances[id]["v"])
 
             if result := solver.solve():
@@ -137,42 +147,47 @@ class Server():
         if pos := self._calculateMlatPosition(self.vrcInValues, self.avatarPointsAsQVector3D):
             if not self._validateMlatPoint(pos, self.avatarPointsAsQVector3D[0], self.avatarAnchorPoints[0]["r"]):
                 return
-            
+
             # we got a position from our calculations back
-            #logging.debug(pos)
+            # logging.debug(pos)
             # add to visualizer
             # TODO: Cleanup
             if len(self.window.visualizerPlot.seriesList()[1].dataProxy().array()) > 150:
-                self.window.visualizerPlot.seriesList()[1].dataProxy().removeItems(0, 1) # create trail
-            self.window.visualizerPlot.seriesList()[1].dataProxy().addItem(QScatterDataItem(pos))
+                self.window.visualizerPlot.seriesList(
+                )[1].dataProxy().removeItems(0, 1)  # create trail
+            self.window.visualizerPlot.seriesList(
+            )[1].dataProxy().addItem(QScatterDataItem(pos))
 
             # calculcate distance from point to each motor
             # TODO: refactor out
             for id, motor in enumerate(self.motorPositionsAsQVector3D):
                 # calculate the distance and normalize it so >1 = outside radius
                 # a slider value could maybe be put in here to adjust the radius?
-                distance = pos.distanceToPoint(motor)/self.motorPositions[id]["r"]
-                distance = max(distance, 0.1) # little deadband in the middle, maybe not needed, not sure yet
+                distance = pos.distanceToPoint(
+                    motor)/self.motorPositions[id]["r"]
+                # little deadband in the middle, maybe not needed, not sure yet
+                distance = max(distance, 0.1)
                 motorPwm = 255-min(ceil(255*distance), 255)
                 # the motor likes at least ~75 to start up and run
                 motorPwm = 75 if motorPwm < 75 and motorPwm > 0 else motorPwm
                 self.oscMotorTxData[id] = motorPwm
-                #logging.debug(f"motor {id} distance {distance} motorPwm {motorPwm}")
+                # logging.debug(f"motor {id} distance {distance} motorPwm {motorPwm}")
         elif any(self.oscMotorTxData):
             for i, v in enumerate(self.oscMotorTxData):
-                self.oscMotorTxData[i] = max(v-2,0) if v > 0 else v
-        #logging.debug(self.oscMotorTxData)
+                self.oscMotorTxData[i] = max(v-2, 0) if v > 0 else v
+        # logging.debug(self.oscMotorTxData)
 
-        #intensity = self.window.get_intensity() # this gets the slider setting, ignore for now
+        # intensity = self.window.get_intensity() # this gets the slider setting, ignore for now
 
         if self.enableVrcTx:
             # send out motor speeds
             self.oscTx.send_message("/m", self.oscMotorTxData)
 
-    def _MainLoopThread(self, tps: int=60) -> None:
+    def _MainLoopThread(self, tps: int = 60) -> None:
 
         # add some static points just for axis scaling
-        self.window.visualizerPlot.seriesList()[0].dataProxy().addItems([QScatterDataItem(QVector3D(-0.3,0,-0.3)),QScatterDataItem(QVector3D(0.3,0.6,0.3))])
+        self.window.visualizerPlot.seriesList()[0].dataProxy().addItems([QScatterDataItem(
+            QVector3D(-0.3, 0, -0.3)), QScatterDataItem(QVector3D(0.3, 0.6, 0.3))])
 
         while self.running:
             loopStart = time.perf_counter_ns()
@@ -185,14 +200,16 @@ class Server():
 
             # update gui connection status with a 2 seconds timeout
             # once i learn qt signals maybe this can be event based?
-            self.window.setGuiVrcRecvStatus(self.vrc_last_packet+1 >= time.time())
+            self.window.setGuiVrcRecvStatus(
+                self.vrc_last_packet+1 >= time.time())
             self.patpatpatIsConnected = self.patpatpat_last_heartbeat+2 >= time.time()
-            self.window.setGuiHardwareConnectionStatus(self.patpatpatIsConnected)
+            self.window.setGuiHardwareConnectionStatus(
+                self.patpatpatIsConnected)
 
             # calculate loop time
             loopEnd = time.perf_counter_ns()
-            #self._mqttPublish("dev/patpatpat/out/loopperf", (loopEnd-loopStart)/1000000)
-            #logging.debug(f"loop time: {(loopEnd-loopStart)/1000000}ms")
+            # self._mqttPublish("dev/patpatpat/out/loopperf", (loopEnd-loopStart)/1000000)
+            # logging.debug(f"loop time: {(loopEnd-loopStart)/1000000}ms")
             time.sleep(max((1/tps)-(loopEnd-loopStart)/1000000000, 0))
 
         logging.info("Exiting Application...")
@@ -201,14 +218,14 @@ class Server():
     def _OscReceiverThread(self) -> None:
         # handle incoming vrchat osc messages
         def _recv_contact(address, cid, val) -> None:
-            #logging.debug(f"cid {cid[0]} {address}: {val}")
+            # logging.debug(f"cid {cid[0]} {address}: {val}")
             # invert value and scale it according to the colliders size
             scaledval = (1.0-val)*self.avatarAnchorPoints[cid[0]]["r"]
             self.vrcInValues[cid[0]] = {"v": scaledval, "ts": time.time()}
             self.vrc_last_packet = time.time()
 
         def _recv_patpatpat_heartbeat(_, mac, uptime, voltage, rssi) -> None:
-            #logging.debug(f"Received patpatpat heartbeat from mac {mac} with uptime {uptime}s and voltage {voltage}mV and wifi rssi {rssi}dBm")
+            # logging.debug(f"Received patpatpat heartbeat from mac {mac} with uptime {uptime}s and voltage {voltage}mV and wifi rssi {rssi}dBm")
             self._mqttPublish("dev/patpatpat/out/heartbeat", uptime)
             self.patpatpat_last_heartbeat = time.time()
 
@@ -225,7 +242,8 @@ class Server():
         dispatcher.map("/patpatpat/heartbeat", _recv_patpatpat_heartbeat)
 
         # setup and run osc server
-        self.oscRecv = BlockingOSCUDPServer(("", self.config.get("vrcOscTxPort")), dispatcher)
+        self.oscRecv = BlockingOSCUDPServer(
+            ("", self.config.get("vrcOscTxPort")), dispatcher)
         logging.info(f"OSC serving on {self.oscRecv.server_address}")
         self.oscRecv.serve_forever()
 
