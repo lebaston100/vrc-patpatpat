@@ -1,8 +1,10 @@
 import logging
 from modules.jsonFile import fileHelper
 
+
 class Config:
     """A helper class to handle the bot config file"""
+
     def __init__(self, file: str) -> None:
         self._fh = fileHelper(file)
         self._configOptions = None

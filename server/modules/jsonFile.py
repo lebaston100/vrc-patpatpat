@@ -1,8 +1,10 @@
 import json
 import logging
 
+
 class fileHelper:
     """A simple helper class to read and save json from files"""
+
     def __init__(self, filename) -> None:
         self._filename = filename
 

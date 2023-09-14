@@ -23,6 +23,7 @@ BUNDLEDIR = pathlib.Path(__file__).parent.resolve()
 CWDIR = pathlib.Path().cwd()
 RESOURCEDIR = BUNDLEDIR / "resources"
 
+
 class MainWindow(QWidget):
     def __init__(self) -> None:
         super().__init__()
@@ -32,7 +33,7 @@ class MainWindow(QWidget):
         self.prev_vrchat_status = False
 
         self.setWindowTitle("vrc-patpatpat 0.2")
-        with open(RESOURCEDIR / "global.css","r") as file:
+        with open(RESOURCEDIR / "global.css", "r") as file:
             self.setStyleSheet(file.read())
 
         layoutMain = QVBoxLayout()
@@ -64,13 +65,15 @@ class MainWindow(QWidget):
     def createGuiHardwareStatus(self) -> CGui2Row:
         self.status_hardware_connection = QLabel(" ⬤")
 
-        row = CGui2Row(title="patpatpat connection", content=self.status_hardware_connection)
+        row = CGui2Row(title="patpatpat connection",
+                       content=self.status_hardware_connection)
         return row
 
     def setGuiHardwareConnectionStatus(self, status: bool) -> None:
         if self.prev_patpatpat_status != status:
             self.prev_patpatpat_status = status
-            self.status_hardware_connection.setStyleSheet("color: #29b980; font-size: 30px;" if status else "color: #b94029; font-size: 30px;")
+            self.status_hardware_connection.setStyleSheet(
+                "color: #29b980; font-size: 30px;" if status else "color: #b94029; font-size: 30px;")
 
             self.test_right_button.setDisabled(not status)
             self.test_left_button.setDisabled(not status)
@@ -89,13 +92,15 @@ class MainWindow(QWidget):
     def createGuiVrcRecvStatus(self) -> CGui2Row:
         self.status_vrchat_connection = QLabel("  ⬤")
 
-        row = CGui2Row(title="VRChat data", content=self.status_vrchat_connection)
+        row = CGui2Row(title="VRChat data",
+                       content=self.status_vrchat_connection)
         return row
 
     def setGuiVrcRecvStatus(self, status: bool) -> None:
         if self.prev_vrchat_status != status:
             self.prev_vrchat_status = status
-            self.status_vrchat_connection.setStyleSheet("color: #29b980; font-size: 30px;" if status else "color: #b94029; font-size: 30px;")
+            self.status_vrchat_connection.setStyleSheet(
+                "color: #29b980; font-size: 30px;" if status else "color: #b94029; font-size: 30px;")
 
 # Row 4: A slider that currently does nothing
     def createGuiSettingsSlider(self) -> CGui2Row:
@@ -106,7 +111,8 @@ class MainWindow(QWidget):
         self.slider_strength.setValue(50)
         self.slider_strength.setEnabled(False)
 
-        row = CGui2Row(title="Intensity", content=self.slider_strength, AlignRight=False, DefaultColor=False)
+        row = CGui2Row(title="Intensity", content=self.slider_strength,
+                       AlignRight=False, DefaultColor=False)
         return row
 
     def getGuiSettingsSlider(self) -> float:
@@ -135,7 +141,8 @@ class MainWindow(QWidget):
         layoutH.addWidget(self.test_right_button)
 
         self.clear_plot_button = QPushButton("Clear Plot")
-        self.clear_plot_button.clicked.connect(self.signalGuiClearVisualizerPlot)
+        self.clear_plot_button.clicked.connect(
+            self.signalGuiClearVisualizerPlot)
         layoutH.addWidget(self.clear_plot_button)
 
         info_label = QLabel("Test hardware")
@@ -166,7 +173,8 @@ class MainWindow(QWidget):
     def createGuiVisualizer(self) -> QWidget:
         self.visualizerPlot = Q3DScatter()
         self.visualizerPlot.setAspectRatio(1.0)
-        self.visualizerPlot.setShadowQuality(Q3DScatter.ShadowQuality.ShadowQualityNone)
+        self.visualizerPlot.setShadowQuality(
+            Q3DScatter.ShadowQuality.ShadowQualityNone)
 
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -189,6 +197,7 @@ class MainWindow(QWidget):
 
     def closeEvent(self, _) -> None:
         self.server.shutdown()
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

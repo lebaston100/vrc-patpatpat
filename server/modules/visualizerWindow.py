@@ -4,6 +4,7 @@ import time
 import sys
 import logging
 
+
 class VisualizerWindow(QWidget):
     def __init__(self) -> None:
         super().__init__()
