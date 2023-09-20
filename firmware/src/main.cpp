@@ -57,7 +57,11 @@ void setup() {
     for (byte i=0; i<numMotors; i++) {
         pinMode(motorPins[i], OUTPUT);
     }
-    pinMode(INTERNAL_LED, OUTPUT);    
+    pinMode(INTERNAL_LED, OUTPUT);
+
+    #ifdef TARGET_S2_MINI
+        pinMode(1, INPUT);
+    #endif
 
     // Startup Serial
     Serial.begin(115200);
@@ -128,14 +132,15 @@ void loop() {
             msg.fill(Udp.read());
         }
         if (!msg.hasError()) {
-            Serial.println("osc message is valid");
+            // Serial.println("osc message is valid");
+            lastPacketRecv = millis();
             // drive motors
             msg.dispatch("/m", osc_motors);
 
             // handle heartbeat sending
-            lastPacketRecv = millis();
             if (millis() - lastHeartbeatSend >= 1000) {
                 digitalWrite(INTERNAL_LED, LEDON);
+                // TODO Add hostname to addr
                 OSCMessage txmsg("/patpatpat/heartbeat");
                 txmsg.add(WiFi.macAddress().c_str());
                 txmsg.add((int)millis()/1000);
@@ -143,7 +148,7 @@ void loop() {
                 #ifdef ARDUINO_ARCH_ESP8266
                     txmsg.add(ESP.getVcc());
                 #else
-                    txmsg.add(0);
+                    txmsg.add(analogRead(1));
                 #endif
                 txmsg.add(WiFi.RSSI());
                 Udp.beginPacket(Udp.remoteIP(), VRC_UDP_PORT);
