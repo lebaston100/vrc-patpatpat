@@ -10,14 +10,14 @@ This is an in-development fork of [https://github.com/danielfvm/Patstrap](https:
 - (done) add config file to configure/load/save parameters
 - (done) add a 3d vizualizer
 - (done) add a simple osc recorder and player (for dev) (server/tools/oscRecReplayer.py)
-- (working) implement support for more then 3 touch points
+- (done) implement support for more then 3 touch points
 - (started/paused) add mqtt control/feedback to server (for further integration purposes in my setup)
-- (mostly done) design custom pcb to hold all the hardware
-- (todo) completely revamp gui
+- (v2 done) design custom pcb to hold all the hardware
+- (todo) completely rewrite everything...
 - (todo) implement independent zones for additional simple colider -> motor mappings
 - (todo) rewrite readme
 - (done) add CI job to build gui/server automatically
-- (future possible improvement) add slipserial support for completely wired operation
+- (future possible improvement) add slipserial support for completely wired operation (the reason behind using the s2)
 - (future possible improvement) add ota support (right now it just breaks mdns)
 
 Other stuff to later add to the readme:
@@ -27,7 +27,7 @@ Other stuff to later add to the readme:
 - Using a wemos s2 mini but also compatible to esp8266(d1-mini)
 - revise head mounting options for > 2 motors (idea-prototype beeing worked on)
 - Update unity guide for positioning and coordinates
-- Add wiring for battery voltage measurement
+- Add wiring for battery voltage measurement(only on non-pcb setups)
 - Mention that server connection indicator for hardware only is active when comms in both directions work
 - To compile the wifi credentials into the esp code the wifi.ini.template needs to be renamed to wifi.ini and the values filled out with the ssid and password
 - Python 3.9 or greater should be used
