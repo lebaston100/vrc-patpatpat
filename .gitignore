@@ -1,16 +1,28 @@
+# logfiles
 *.log
+
+# purposefully hidden files and folders
+._*
+
+# useless macos files
 .DS_Store
 .DS_Store?
-._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
+
+# just windows
 Thumbs.db
+
+# application icon project files
 icons/
+
+# vsc files
 *.code-workspace
 *.vscode
-package-lock.json
+
+# compiled versions (only available over releases/gh action builds)
 *.exe
-.venv
-__pycache__
-recording*.json
+
+# python specific files/folders
+__pycache__/
+.venv/
