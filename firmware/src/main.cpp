@@ -10,6 +10,7 @@
     #include <WiFiClient.h>
     #define LEDON HIGH
     #define LEDOFF LOW
+    #define s2batteryPin 1
 #endif
 #include <WiFiUdp.h>
 #include <OSCMessage.h>
@@ -60,7 +61,7 @@ void setup() {
     pinMode(INTERNAL_LED, OUTPUT);
 
     #ifdef TARGET_S2_MINI
-        pinMode(1, INPUT);
+        pinMode(s2batteryPin, INPUT);
     #endif
 
     // Startup Serial
@@ -148,7 +149,7 @@ void loop() {
                 #ifdef ARDUINO_ARCH_ESP8266
                     txmsg.add(ESP.getVcc());
                 #else
-                    txmsg.add(analogRead(1));
+                    txmsg.add(analogRead(s2batteryPin));
                 #endif
                 txmsg.add(WiFi.RSSI());
                 Udp.beginPacket(Udp.remoteIP(), VRC_UDP_PORT);

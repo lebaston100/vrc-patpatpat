@@ -47,11 +47,11 @@ class Server():
     def _resetValues(self) -> None:
         """Initialize some internal values"""
         self.vrc_last_packet = self.patpatpat_last_heartbeat = time.time()-5
-        self.enableVrcTx = True
-        self.battery = 0
-        self.numMotors = self.config.get("numMotors", 2)
-        self.oscMotorTxData = [0]*self.numMotors
-        self.patpatpatIsConnected = False
+        self.enableVrcTx: bool = True
+        self.battery: int = 0
+        self.numMotors: int = self.config.get("numMotors", 2)
+        self.oscMotorTxData: list[int] = [0]*self.numMotors
+        self.patpatpatIsConnected: bool = False
         self.vrcInValues = {k: {"v": 0, "ts": 0} for k in range(4)}
         # at some point change this to be a single dict each with the QVector3D and leftover data
         self.avatarAnchorPoints = [self.config.get(
@@ -177,7 +177,7 @@ class Server():
                 self.oscMotorTxData[i] = max(v-2, 0) if v > 0 else v
         # logging.debug(self.oscMotorTxData)
 
-        # intensity = self.window.get_intensity() # this gets the slider setting, ignore for now
+        # intensity = self.window.get_intensity() # this gets the slider setting, ignore for now, handle with signals
 
         if self.enableVrcTx:
             # send out motor speeds
