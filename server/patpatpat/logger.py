@@ -2,14 +2,14 @@ import logging
 import logging.handlers
 
 
-def getRootLogger(level=logging.DEBUG) -> logging.RootLogger:
+def getRootLogger(level=logging.DEBUG) -> logging.Logger:
     """Return our main root logger
 
     Args:
         level (logging.LEVEL, optional): The logging level. Defaults to logging.DEBUG.
 
     Returns:
-        logging.RootLogger: The logging.Logger object
+        logging.Logger: The logging.Logger object
     """
     # logger configuration
     formatter = logging.Formatter(

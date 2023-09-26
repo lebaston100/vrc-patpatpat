@@ -11,3 +11,4 @@ LoggerTestClass()
 
 config = ConfigHandler("test.config")
 config.set("testkey", "testvalue")
+logger.info(config.get("testkey"))

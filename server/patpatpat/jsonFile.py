@@ -5,29 +5,52 @@ from pathlib import Path
 logger = getSubLogger(__name__)
 
 
-class JsonFileHelper:
-    """A simple helper class to read and save json from files"""
+class FileHelper:
+    """A simple helper class to read and save json from files
+    """
 
     def __init__(self, file: Path) -> None:
+        """Initialize the file helper class
+
+        Args:
+            file (Path): A pathlib.Path object to the config file
+        """
         self._file = file
 
-    def write(self, data: dict) -> None:
-        """dump 'data' to the json file"""
+    def write(self, data: dict) -> bool:
+        """Write all data into the configuration file
+
+        Args:
+            data (dict): The data to write to the file
+
+        Raises:
+            E: If there was an error writing the file
+
+        Returns:
+            bool: True if the write was sucessful
+        """
         logger.debug("writing data to json file")
         try:
             with open(self._file, mode="w") as f:
-                f.write(json.dumps(data, indent=4))
+                json.dump(data, f, indent=4)
+            return True
         except Exception as E:
             logger.exception(E)
             raise E
 
     def read(self) -> dict:
-        """try to read from json file and return it"""
+        """Read all configration options from file
+
+        Raises:
+            E: If there was an error while reading the file
+
+        Returns:
+            dict: The data that was read from the file
+        """
         logger.debug("reading from json file")
         try:
             with open(self._file, mode="r") as f:
-                data = f.read()
-            return json.loads(data)
+                return json.load(f)
         except Exception as E:
             logger.exception(E)
             raise E
