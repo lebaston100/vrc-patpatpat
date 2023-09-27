@@ -9,6 +9,6 @@ logger.error("error from main")
 
 LoggerTestClass()
 
-config = ConfigHandler("test.config")
+config = ConfigHandler("test.conf")
 config.set("testkey", "testvalue")
 logger.info(config.get("testkey"))
