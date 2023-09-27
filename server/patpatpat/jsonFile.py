@@ -1,6 +1,7 @@
 import json
 from patpatpat import getSubLogger
 from pathlib import Path
+from typing import Any
 
 logger = getSubLogger(__name__)
 
@@ -38,7 +39,7 @@ class FileHelper:
             logger.exception(E)
             raise E
 
-    def read(self) -> dict:
+    def read(self) -> dict[str, Any]:
         """Read all configration options from file
 
         Raises:

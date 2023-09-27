@@ -46,10 +46,7 @@ class ConfigHandler:
         Returns:
             Any: _description_
         """
-        if self.has(key):
-            return self._configOptions[key]
-        else:
-            return fallback
+        return self._configOptions.get(key, fallback)
 
     def has(self, key: str) -> bool:
         """Checks if config contains a given key
