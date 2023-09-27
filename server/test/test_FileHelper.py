@@ -1,8 +1,8 @@
 import pytest
 
 
-class TestClass:
-    def test_FileHelper_Object(self):
+class TestFileHelper:
+    def test_FileHelper_init(self):
         """Test that the module imports and can be created"""
         from pathlib import Path
         try:
