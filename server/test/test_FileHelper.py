@@ -16,7 +16,7 @@ class TestFileHelper:
         """Return a class-persistant FileHper to test on"""
         from pathlib import Path
         from patpatpat.jsonFile import FileHelper
-        path = Path("test/resources/test.conf")
+        path = Path("test/test.conf")
         yield FileHelper(path)
         path.unlink()
 
