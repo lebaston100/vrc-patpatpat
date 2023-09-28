@@ -43,10 +43,6 @@ exe = EXE(
     entitlements_file=None,
 )
 
-import logging
-import os
-logging.info(os.getcwd())
-
 """
 import shutil
 import os
