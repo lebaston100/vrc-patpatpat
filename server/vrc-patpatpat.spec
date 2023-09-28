@@ -5,7 +5,7 @@ block_cipher = None
 
 
 a = Analysis(
-    ['gui.py'],
+    ['main.py'],
     pathex=[],
     binaries=[],
     datas=[('resources/*', './resources')],
@@ -43,6 +43,11 @@ exe = EXE(
     entitlements_file=None,
 )
 
+import logging
+import os
+logging.info(os.getcwd())
+
+"""
 import shutil
 import os
 import logging
@@ -56,3 +61,4 @@ shutil.copyfile(f"{rootpath}LICENSE", f"{DISTPATH}/LICENSE")
 shutil.copytree(f"{rootpath}firmware", f"{DISTPATH}/firmware")
 shutil.copytree(f"{rootpath}pcb", f"{DISTPATH}/pcb")
 logging.info("Successfully copied all files and folders into build directory")
+"""
