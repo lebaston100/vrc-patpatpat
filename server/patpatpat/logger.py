@@ -11,10 +11,6 @@ def getRootLogger(level=logging.DEBUG) -> logging.Logger:
     Returns:
         logging.Logger: The logging.Logger object
     """
-    # logger configuration
-    formatter = logging.Formatter(
-        "[{asctime}] [{levelname:<8}] {name}: {message}", datefmt="%Y-%m-%d %H:%M:%S", style="{")
-
     # rotating log file handler
     fileLogHandler = logging.handlers.RotatingFileHandler(
         filename="vrc-patpatpat.log",
@@ -23,12 +19,14 @@ def getRootLogger(level=logging.DEBUG) -> logging.Logger:
         backupCount=5,  # Rotate through 5 files
     )
     fileLogHandler.setLevel(level)
-    fileLogHandler.setFormatter(formatter)
+    fileLogHandler.setFormatter(logging.Formatter(
+        "[{asctime}] [{levelname:<8}] {name}: {message}", datefmt="%Y-%m-%d %H:%M:%S", style="{"))
 
     # cmd output
     cmdLogHandler = logging.StreamHandler()
     cmdLogHandler.setLevel(level)
-    cmdLogHandler.setFormatter(formatter)
+    cmdLogHandler.setFormatter(logging.Formatter(
+        "[{relativeCreated:.3f}][{levelname:<5}][{name:<26}] {message}", datefmt="%M:%S", style="{"))
 
     # setup main logger
     logger = logging.getLogger("patpatpat")
