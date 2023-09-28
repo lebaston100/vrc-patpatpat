@@ -20,13 +20,13 @@ def getRootLogger(level=logging.DEBUG) -> logging.Logger:
     )
     fileLogHandler.setLevel(level)
     fileLogHandler.setFormatter(logging.Formatter(
-        "[{asctime}] [{levelname:<8}] {name}: {message}", datefmt="%Y-%m-%d %H:%M:%S", style="{"))
+        "[{asctime}.{msecs:.0f}] [{levelname:<8}] {name}: {message}", datefmt="%Y-%m-%d %H:%M:%S", style="{"))
 
     # cmd output
     cmdLogHandler = logging.StreamHandler()
     cmdLogHandler.setLevel(level)
     cmdLogHandler.setFormatter(logging.Formatter(
-        "[{relativeCreated:.3f}][{levelname:<5}][{name:<26}] {message}", datefmt="%M:%S", style="{"))
+        "[{relativeCreated:.3f}][{levelname:<5}][{name:<26}] {message}", style="{"))
 
     # setup main logger
     logger = logging.getLogger("patpatpat")
