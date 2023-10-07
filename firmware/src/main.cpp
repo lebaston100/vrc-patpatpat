@@ -151,6 +151,8 @@ void loop() {
                 #else
                     txmsg.add(analogRead(s2batteryPin));
                 #endif
+                Serial.println(Udp.remoteIP());
+                Serial.println(Udp.remotePort());
                 txmsg.add(WiFi.RSSI());
                 Udp.beginPacket(Udp.remoteIP(), VRC_UDP_PORT);
                 txmsg.send(Udp);
