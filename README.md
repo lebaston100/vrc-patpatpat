@@ -1,26 +1,31 @@
 # vrc-patpatpat
 
-An open hardware and software project which tries to implement haptic head pat feedback to the player in VRchat.
+An open hardware and software project which tries to implement haptic head pat (but also more generic) feedback to the player in VRchat.
 
- ## This is a WIP fork!
+ ## This project is current work in progress
  
-This is an in-development fork of [https://github.com/danielfvm/Patstrap](https://github.com/danielfvm/Patstrap) (only a small amout of original code left, mostly gui and some backend) which will try to work on the following:
+This is was a fork of [https://github.com/danielfvm/Patstrap](https://github.com/danielfvm/Patstrap) but now has been (is in progress of beeing) rewritten from ground up.
+
+The current development is happening in the refactor branch!
+
+Additional Goals and ToDo:
 
 - (done) switch to using osc over udp for the motor control data
 - (done) add config file to configure/load/save parameters
 - (done) add a 3d vizualizer
 - (done) add a simple osc recorder and player (for dev) (server/tools/oscRecReplayer.py)
 - (done) implement support for more then 3 touch points
-- (started/paused) add mqtt control/feedback to server (for further integration purposes in my setup)
-- (v2 done) design custom pcb to hold all the hardware
-- (todo) completely rewrite everything...
+- (done) design custom pcb to hold all the hardware (v1 dev board manufactured and built, v2 dev board design done)
+- (in progress (refactor branch)) completely rewrite everything...
+- (todo) switch from mdns discovery to custom udp based discovery
 - (todo) implement independent zones for additional simple colider -> motor mappings
+- (todo) add ota support
 - (todo) rewrite readme
 - (done) add CI job to build gui/server automatically
+- (future possible improvement) add mqtt control/feedback to server (for further integration purposes in my setup)
 - (future possible improvement) add slipserial support for completely wired operation (the reason behind using the s2)
-- (future possible improvement) add ota support (right now it just breaks mdns)
 
-Other stuff to later add to the readme:
+Other stuff/notes to later add to the readme:
 
 - Using ULN2003 board to drive motors
 - Using [vibration motors](https://www.aliexpress.com/item/4000245243914.html) from aliexpress
@@ -35,7 +40,7 @@ Other stuff to later add to the readme:
 - Document motor mounting ideas
 - Don't forget pcb BOM and pcb specific software stuff
 
-### Original Readme from here on for now
+### Original patstrap Readme from here on for now until i get around to rewriting it
 
 ---
 
