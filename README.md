@@ -4,7 +4,7 @@ An open hardware and software project which tries to implement haptic head pat (
 
  ## This project is current work in progress
  
-This is was a fork of [https://github.com/danielfvm/Patstrap](https://github.com/danielfvm/Patstrap) but now has been (is in progress of beeing) rewritten from ground up.
+This was a fork of [https://github.com/danielfvm/Patstrap](https://github.com/danielfvm/Patstrap) but now has been (is in progress of beeing) rewritten from ground up.
 
 The current development is happening in the refactor branch!
 
