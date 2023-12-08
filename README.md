@@ -35,7 +35,7 @@ Other stuff/notes to later add to the readme:
 - Add wiring for battery voltage measurement(only on non-pcb setups)
 - Mention that server connection indicator for hardware only is active when comms in both directions work
 - To compile the wifi credentials into the esp code the wifi.ini.template needs to be renamed to wifi.ini and the values filled out with the ssid and password
-- Python 3.9 or greater should be used
+- Python 3.12 should be used
 - Firewall might make issues if network access to python is denied (maybe add a firewall.bat?)
 - Document motor mounting ideas
 - Don't forget pcb BOM and pcb specific software stuff
