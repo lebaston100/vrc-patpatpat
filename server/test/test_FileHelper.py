@@ -6,7 +6,7 @@ class TestFileHelper:
         """Test that the module imports and can be created"""
         from pathlib import Path
         try:
-            from patpatpat.jsonFile import FileHelper
+            from utils import FileHelper
             h = FileHelper(Path("test.conf"))
         except Exception:
             assert False
@@ -15,7 +15,7 @@ class TestFileHelper:
     def createFileHelper(self):
         """Return a class-persistant FileHper to test on"""
         from pathlib import Path
-        from patpatpat.jsonFile import FileHelper
+        from utils import FileHelper
         path = Path("test/test.conf")
         yield FileHelper(path)
         path.unlink()

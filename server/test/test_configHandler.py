@@ -7,7 +7,7 @@ class TestConfigHandler:
         from pathlib import Path
         testPath = Path("test/test.conf")
         try:
-            from patpatpat.configHandler import ConfigHandler
+            from utils import ConfigHandler
             c = ConfigHandler("test/test.conf")
         except Exception:
             assert False
@@ -16,7 +16,7 @@ class TestConfigHandler:
     def createConfigHandler(self):
         """Return a ConfigHelper to test on"""
         from pathlib import Path
-        from patpatpat.configHandler import ConfigHandler
+        from utils import ConfigHandler
         path = Path("test/test.conf")
         yield ConfigHandler("test/test.conf")
         path.unlink()
