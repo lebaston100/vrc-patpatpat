@@ -123,6 +123,7 @@ class SignalLogHandler(logging.Handler):
         Args:
             level (str): The logging level to use
         """
+
         self.setLevel(logging.getLevelName(level))
 
 
