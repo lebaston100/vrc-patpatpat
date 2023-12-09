@@ -2,43 +2,62 @@
 
 An open hardware and software project which tries to implement haptic head pat (but also more generic) feedback to the player in VRchat.
 
- ## This project is current work in progress
+## This project is actively work in progress
  
-This was a fork of [https://github.com/danielfvm/Patstrap](https://github.com/danielfvm/Patstrap) but now has been (is in progress of beeing) rewritten from ground up.
+The current development is happening in the refactor branch! The "old" basic working server version can still be accessed from the master branch.
 
-The current development is happening in the refactor branch!
+### Todo overview :
 
-Additional Goals and ToDo:
+Server:
 
-- (done) switch to using osc over udp for the motor control data
-- (done) add config file to configure/load/save parameters
-- (done) add a 3d vizualizer
-- (done) add a simple osc recorder and player (for dev) (server/tools/oscRecReplayer.py)
-- (done) implement support for more then 3 touch points
-- (done) design custom pcb to hold all the hardware (v1 dev board manufactured and built, v2 dev board design done)
-- (in progress (refactor branch)) completely rewrite everything...
-- (todo) switch from mdns discovery to custom udp based discovery
-- (todo) implement independent zones for additional simple colider -> motor mappings
-- (todo) add ota support
-- (todo) rewrite readme
-- (done) add CI job to build gui/server automatically
-- (future possible improvement) add mqtt control/feedback to server (for further integration purposes in my setup)
-- (future possible improvement) add slipserial support for completely wired operation (the reason behind using the s2)
+- [ ] Main UI (design in progress)
+- [ ] Configuration windows
+- [ ] 3D visualizer
+- [x] Log viewer
+- [x] Config file
+- [ ] VRC comms
+- [ ] Hardware discovery
+- [ ] Hardware comms
+- [ ] MLAT solver
+- [ ] Linear solver
+- [ ] MQTT control support (maybe)
+- [ ] Slipserial support (maybe)
+
+Hardware:
+
+- [ ] Discovery logic
+- [ ] OTA support
+
+Misc:
+
+- [x] Simple osc recorder and player (for dev) (server/tools/oscRecReplayer.py)
+- [x] Design dev pcb (v1 dev board manufactured and built, v2 dev board design done)
+- [ ] Rewrite readme
+- [ ] Add CI pytest job for server
+- [ ] Add CI build job for server
 
 Other stuff/notes to later add to the readme:
 
-- Using ULN2003 board to drive motors
-- Using [vibration motors](https://www.aliexpress.com/item/4000245243914.html) from aliexpress
-- Using a wemos s2 mini but also compatible to esp8266(d1-mini)
-- revise head mounting options for > 2 motors (idea-prototype beeing worked on)
+- Using ULN2003 board to drive motors on dev board
+- Using tiny coin cell style [vibration motors](https://www.aliexpress.com/item/4000245243914.html)
+- Using a wemos s2 mini on dev board but also compatible to esp8266(d1-mini)
+- Revise head mounting options for > 2 motors (idea-prototype beeing worked on)
 - Update unity guide for positioning and coordinates
-- Add wiring for battery voltage measurement(only on non-pcb setups)
+- Add wiring for battery voltage measurement
 - Mention that server connection indicator for hardware only is active when comms in both directions work
 - To compile the wifi credentials into the esp code the wifi.ini.template needs to be renamed to wifi.ini and the values filled out with the ssid and password
-- Python 3.12 should be used
 - Firewall might make issues if network access to python is denied (maybe add a firewall.bat?)
 - Document motor mounting ideas
 - Don't forget pcb BOM and pcb specific software stuff
+
+Tech stack:
+
+- Language: Python 3.12
+- GUI framework: QT6 via PyQt6
+- Hardware communication: OSC over UDP
+- Embedded firmware: Arduino-flavoured c++ (using PIO)
+
+This was a fork of [https://github.com/danielfvm/Patstrap](https://github.com/danielfvm/Patstrap) but now is in progress of beeing rewritten from ground up.
 
 ### Original patstrap Readme from here on for now until i get around to rewriting it
 
