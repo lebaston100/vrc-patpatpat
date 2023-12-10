@@ -113,9 +113,14 @@ class SignalLogHandler(logging.Handler):
         """
 
         try:
-            self.signal.newLogEntry.emit(self.format(record))
+            formatedText = self.format(record)
+            # text color red when WARN or above
+            if record.levelno > 20:
+                formatedText = f"<font color=\"Red\">{formatedText}</font>"
         except Exception:
             self.handleError(record)
+        else:
+            self.signal.newLogEntry.emit(formatedText)
 
     def changeLevel(self, level: str) -> None:
         """Change the level of logger
