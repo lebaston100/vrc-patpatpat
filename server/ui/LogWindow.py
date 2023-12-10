@@ -3,7 +3,8 @@ from modules import config
 from PyQt6.QtCore import pyqtSignal as Signal, Qt
 from PyQt6.QtGui import QCloseEvent
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QPlainTextEdit, QSizePolicy, QSpacerItem, QComboBox)
+                             QPushButton, QPlainTextEdit, QSizePolicy,
+                             QSpacerItem, QComboBox)
 from utils import LoggerClass, SignalLogHandler
 
 logger = LoggerClass.getSubLogger(__name__)
@@ -62,14 +63,9 @@ class LogWindow(QWidget):
 
         # spacer to push buttons to the right
         self.spacer1 = QSpacerItem(40, 20,
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+                                   QSizePolicy.Policy.Expanding,
+                                   QSizePolicy.Policy.Minimum)
         self.footerRowLayout.addItem(self.spacer1)
-
-        # the clear log button
-        self.pb_clearLog = QPushButton(self)
-        self.pb_clearLog.setObjectName("pb_clearLog")
-        self.pb_clearLog.setText("Clear Log")
-        self.footerRowLayout.addWidget(self.pb_clearLog)
 
         # the log level selection dropdown
         self.cb_logLevel = QComboBox(self)
@@ -82,6 +78,12 @@ class LogWindow(QWidget):
         self.cb_logLevel.setCurrentText(self._initialLogLevel)
         self.cb_logLevel.setObjectName("cb_logLevel")
         self.footerRowLayout.addWidget(self.cb_logLevel)
+
+        # the clear log button
+        self.pb_clearLog = QPushButton(self)
+        self.pb_clearLog.setObjectName("pb_clearLog")
+        self.pb_clearLog.setText("Clear Log")
+        self.footerRowLayout.addWidget(self.pb_clearLog)
 
         self.LogWindowWidgetLayout.addLayout(self.footerRowLayout)
 
