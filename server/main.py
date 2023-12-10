@@ -1,14 +1,15 @@
-import patpatpat
-from patpatpat import ConfigHandler, LoggerTestClass
+from ui import MainWindow
+from PyQt6.QtWidgets import QApplication
+import utils
+import sys
 
-logger = patpatpat.getRootLogger()
+logger = utils.LoggerClass.getRootLogger()
 
-logger.debug("debug from main")
-logger.info("info from main")
-logger.error("error from main")
+if __name__ == "__main__":
+    logger.debug("Started app")
+    app = QApplication(sys.argv)
 
-LoggerTestClass()
-
-config = ConfigHandler("test.conf")
-config.set("testkey", "testvalue")
-logger.info(config.get("testkey"))
+    window = MainWindow()
+    window.setFixedSize(800, 430)
+    window.show()
+    sys.exit(app.exec())

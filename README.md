@@ -1,6 +1,6 @@
 # vrc-patpatpat
 
-An open hardware and software project which tries to implement haptic head pat (but also more generic) feedback to the player in VRchat.
+An open hardware and software project which tries to implement spatial haptic head pat (but also more generic) feedback to the player in VRchat.
 
 ## This project is actively work in progress
  
