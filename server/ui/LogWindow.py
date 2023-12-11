@@ -22,6 +22,7 @@ class LogWindow(QWidget):
             logger (Logger): The Logger we want to listen to.
         """
 
+        logger.debug(f"Creating {__class__.__name__}")
         super().__init__()
         self._logWindowHandler = SignalLogHandler()
         self._initialLogLevel = initialLogLevel
@@ -35,10 +36,9 @@ class LogWindow(QWidget):
         """Initialize UI elements.
         """
 
-        logger.debug("Creating Log Window")
-        # the window and layouts
+        # the widget and it's layout
         self.setWindowTitle("Log Window")
-        self.setObjectName("LogWindowWidget")
+        self.setObjectName(__class__.__name__)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.resize(1380, 650)
         self.LogWindowWidgetLayout = QVBoxLayout(self)
@@ -100,5 +100,5 @@ class LogWindow(QWidget):
             event (QCloseEvent  |  None]): The qt event.
         """
 
-        logger.info(f"closeEvent in {__name__}")
+        logger.info(f"closeEvent in {__class__.__name__}")
         self._rootLogger.removeHandler(self._logWindowHandler)
