@@ -92,7 +92,7 @@ class LogWindow(QWidget):
         self.cb_logLevel.currentTextChanged.connect(
             self._logWindowHandler.changeLevel)
         self._logWindowHandler.signal.newLogEntry.connect(
-            self.te_logView.appendPlainText)
+            self.te_logView.appendHtml)
 
     # handle the close event for the log window
     def closeEvent(self, event: [QCloseEvent | None]) -> None:
