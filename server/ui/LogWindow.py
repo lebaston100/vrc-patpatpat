@@ -1,4 +1,4 @@
-from logging import _nameToLevel, Logger
+from logging import Logger
 from modules import config
 from PyQt6.QtCore import pyqtSignal as Signal, Qt
 from PyQt6.QtGui import QCloseEvent
@@ -69,11 +69,7 @@ class LogWindow(QWidget):
 
         # the log level selection dropdown
         self.cb_logLevel = QComboBox(self)
-        # little cheat using the logging internal dict to get
-        # all available logging levels
-        for level in _nameToLevel.keys():
-            if level in ("WARN", "NOTSET"):
-                continue
+        for level in LoggerClass.getLoggingLevelStrings():
             self.cb_logLevel.addItem(level)
         self.cb_logLevel.setCurrentText(self._initialLogLevel)
         self.cb_logLevel.setObjectName("cb_logLevel")

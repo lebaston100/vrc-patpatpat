@@ -1,5 +1,7 @@
 import logging
 from logging import LogRecord
+from logging import _levelToName
+from collections.abc import Iterator
 import logging.handlers
 from PyQt6.QtCore import QObject, pyqtSignal as QSignal
 
@@ -63,6 +65,19 @@ class LoggerClass():
         logger = logging.getLogger("patpatpat").getChild(name)
         logger.setLevel(logging.getLevelName(level))
         return logger
+
+    @staticmethod
+    def getLoggingLevelStrings() -> Iterator[str]:
+        """Return all available logging level as a generator.
+
+        Yields:
+            Iterator[str]: The log level string capitalized.
+        """
+
+        for level in _levelToName.values():
+            if level == "NOTSET":
+                continue
+            yield level
 
 
 class LogWindowSignaler(QObject):
