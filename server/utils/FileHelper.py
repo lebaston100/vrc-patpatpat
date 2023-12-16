@@ -61,4 +61,4 @@ class FileHelper:
 
 
 if __name__ == "__main__":
-    logger.error("There is no point running this file directly")
+    print("There is no point running this file directly")

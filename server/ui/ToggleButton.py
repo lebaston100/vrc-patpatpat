@@ -9,6 +9,7 @@ Typical usage example:
 from PyQt6.QtWidgets import QPushButton
 
 from utils import LoggerClass
+
 logger = LoggerClass.getSubLogger(__name__)
 
 
@@ -17,7 +18,7 @@ class ToggleButton(QPushButton):
     changes it's text depending on the toggle state.
     """
 
-    def __init__(self, stateText: tuple, prefixText: [str | None] = None,
+    def __init__(self, stateText: tuple, prefixText: str | None = None,
                  *args, **kwargs) -> None:
         """Initialize the toggle button.
 
@@ -40,6 +41,13 @@ class ToggleButton(QPushButton):
 
         Args:
             state (bool): The new state that the button is in.
+
+        Returns:
+            None
         """
 
         self.setText(self._prefixText + self._stateText[state])
+
+
+if __name__ == "__main__":
+    print("There is no point running this file directly")

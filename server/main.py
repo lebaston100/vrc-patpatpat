@@ -1,7 +1,9 @@
-from ui import MainWindow
-from PyQt6.QtWidgets import QApplication
-import utils
 import sys
+
+from PyQt6.QtWidgets import QApplication
+
+import utils
+from ui import MainWindow
 
 logger = utils.LoggerClass.getRootLogger()
 

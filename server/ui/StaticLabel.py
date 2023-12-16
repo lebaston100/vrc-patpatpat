@@ -17,7 +17,7 @@ class StaticLabel(QLabel):
     """A simple expansion of QLabel with a static prefix text.
     """
 
-    def __init__(self, prefixText: str, text: [str | None] = None, *args, **kwargs) -> None:
+    def __init__(self, prefixText: str, text: str | None = None, *args, **kwargs) -> None:
         """Initialize the label.
 
         Args:
@@ -33,6 +33,13 @@ class StaticLabel(QLabel):
 
         Args:
             text (str): The new text to set the label to
+
+        Returns:
+            None
         """
 
         return super().setText(self._prefixText + text)
+
+
+if __name__ == "__main__":
+    print("There is no point running this file directly")

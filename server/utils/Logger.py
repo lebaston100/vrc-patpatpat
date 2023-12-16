@@ -148,4 +148,4 @@ class SignalLogHandler(logging.Handler):
 
 
 if __name__ == "__main__":
-    logging.error("There is no point running this file directly")
+    print("There is no point running this file directly")
