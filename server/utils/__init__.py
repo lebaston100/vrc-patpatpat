@@ -8,5 +8,5 @@ Exposes:
 """
 
 from .Logger import LoggerClass, SignalLogHandler
-from .ConfigHandler import ConfigHandler
 from .FileHelper import FileHelper
+from .PathReader import PathReader

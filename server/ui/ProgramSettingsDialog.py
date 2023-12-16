@@ -1,18 +1,20 @@
 """The main application settings window
 """
 
+from typing import Any, Optional
 from PyQt6.QtWidgets import (QComboBox, QDialogButtonBox, QWidget,
                              QFormLayout, QLabel, QLineEdit, QSizePolicy,
                              QSpacerItem, QSpinBox)
 from PyQt6.QtCore import pyqtSignal as Signal, Qt
 from PyQt6.QtGui import QCloseEvent
-from modules import config
+from ui.uiHelpers import handleCloseEvent
+from modules import config, OptionAdapter
 from utils import LoggerClass
 
 logger = LoggerClass.getSubLogger(__name__)
 
 
-class ProgramSettingsDialog(QWidget):
+class ProgramSettingsDialog(QWidget, OptionAdapter):
     def __init__(self) -> None:
         """Initialize programm settings window
         """
@@ -21,6 +23,10 @@ class ProgramSettingsDialog(QWidget):
         super().__init__()
 
         self.setupUi()
+        self._configKey = "program"
+
+        # after UI is setup load options into ui elements
+        self.loadOptsToGui(config.get(self._configKey))
 
     def setupUi(self):
         """Initialize UI elements.
@@ -42,6 +48,7 @@ class ProgramSettingsDialog(QWidget):
         self.le_mqttBrokerIp = QLineEdit(self)
         self.le_mqttBrokerIp.setObjectName("le_mqttBrokerIp")
         self.le_mqttBrokerIp.setInputMask("900.900.900.900")
+        self.addOpt("mqttBrokerIp", self.le_mqttBrokerIp)
 
         self.selfLayout.addRow(self.lb_mqttBrokerIp, self.le_mqttBrokerIp)
 
@@ -53,6 +60,8 @@ class ProgramSettingsDialog(QWidget):
         self.sb_vrcOscRxPort = QSpinBox(self)
         self.sb_vrcOscRxPort.setObjectName("sb_vrcOscRxPort")
         self.sb_vrcOscRxPort.setMaximum(65535)
+        self.sb_vrcOscRxPort.value
+        self.addOpt("vrcOscPort", self.sb_vrcOscRxPort, dataType=int)
 
         self.selfLayout.addRow(self.lb_vrcOscRxPort, self.sb_vrcOscRxPort)
 
@@ -65,7 +74,7 @@ class ProgramSettingsDialog(QWidget):
         self.sb_tps.setObjectName("sb_tps")
         self.sb_tps.setMinimum(1)
         self.sb_tps.setMaximum(100)
-        self.sb_tps.setValue(40)
+        self.addOpt("mainTps", self.sb_tps, dataType=int)
 
         self.selfLayout.addRow(self.lb_tps, self.sb_tps)
 
@@ -78,6 +87,10 @@ class ProgramSettingsDialog(QWidget):
         for level in LoggerClass.getLoggingLevelStrings():
             self.cb_logLevel.addItem(level)
         self.cb_logLevel.setObjectName("cb_logLevel")
+        self.addOpt("logLevel", self.cb_logLevel)
+
+        self.addOpt("testarray.0", self.sb_tps, dataType=int)
+        self.addOpt("testarray.1", self.sb_tps, dataType=int)
 
         self.selfLayout.addRow(self.lb_debugLevel, self.cb_logLevel)
 
@@ -99,13 +112,28 @@ class ProgramSettingsDialog(QWidget):
 
     def handleSaveButton(self) -> None:
         logger.debug("Save button pressed")
+        updatedSettings, changedPaths = self.getOptsFromGui(
+            config.get(self._configKey))
+        config.set(self._configKey, updatedSettings, changedPaths)
+        self.close()
 
     # handle the close event for the log window
-    def closeEvent(self, event: [QCloseEvent | None]) -> None:
+    def closeEvent(self, event: QCloseEvent) -> None:
         """Handle window close event cleanly.
 
         Args:
-            event (QCloseEvent  |  None]): The qt event.
+            event QCloseEvent): The QCloseEvent.
         """
 
-        logger.info(f"closeEvent in {__class__.__name__}")
+        logger.debug(f"closeEvent in {__class__.__name__}")
+
+        # this might be removed later if it blocks processing data
+        # check and warn for unsaved changes
+        updatedSettings, changedPaths = self.getOptsFromGui(
+            config.get(self._configKey))
+        if changedPaths:
+            handleCloseEvent(self, event)
+
+
+if __name__ == "__main__":
+    print("There is no point running this file directly")

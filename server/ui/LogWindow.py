@@ -1,10 +1,12 @@
 from logging import Logger
-from modules import config
-from PyQt6.QtCore import pyqtSignal as Signal, Qt
+
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCloseEvent
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
-                             QPushButton, QPlainTextEdit, QSizePolicy,
-                             QSpacerItem, QComboBox)
+from PyQt6.QtWidgets import (QComboBox, QHBoxLayout, QPlainTextEdit,
+                             QPushButton, QSizePolicy, QSpacerItem,
+                             QVBoxLayout, QWidget)
+
+from modules import config
 from utils import LoggerClass, SignalLogHandler
 
 logger = LoggerClass.getSubLogger(__name__)
@@ -91,14 +93,20 @@ class LogWindow(QWidget):
             self.te_logView.appendHtml)
 
     # handle the close event for the log window
-    def closeEvent(self, event: [QCloseEvent | None]) -> None:
+    def closeEvent(self, event: QCloseEvent) -> None:
         """Handle window close event cleanly.
 
         Remove log handler from logger.
 
         Args:
             event (QCloseEvent  |  None]): The qt event.
+
+        Returns:
+            None
         """
 
-        logger.info(f"closeEvent in {__class__.__name__}")
+        logger.debug(f"closeEvent in {__class__.__name__}")
         self._rootLogger.removeHandler(self._logWindowHandler)
+
+if __name__ == "__main__":
+    logger.error("There is no point running this file directly")
