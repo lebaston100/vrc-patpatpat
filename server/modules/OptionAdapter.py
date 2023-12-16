@@ -7,10 +7,9 @@ from utils import LoggerClass, PathReader
 logger = LoggerClass.getSubLogger(__name__)
 
 # TODO:
-# add more get/set methods for ui
 # add more error handling
 
-# TODO: Some day once i undersand typing figure this all out
+# TODO: Some day once i understand typing figure this all out
 # type allowedWidgetTypes = QLineEdit | QSpinBox | QComboBox
 # type validDataTypes = Type[str] | Type[int] | Type[float] | Type[bool] | Type[list[Any]
 #   ] | Type[dict[Any, Any]]
@@ -51,7 +50,6 @@ class OptionAdapter():
         """
 
         self._uiElems.update({path: (uiObject, dataType)})
-        # logger.debug(self._uiElems)
 
     def setUiOpt(self, element, value) -> None:
         """
@@ -120,7 +118,7 @@ class OptionAdapter():
             case _:
                 logger.warn(
                     "tried to get a value for an unknown ui element type")
-        if method is not None:
+        if method:
             return dataType(method())
 
     def loadOptsToGui(self, options: dict) -> None:

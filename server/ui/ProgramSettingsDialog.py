@@ -1,14 +1,15 @@
 """The main application settings window
 """
 
-from typing import Any, Optional
-from PyQt6.QtWidgets import (QComboBox, QDialogButtonBox, QWidget,
-                             QFormLayout, QLabel, QLineEdit, QSizePolicy,
-                             QSpacerItem, QSpinBox)
-from PyQt6.QtCore import pyqtSignal as Signal, Qt
+from PyQt6.QtCore import Qt
+from PyQt6.QtCore import pyqtSignal as Signal
 from PyQt6.QtGui import QCloseEvent
+from PyQt6.QtWidgets import (QComboBox, QDialogButtonBox, QFormLayout, QLabel,
+                             QLineEdit, QSizePolicy, QSpacerItem, QSpinBox,
+                             QWidget)
+
+from modules import OptionAdapter, config
 from ui.uiHelpers import handleCloseEvent
-from modules import config, OptionAdapter
 from utils import LoggerClass
 
 logger = LoggerClass.getSubLogger(__name__)
@@ -60,7 +61,6 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
         self.sb_vrcOscRxPort = QSpinBox(self)
         self.sb_vrcOscRxPort.setObjectName("sb_vrcOscRxPort")
         self.sb_vrcOscRxPort.setMaximum(65535)
-        self.sb_vrcOscRxPort.value
         self.addOpt("vrcOscPort", self.sb_vrcOscRxPort, dataType=int)
 
         self.selfLayout.addRow(self.lb_vrcOscRxPort, self.sb_vrcOscRxPort)
