@@ -20,7 +20,7 @@ class MainWindow(QMainWindow):
         self.testButton.setText("open")
 
         self.setCentralWidget(self.testButton)
-        self.testButton.clicked.connect(self.showProgramSettingsWindow)
+        self.testButton.clicked.connect(self.showTestWindow)
 
         config.configRootKeyHasChanged.connect(self.configChanged)
         config.configSubKeyHasChanged.connect(self.configChanged)
@@ -30,9 +30,14 @@ class MainWindow(QMainWindow):
     def configChanged(self, key):
         logger.debug(f"config changed for key '{key}'")
 
-    def showProgramSettingsWindow(self):
-        self.programSettingsDialog = ui.ProgramSettingsDialog()
-        self.programSettingsDialog.show()
+    def showTestWindow(self):
+        self.testWindow = ui.EspSettingsDialog()
+        self.testWindow.show()
+        self.testWindow.destroyed.connect(
+            self.programSettingsWindowClosed)
+
+    def programSettingsWindowClosed(self):
+        self.testWindow = None
 
     # handle the close event for the log window
     def closeEvent(self, event: QCloseEvent) -> None:
