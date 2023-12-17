@@ -16,20 +16,20 @@ logger = LoggerClass.getSubLogger(__name__)
 
 
 class ProgramSettingsDialog(QWidget, OptionAdapter):
-    def __init__(self) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         """Initialize programm settings window
         """
 
         logger.debug(f"Creating {__class__.__name__}")
-        super().__init__()
+        super().__init__(*args, **kwargs)
 
-        self.setupUi()
+        self.buildUi()
         self._configKey = "program"
 
         # after UI is setup load options into ui elements
         self.loadOptsToGui(config.get(self._configKey))
 
-    def setupUi(self):
+    def buildUi(self):
         """Initialize UI elements.
         """
 

@@ -37,7 +37,7 @@ class LoggerClass():
         cmdLogHandler = logging.StreamHandler()
         cmdLogHandler.setLevel(level)
         cmdLogHandler.setFormatter(logging.Formatter(
-            "[{relativeCreated:.3f}][{levelname:<5}][{name:<26}] {message}",
+            "[{relativeCreated:.3f}][{levelname:<5}][{name:<30}] {message}",
             style="{"))
 
         # setup main logger
@@ -117,7 +117,7 @@ class SignalLogHandler(logging.Handler):
         super().__init__(level=level)
         self.signal = LogWindowSignaler()
         self.setFormatter(logging.Formatter(
-            "[{asctime}.{msecs:.0f}] [{levelname:<8}] {name}: {message}",
+            "[{asctime}.{msecs:.0f}] [{levelname:<8}] {name:<30}: {message}",
             datefmt="%Y-%m-%d %H:%M:%S", style="{"))
 
     def emit(self, record: LogRecord) -> None:

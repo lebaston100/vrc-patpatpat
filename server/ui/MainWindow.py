@@ -13,14 +13,14 @@ logger = LoggerClass.getSubLogger(__name__)
 
 
 class MainWindow(QMainWindow):
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
         self.testButton = QPushButton()
         self.testButton.setText("open")
 
         self.setCentralWidget(self.testButton)
-        self.testButton.clicked.connect(self.showLogWindow)
+        self.testButton.clicked.connect(self.showProgramSettingsWindow)
 
         config.configRootKeyHasChanged.connect(self.configChanged)
         config.configSubKeyHasChanged.connect(self.configChanged)
@@ -30,7 +30,7 @@ class MainWindow(QMainWindow):
     def configChanged(self, key):
         logger.debug(f"config changed for key '{key}'")
 
-    def showLogWindow(self):
+    def showProgramSettingsWindow(self):
         self.programSettingsDialog = ui.ProgramSettingsDialog()
         self.programSettingsDialog.show()
 

@@ -17,7 +17,8 @@ class LogWindow(QWidget):
     events at a configurable logging level.
     """
 
-    def __init__(self, logger: Logger, initialLogLevel: str = "DEBUG") -> None:
+    def __init__(self, logger: Logger, initialLogLevel: str = "DEBUG",
+                 *args, **kwargs) -> None:
         """Initialize window that display the logger output.
 
         Args:
@@ -25,16 +26,16 @@ class LogWindow(QWidget):
         """
 
         logger.debug(f"Creating {__class__.__name__}")
-        super().__init__()
+        super().__init__(*args, **kwargs)
         self._logWindowHandler = SignalLogHandler()
         self._initialLogLevel = initialLogLevel
         self._logWindowHandler.changeLevel(self._initialLogLevel)
         self._rootLogger = logger
         # only attach the handler while the window is alive
         self._rootLogger.addHandler(self._logWindowHandler)
-        self.setupUi()
+        self.buildUi()
 
-    def setupUi(self) -> None:
+    def buildUi(self) -> None:
         """Initialize UI elements.
         """
 
@@ -107,6 +108,7 @@ class LogWindow(QWidget):
 
         logger.debug(f"closeEvent in {__class__.__name__}")
         self._rootLogger.removeHandler(self._logWindowHandler)
+
 
 if __name__ == "__main__":
     logger.error("There is no point running this file directly")

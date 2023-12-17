@@ -33,17 +33,17 @@ class OptionAdapter():
                 self.loadOptsToGui({'path1': 'text', 'path2': 1})
     """
 
-    def __init__(self) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         self._uiElems = {}
 
-    def addOpt(self, path: str, uiObject,
+    def addOpt(self, path: str, uiObject: object,
                dataType: validValueTypes = str) -> None:
         """Adds an UI element and it's settings path to the list of
         UI elements
 
         Args:
             path (str): The path (name) of the option.
-            uiObject (_type_): The UI object
+            uiObject (object): The UI object
                 (probably some QWidget subclass).
             dataType (validValueTypes, optional): The data type to cast
                 the option to. Defaults to str.
@@ -51,7 +51,7 @@ class OptionAdapter():
 
         self._uiElems.update({path: (uiObject, dataType)})
 
-    def setUiOpt(self, element, value) -> None:
+    def setUiOpt(self, element: object, value: Any) -> None:
         """
         Sets the value of a UI element based on its type.
 
@@ -59,8 +59,7 @@ class OptionAdapter():
         If the element type is not supported, it logs an error message.
 
         Args:
-            element (Union[QLineEdit, QSpinBox, QComboBox]): The UI
-                element whose value is to be set.
+            element (object): The UI element whose value is to be set.
             value (Any): The value to be set for the UI element.
 
         Returns:
@@ -84,7 +83,7 @@ class OptionAdapter():
         if method:
             method(value)
 
-    def getUiOpt(self, element,
+    def getUiOpt(self, element: object,
                  dataType=str) -> Any:
         """
         Retrieves the value of a UI element based on its type.
@@ -94,9 +93,8 @@ class OptionAdapter():
         If the element type is not supported, it logs a warning message.
 
         Args:
-            element (Union[QLineEdit, QSpinBox, QComboBox,
-                QRadioButton]): The UI
-                    element whose value is to be retrieved.
+            element (object): The UI element whose values
+                to be retrieved.
             dataType (Type, optional): The expected return type of
                 the value. Defaults to str.
 

@@ -30,7 +30,7 @@ class GlobalConfig(QObject):
     configRootKeyHasChanged = QSignal(str)
     configSubKeyHasChanged = QSignal(str)
 
-    def __init__(self, file: str) -> None:
+    def __init__(self, file: str, *args, **kwargs) -> None:
         """Initialize config handler.
 
         Args:
@@ -40,7 +40,7 @@ class GlobalConfig(QObject):
             None
 
         Raises:
-            E: If reading the config file failed.
+            Exception: If reading the config file failed.
         """
 
         super().__init__()

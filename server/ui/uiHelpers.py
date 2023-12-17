@@ -11,11 +11,11 @@ from PyQt6.QtWidgets import QMessageBox, QWidget
 
 
 def handleCloseEvent(parent: QWidget | None, event: QCloseEvent) -> bool:
-    """Asks the use if they want to close the settings with without saving.
+    """Asks the user if they want to close the settings without saving.
 
     Args:
         parent (QWidget | None): The parent QWidget.
-        event (QCloseEvent): The QCloseEvent to hande.
+        event (QCloseEvent): The QCloseEvent to handle.
 
     Returns:
         bool: If event was accepted or not.

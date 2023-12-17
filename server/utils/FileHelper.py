@@ -10,7 +10,7 @@ class FileHelper:
     """A simple helper class to read and save json from files.
     """
 
-    def __init__(self, file: Path) -> None:
+    def __init__(self, file: Path, *args, **kwargs) -> None:
         """Initialize the file helper class.
 
         Args:

@@ -8,7 +8,7 @@ from ui import MainWindow
 logger = utils.LoggerClass.getRootLogger()
 
 if __name__ == "__main__":
-    logger.debug("Started app")
+    logger.info("Starting vrc-patpatpat V0.1")
     app = QApplication(sys.argv)
 
     window = MainWindow()

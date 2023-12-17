@@ -1,5 +1,3 @@
-"""Only very basic tests for now"""
-
 import pytest
 
 
@@ -61,7 +59,8 @@ class TestSignalLogHandler:
         handler = SignalLogHandler()
         logger.addHandler(handler)
 
-        # Test that the handler can be attached to a logger and properly emits the newLogEntry signal
+        # Test that the handler can be attached to a logger and properly
+        # emits the newLogEntry signal
         def slot(log_entry):
             now = datetime.now()
             current_time = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -73,15 +72,18 @@ class TestSignalLogHandler:
         # Log a message
         logger.debug("test message")
 
-        # Test that the format of the emitted string matches the specified formatter
+        # Test that the format of the emitted string matches
+        # the specified formatter
         record = LogRecord('test_logger', logging.DEBUG, '', 0,
                            'test message', args=(), exc_info=None)
         now = datetime.now()
         current_time = now.strftime("%Y-%m-%d %H:%M:%S")
         current_ms = now.strftime("%f")[:3].zfill(3)
-        assert handler.format(record) == (f"[{current_time}.{current_ms}] [DEBUG   ] "
-                                          "test_logger: test message")
+        assert handler.format(record) == (f"[{current_time}.{current_ms}] [DEB"
+                                          "UG   ] test_logger: test message")
 
-        # Test that the level can be changed with the changeLevel function and that change is properly reflected in the object's state
+        # Test that the level can be changed with the changeLevel
+        # function and that change is properly reflected in
+        # the object's state
         handler.changeLevel('INFO')
         assert handler.level == logging.INFO
