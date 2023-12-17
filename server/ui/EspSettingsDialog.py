@@ -4,7 +4,7 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import pyqtSignal as Signal
 from PyQt6.QtGui import QCloseEvent
-from PyQt6.QtWidgets import (QDialogButtonBox, QFormLayout, QLabel, QLineEdit,
+from PyQt6.QtWidgets import (QDialogButtonBox, QFormLayout, QLineEdit,
                              QSizePolicy, QSpacerItem, QSpinBox, QWidget)
 
 from modules import OptionAdapter, config
@@ -42,7 +42,7 @@ class EspSettingsDialog(QWidget, OptionAdapter):
         self.setWindowTitle("ESP Settings")
         self.setObjectName(__class__.__name__)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-        self.resize(396, 195)
+        self.resize(400, 200)
         self.selfLayout = QFormLayout(self)
         self.selfLayout.setObjectName("selfLayout")
 
