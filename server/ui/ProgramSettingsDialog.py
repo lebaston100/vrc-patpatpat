@@ -42,47 +42,31 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
         self.selfLayout.setObjectName("selfLayout")
 
         # mqtt broker ip
-        self.lb_mqttBrokerIp = QLabel(self)
-        self.lb_mqttBrokerIp.setObjectName("lb_mqttBrokerIp")
-        self.lb_mqttBrokerIp.setText("MQTT Broker IP:")
-
         self.le_mqttBrokerIp = QLineEdit(self)
         self.le_mqttBrokerIp.setObjectName("le_mqttBrokerIp")
         self.le_mqttBrokerIp.setInputMask("900.900.900.900")
         self.addOpt("mqttBrokerIp", self.le_mqttBrokerIp)
 
-        self.selfLayout.addRow(self.lb_mqttBrokerIp, self.le_mqttBrokerIp)
+        self.selfLayout.addRow("MQTT Broker IP:", self.le_mqttBrokerIp)
 
         # vrchat osc port
-        self.lb_vrcOscRxPort = QLabel(self)
-        self.lb_vrcOscRxPort.setObjectName("lb_vrcOscRxPort")
-        self.lb_vrcOscRxPort.setText("VRC OSC Rx Port:")
-
         self.sb_vrcOscRxPort = QSpinBox(self)
         self.sb_vrcOscRxPort.setObjectName("sb_vrcOscRxPort")
         self.sb_vrcOscRxPort.setMaximum(65535)
         self.addOpt("vrcOscPort", self.sb_vrcOscRxPort, dataType=int)
 
-        self.selfLayout.addRow(self.lb_vrcOscRxPort, self.sb_vrcOscRxPort)
+        self.selfLayout.addRow("VRC OSC Rx Port:", self.sb_vrcOscRxPort)
 
         # main tps
-        self.lb_tps = QLabel(self)
-        self.lb_tps.setObjectName("lb_tps")
-        self.lb_tps.setText("TPS:")
-
         self.sb_tps = QSpinBox(self)
         self.sb_tps.setObjectName("sb_tps")
         self.sb_tps.setMinimum(1)
         self.sb_tps.setMaximum(100)
         self.addOpt("mainTps", self.sb_tps, dataType=int)
 
-        self.selfLayout.addRow(self.lb_tps, self.sb_tps)
+        self.selfLayout.addRow("TPS:", self.sb_tps)
 
         # log level
-        self.lb_debugLevel = QLabel(self)
-        self.lb_debugLevel.setObjectName("lb_debugLevel")
-        self.lb_debugLevel.setText("Log Level:")
-
         self.cb_logLevel = QComboBox(self)
         for level in LoggerClass.getLoggingLevelStrings():
             self.cb_logLevel.addItem(level)
@@ -92,7 +76,7 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
         self.addOpt("testarray.0", self.sb_tps, dataType=int)
         self.addOpt("testarray.1", self.sb_tps, dataType=int)
 
-        self.selfLayout.addRow(self.lb_debugLevel, self.cb_logLevel)
+        self.selfLayout.addRow("Log Level:", self.cb_logLevel)
 
         # spacer
         self.spacer1 = QSpacerItem(
