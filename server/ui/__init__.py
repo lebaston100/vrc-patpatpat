@@ -4,5 +4,6 @@ from .StaticLabel import StaticLabel
 from .MainWindow import MainWindow
 from .ProgramSettingsDialog import ProgramSettingsDialog
 from .EspSettingsDialog import EspSettingsDialog
+from .ContactGroupSettings import ContactGroupSettings
 
 from .uiHelpers import handleCloseEvent
