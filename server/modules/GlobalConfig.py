@@ -13,7 +13,7 @@ from typing import Any, Optional
 from PyQt6.QtCore import QMutex, QObject
 from PyQt6.QtCore import pyqtSignal as QSignal
 
-from utils import FileHelper, LoggerClass
+from utils import FileHelper, LoggerClass, PathReader
 
 logger = LoggerClass.getSubLogger(__name__)
 
@@ -72,13 +72,13 @@ class GlobalConfig(QObject):
             self._flushDataToFile()
         self._configOptions = self._fh.read()
 
-    def set(self, key: str,
+    def set(self, path: str,
             newVal: str | list | dict | int | float,
             changedPaths: Optional[list[str]]) -> bool:
         """Set a config option to a new value and trigger a flush.
 
         Args:
-            key (str): The key to write.
+            path (str): The key to write.
             newVal ([str | list | dict | int | float]): The value to
                 write for the fiven key.
 
@@ -86,23 +86,28 @@ class GlobalConfig(QObject):
             bool: True if write was successful otherwise False.
         """
 
-        self.mutex.lock()
-        # self._configOptions[key] = newVal
-        self._configOptions.update({key: newVal})
-        self.mutex.unlock()
-        logger.debug(f"changed <{key}> to <{newVal}>")
-        self.configRootKeyHasChanged.emit(key)
-        if changedPaths:
-            for path in changedPaths:
-                self.configSubKeyHasChanged.emit(f"{key}.{path}")
-        return self._flushDataToFile()
+        try:
+            self.mutex.lock()
+            self._configOptions.update(PathReader.setOption(
+                self._configOptions, path, newVal))
+            self.mutex.unlock()  # This could in theory never be unlocked!
+            logger.debug(f"changed <{path}> to <{newVal}>")
+            self.configRootKeyHasChanged.emit(path)
+            if changedPaths:
+                for opt in changedPaths:
+                    self.configSubKeyHasChanged.emit(f"{path}.{opt}")
+        except Exception as E:
+            logger.exception(E)
+            return False
+        else:
+            return self._flushDataToFile()
 
-    def get(self, key: str,
+    def get(self, path: str,
             fallback: str | None = None) -> Any:
         """Return a config option by the given key.
 
         Args:
-            key (str): The key to retrieve.
+            path (str): The path to traverse.
             fallback (Optional[Union[str, None]]): The value to return.
                 if a config option with that name does not exist.
                 Defaults to None.
@@ -111,20 +116,45 @@ class GlobalConfig(QObject):
             Any: The requested data or the (default) fallback.
         """
 
-        return self._configOptions.get(key, fallback)
+        try:
+            option = PathReader.getOption(self._configOptions, path)
+        except:
+            return fallback
+        else:
+            return option
 
-    def has(self, key: str) -> bool:
+    def has(self, path: str) -> bool:
         """Check if config contains a given key.
 
         Args:
-            key (str): The key to check for.
+            path (str): The key to check for.
 
         Returns:
             bool: True if a config option for the key exists,
                 otherwise False
         """
 
-        return bool(key in self._configOptions)
+        try:
+            PathReader.getOption(self._configOptions, path)
+        except:
+            return False
+        else:
+            return True
+
+    def delete(self, path: str) -> None:
+        """Deletes something from inside a (nested) dict.
+
+        This is an in-place operation just like del a["b"]!
+
+        Args:
+            path (str): The path to the option to delete written in
+                dot notation.
+
+        Returns:
+            None
+        """
+
+        PathReader.delOption(self._configOptions, path)
 
     def _flushDataToFile(self) -> bool:
         """Write config options from memory to file.
