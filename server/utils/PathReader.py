@@ -45,7 +45,7 @@ class PathReader:
 
         Args:
             inputDict (dict): The dict to get the value from.
-            path (str): The path to the option written in js dot notation.
+            path (str): The path to the option written in dot notation.
 
         Raises:
             KeyError: When specified option is not found.
@@ -70,14 +70,15 @@ class PathReader:
 
         Args:
             inputDict (dict): The dict to modify.
-            path (str): The path to the option written in js dot notation.
+            path (str): The path to the option written in dot notation.
             nv (validValueTypes): The new value.
 
         Raises:
             KeyError: When specified option is not found.
 
         Returns:
-            dict: A new copy of the input dict but with the updated value.
+            dict: A new copy of the input dict but with the updated
+                value.
         """
 
         try:
@@ -92,14 +93,36 @@ class PathReader:
         else:
             return workingDict
 
+    @staticmethod
+    def delOption(inputDict: dict, path: str) -> None:
+        """Deletes something from inside a (nested) dict.
+
+        Args:
+            inputDict (dict): The dict to modify.
+            path (str): The path to the option to delete written in
+                dot notation.
+
+        Returns:
+            None
+        """
+
+        try:
+            # convert str to ints for list indices
+            keys = map(lambda k: int(k) if k.isdigit() else k, path.split("."))
+            # run recursive function over dict
+            _recurseDelete(inputDict, list(keys))
+        except:
+            pass
+        return
+
 
 def _recurse(d: dict, p: list, newValue: validValueTypes) -> None:
     """Recursive function to navigate through the dictionary.
 
     Args:
-        d (dict): The dict to go though
-        p (list): The path to traverse
-        newValue (validValueTypes): The new value to set the option to
+        d (dict): The dict to go though.
+        p (list): The path to traverse.
+        newValue (validValueTypes): The new value to set the option to.
     """
 
     key = p.pop(0)
@@ -107,6 +130,21 @@ def _recurse(d: dict, p: list, newValue: validValueTypes) -> None:
         _recurse(d[key], p, newValue)
     else:
         d[key] = newValue
+
+
+def _recurseDelete(d: dict, p: list) -> None:
+    """Recursive function to delete a key from a dict.
+
+    Args:
+        d (dict): The dict to go though.
+        p (list): The path to traverse.
+    """
+
+    key = p.pop(0)
+    if p:
+        _recurseDelete(d[key], p)
+    else:
+        del d[key]
 
 
 if __name__ == "__main__":
