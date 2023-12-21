@@ -18,22 +18,21 @@ logger = LoggerClass.getSubLogger(__name__)
 
 
 class ContactGroupSettings(QWidget, OptionAdapter):
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, configKey: str, *args, **kwargs) -> None:
         """Initialize contact settings window
         """
 
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
 
+        self._configKey = "groups.group" + configKey
+        logger.debug(self._configKey)
+
         self.buildUi()
-        self._configKey = "TBD"
 
         # TODO: There are a lot of ui elements in here
         # also special ones we need a custom way in the ui reader/writer
         # to write and read from views.
-
-        # after UI is setup load options into ui elements
-        # self.loadOptsToGui(config.get(self._configKey))
 
     def buildUi(self):
         """Initialize UI elements.
@@ -53,7 +52,7 @@ class ContactGroupSettings(QWidget, OptionAdapter):
         self.mainTabWidget.setObjectName("mainTabWidget")
 
         # add all 4 tabs to the tab widget
-        self.tab_general = TabGeneral()
+        self.tab_general = TabGeneral(self._configKey)
         self.mainTabWidget.addTab(self.tab_general, "General")
 
         self.tab_motors = TabMotors()
@@ -80,10 +79,12 @@ class ContactGroupSettings(QWidget, OptionAdapter):
         self.selfLayout.addWidget(self.bt_saveCancelButtons)
 
     def handleSaveButton(self) -> None:
-        logger.debug("Save button pressed")
-        updatedSettings, changedPaths = self.getOptsFromGui(
-            config.get(self._configKey))
-        config.set(self._configKey, updatedSettings, changedPaths)
+        """Save all options when save button was pressed
+        """
+
+        logger.debug(f"handleSaveButton in {__class__.__name__}")
+        # TODO: Save other tabs too
+        self.tab_general.saveOptions()
         self.close()
 
     # handle the close event for the log window
@@ -98,21 +99,24 @@ class ContactGroupSettings(QWidget, OptionAdapter):
 
         # this might be removed later if it blocks processing data
         # check and warn for unsaved changes
-        updatedSettings, changedPaths = self.getOptsFromGui(
-            config.get(self._configKey))
-        if changedPaths:
+        # TODO: Check other tabs too
+        if self.tab_general.hasUnsavedOptions():
             handleCloseEvent(self, event)
 
 
-class TabGeneral(QWidget):
-    def __init__(self, *args, **kwargs) -> None:
+class TabGeneral(QWidget, OptionAdapter):
+    def __init__(self, configKey: str, *args, **kwargs) -> None:
         """Create the "general" tab with it's content
         """
 
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
 
+        self._configKey = configKey
+        self._configOptions = config.get(self._configKey)
         self.buildUi()
+        # after UI is setup load options into ui elements
+        self.loadOptsToGui(self._configOptions)
 
     def buildUi(self):
         """Initialize UI elements.
@@ -126,8 +130,28 @@ class TabGeneral(QWidget):
         self.le_groupName = QLineEdit(self)
         self.le_groupName.setObjectName("le_groupName")
         self.le_groupName.setMaxLength(35)
+        self.addOpt("name", self.le_groupName)
 
         self.selfLayout.addRow("Group Name:", self.le_groupName)
+
+    def hasUnsavedOptions(self) -> bool:
+        """Check if this tab has unsaved options.
+
+        Returns:
+            bool: True if there are modified options otherwise False.
+        """
+
+        _, changedPaths = self.getOptsFromGui(self._configOptions)
+        return bool(changedPaths)
+
+    def saveOptions(self) -> None:
+        """Save the options from this tab.
+        """
+
+        logger.debug(f"saveOptions in {__class__.__name__}")
+        self._configOptions, changedPaths = self.getOptsFromGui(
+            self._configOptions)
+        config.set(self._configKey, self._configOptions, changedPaths)
 
 
 class TabMotors(QWidget):
@@ -283,9 +307,9 @@ class TabSolver(QWidget):
 
         self.selfLayout.addRow("Solver Type:", self.cb_solverType)
 
-        # assemble the solvers settings here, either as it's own class
-        # or just a function. i like class more, maybe add a line below
-        # on
+        # assemble the solvers settings here, always show all options
+        # just hide the ones we don't need
+        # add ui elements to mapping object with key=type and list of opts
 
         # spacer
         self.spacer1 = QSpacerItem(
