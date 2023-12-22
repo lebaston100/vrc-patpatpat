@@ -19,16 +19,18 @@ logger = LoggerClass.getSubLogger(__name__)
 
 
 class GlobalConfig(QObject):
-    """A globaly exposed config object to share program configuration
+    """A globally exposed config object to share program configuration
 
     Signals:
-        configHasChanged(key: str): Emited when a config
-            option was updated
+        configPathHasChanged(key: str): Emitted when a config
+            option was updated.
+        configPathWasDeleted(key: str): Emitted when a config
+            option was deleted.
 
     """
 
-    configRootKeyHasChanged = QSignal(str)
-    configSubKeyHasChanged = QSignal(str)
+    configPathHasChanged = QSignal(str)
+    configPathWasDeleted = QSignal(str)
 
     def __init__(self, file: str, *args, **kwargs) -> None:
         """Initialize config handler.
@@ -74,33 +76,34 @@ class GlobalConfig(QObject):
 
     def set(self, path: str,
             newVal: str | list | dict | int | float,
-            changedPaths: Optional[list[str]]) -> bool:
+            wasChanged: bool = False) -> bool:
         """Set a config option to a new value and trigger a flush.
 
         Args:
             path (str): The key to write.
             newVal ([str | list | dict | int | float]): The value to
                 write for the fiven key.
+            wasChanged (bool): If the path was changed and a signal
+                should be emitted
 
         Returns:
-            bool: True if write was successful otherwise False.
+            bool: True if flush was successful otherwise False.
         """
 
         try:
             self.mutex.lock()
             self._configOptions.update(PathReader.setOption(
                 self._configOptions, path, newVal))
-            self.mutex.unlock()  # This could in theory never be unlocked!
-            logger.debug(f"changed <{path}> to <{newVal}>")
-            self.configRootKeyHasChanged.emit(path)
-            if changedPaths:
-                for opt in changedPaths:
-                    self.configSubKeyHasChanged.emit(f"{path}.{opt}")
+            # logger.debug(f"changed <{path}> to <{newVal}>")
         except Exception as E:
             logger.exception(E)
             return False
         else:
+            if wasChanged:
+                self.configPathHasChanged.emit(path)
             return self._flushDataToFile()
+        finally:
+            self.mutex.unlock()
 
     def get(self, path: str,
             fallback: str | None = None) -> Any:
@@ -155,6 +158,7 @@ class GlobalConfig(QObject):
         """
 
         PathReader.delOption(self._configOptions, path)
+        self.configPathWasDeleted.emit(path)
 
     def _flushDataToFile(self) -> bool:
         """Write config options from memory to file.

@@ -23,11 +23,11 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
 
-        self.buildUi()
         self._configKey = "program"
+        self.buildUi()
 
         # after UI is setup load options into ui elements
-        self.loadOptsToGui(config.get(self._configKey))
+        self.loadOptsToGui(config, self._configKey)
 
     def buildUi(self):
         """Initialize UI elements.
@@ -96,9 +96,7 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
 
     def handleSaveButton(self) -> None:
         logger.debug("Save button pressed")
-        updatedSettings, changedPaths = self.getOptsFromGui(
-            config.get(self._configKey))
-        config.set(self._configKey, updatedSettings, changedPaths)
+        self.saveOptsFromGui(config, self._configKey)
         self.close()
 
     # handle the close event for the log window
@@ -113,8 +111,7 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
 
         # this might be removed later if it blocks processing data
         # check and warn for unsaved changes
-        updatedSettings, changedPaths = self.getOptsFromGui(
-            config.get(self._configKey))
+        changedPaths = self.saveOptsFromGui(config, self._configKey, True)
         if changedPaths:
             handleCloseEvent(self, event)
 

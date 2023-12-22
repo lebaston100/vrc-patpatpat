@@ -26,7 +26,6 @@ class ContactGroupSettings(QWidget, OptionAdapter):
         super().__init__(*args, **kwargs)
 
         self._configKey = "groups.group" + configKey
-        logger.debug(self._configKey)
 
         self.buildUi()
 
@@ -113,10 +112,9 @@ class TabGeneral(QWidget, OptionAdapter):
         super().__init__(*args, **kwargs)
 
         self._configKey = configKey
-        self._configOptions = config.get(self._configKey)
         self.buildUi()
         # after UI is setup load options into ui elements
-        self.loadOptsToGui(self._configOptions)
+        self.loadOptsToGui(config, self._configKey)
 
     def buildUi(self):
         """Initialize UI elements.
@@ -141,7 +139,7 @@ class TabGeneral(QWidget, OptionAdapter):
             bool: True if there are modified options otherwise False.
         """
 
-        _, changedPaths = self.getOptsFromGui(self._configOptions)
+        changedPaths = self.saveOptsFromGui(config, self._configKey, True)
         return bool(changedPaths)
 
     def saveOptions(self) -> None:
@@ -149,9 +147,7 @@ class TabGeneral(QWidget, OptionAdapter):
         """
 
         logger.debug(f"saveOptions in {__class__.__name__}")
-        self._configOptions, changedPaths = self.getOptsFromGui(
-            self._configOptions)
-        config.set(self._configKey, self._configOptions, changedPaths)
+        self.saveOptsFromGui(config, self._configKey)
 
 
 class TabMotors(QWidget):

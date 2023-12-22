@@ -1,30 +1,34 @@
-"""Provides helper methods to get and set dict values by using
-a kinda-js-style dot notation path.
+"""
+This module provides the PathReader class for reading and modifying
+nested dictionaries.
 
-Usage example:
+The PathReader class provides static methods to get, set, and delete
+options in a nested dictionary. The path to the option is specified in
+dot notation.
 
-    data = {
-        "key1": "value1",
-        "key2": [
-            1,
-            {
-                "subsubkey": "value"
-            }
-        ]
+Example:
+    # Create a nested dictionary
+    config = {
+        "option1": "value1",
+        "nested": {
+            "option2": "value2"
+        }
     }
 
-    PathReader.getOption(data, "key2.1.subsubkey") -> "value"
+    # Use PathReader to get an option
+    print(PathReader.getOption(config, "nested.option2")) 
+        # Output: "value2"
 
-    newdict = PathReader.setOption(data, "key2.1.subsubkey", "new Value")
-    -> newdict = {
-        "key1": "value1",
-        "key2": [
-            1,
-            {
-                "subsubkey": "new Value"
-            }
-        ]
-    }
+    # Use PathReader to set an option
+    new_config = PathReader.setOption(config, "nested.option2",
+        "new_value")
+    print(PathReader.getOption(new_config, "nested.option2"))
+        # Output: "new_value"
+
+    # Use PathReader to delete an option
+    PathReader.delOption(new_config, "nested.option2")
+    print(PathReader.getOption(new_config, "nested.option2", "default"))
+        # Output: "default"
 
 """
 

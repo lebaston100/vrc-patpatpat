@@ -28,7 +28,7 @@ class OptionAdapter():
         class MyWidget(QMainWindow, OptionAdapter):
             def __init__(self):
                 super().__init__()
-                self.addOpt('path1', QLineEdit(), str)
+                self.addOpt('path1', QLineEdit())
                 self.addOpt('path2', QSpinBox(), int)
                 self.loadOptsToGui({'path1': 'text', 'path2': 1})
     """
@@ -51,7 +51,7 @@ class OptionAdapter():
 
         self._uiElems.update({path: (uiObject, dataType)})
 
-    def setUiOpt(self, element: object, value: Any) -> None:
+    def _setUiOpt(self, element: object, value: Any) -> None:
         """
         Sets the value of a UI element based on its type.
 
@@ -78,13 +78,13 @@ class OptionAdapter():
                 method = cast(QRadioButton, element).setChecked
             case _:
                 logger.error(
-                    "tried to set a value for an unknown ui element type")
+                    "tried to set value for an unknown ui element type")
                 return
         if method:
             method(value)
 
-    def getUiOpt(self, element: object,
-                 dataType=str) -> Any:
+    def _getUiOpt(self, element: object,
+                  dataType=str) -> Any:
         """
         Retrieves the value of a UI element based on its type.
 
@@ -115,11 +115,11 @@ class OptionAdapter():
                 method = cast(QRadioButton, element).isChecked
             case _:
                 logger.warn(
-                    "tried to get a value for an unknown ui element type")
+                    "tried to get value from an unknown ui element type")
         if method:
             return dataType(method())
 
-    def loadOptsToGui(self, options: dict) -> None:
+    def loadOptsToGui(self, config, configKey: str) -> None:
         """
         Loads options from a dictionary to UI elements.
 
@@ -127,18 +127,20 @@ class OptionAdapter():
         corresponding UI elements to the values from the dictionary.
 
         Args:
-            options (dict): A dictionary containing options to be loaded 
-                to the UI.
+            config (GlobalConfig): The GlobalConfig instance to update.
+            configKey (str): The base config key path.
 
         Returns:
             None
         """
 
         for path, (uiElem, dataType) in self._uiElems.items():
-            newValue = dataType(PathReader.getOption(options, path))
-            self.setUiOpt(uiElem, newValue)
+            newValue = dataType(config.get(f"{configKey}.{path}"))
+            # logger.debug(f"{configKey}.{path}: {str(newValue)}")
+            self._setUiOpt(uiElem, newValue)
 
-    def getOptsFromGui(self, options: dict) -> tuple[dict, list]:
+    def saveOptsFromGui(self, config, configKey: str,
+                        diff: bool = False) -> list[str | None]:
         """
         Retrieves values from UI elements and updates the options dict.
 
@@ -147,21 +149,25 @@ class OptionAdapter():
         keeps track of the keys (or paths) that have changed.
 
         Args:
-            options (dict): The options dictionary to be updated.
+            config (GlobalConfig): The GlobalConfig instance to update.
+            configKey (str): The base config key path.
+            diff (bool): Only return the difference without saving.
 
         Returns:
-            tuple: A tuple containing the updated options dictionary and
+            list[str | None]: A tuple containing the updated options dictionary and
             a list of keys that have changed.
         """
 
         changedKeys = []
         for path, (uiElem, dataType) in self._uiElems.items():
-            oldValue = dataType(PathReader.getOption(options, path))
-            newValue = self.getUiOpt(uiElem, dataType)
-            if newValue != oldValue:
+            path = f"{configKey}.{path}"
+            newValue = self._getUiOpt(uiElem, dataType)
+            keyChanged = newValue != dataType(config.get(path))
+            if keyChanged:
                 changedKeys.append(path)
-            options = PathReader.setOption(options, path, newValue)
-        return options, changedKeys
+            if not diff:
+                config.set(path, newValue, keyChanged)
+        return changedKeys
 
 
 if __name__ == "__main__":

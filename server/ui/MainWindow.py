@@ -22,8 +22,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.testButton)
         self.testButton.clicked.connect(self.showTestWindow)
 
-        config.configRootKeyHasChanged.connect(self.configChanged)
-        config.configSubKeyHasChanged.connect(self.configChanged)
+        config.configPathHasChanged.connect(self.configChanged)
 
         self.setupUi()
 
@@ -31,7 +30,9 @@ class MainWindow(QMainWindow):
         logger.debug(f"config changed for key '{key}'")
 
     def showTestWindow(self):
-        self.testWindow = ui.ContactGroupSettings("0")
+        # self.testWindow = ui.ContactGroupSettings("0")
+        # self.testWindow = ui.ProgramSettingsDialog()
+        self.testWindow = ui.EspSettingsDialog("0")
         self.testWindow.show()
         self.testWindow.destroyed.connect(
             self.programSettingsWindowClosed)
