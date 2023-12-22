@@ -4,11 +4,11 @@
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtCore import pyqtSignal as Signal
 from PyQt6.QtGui import QCloseEvent
-from PyQt6.QtWidgets import (QAbstractItemView, QAbstractScrollArea, QComboBox,
-                             QDialogButtonBox, QFormLayout, QHBoxLayout,
-                             QLabel, QLineEdit, QPushButton, QSizePolicy,
-                             QSpacerItem, QSpinBox, QTableView, QTabWidget,
-                             QVBoxLayout, QWidget)
+from PyQt6.QtWidgets import (QAbstractItemView, QAbstractScrollArea, QCheckBox,
+                             QComboBox, QDialogButtonBox, QFormLayout,
+                             QHBoxLayout, QLabel, QLineEdit, QPushButton,
+                             QSizePolicy, QSpacerItem, QSpinBox, QTableView,
+                             QTabWidget, QVBoxLayout, QWidget)
 
 from modules import OptionAdapter, config
 from ui.uiHelpers import handleCloseEvent
@@ -60,7 +60,7 @@ class ContactGroupSettings(QWidget, OptionAdapter):
         self.tab_colliderPoints = TabColliderPoints()
         self.mainTabWidget.addTab(self.tab_colliderPoints, "Collider Points")
 
-        self.tab_solver = TabSolver()
+        self.tab_solver = TabSolver(self._configKey)
         self.mainTabWidget.addTab(self.tab_solver, "Solver")
 
         self.mainTabWidget.setCurrentIndex(0)
@@ -84,6 +84,7 @@ class ContactGroupSettings(QWidget, OptionAdapter):
         logger.debug(f"handleSaveButton in {__class__.__name__}")
         # TODO: Save other tabs too
         self.tab_general.saveOptions()
+        self.tab_solver.saveOptions()
         self.close()
 
     # handle the close event for the log window
@@ -99,7 +100,8 @@ class ContactGroupSettings(QWidget, OptionAdapter):
         # this might be removed later if it blocks processing data
         # check and warn for unsaved changes
         # TODO: Check other tabs too
-        if self.tab_general.hasUnsavedOptions():
+        if (self.tab_general.hasUnsavedOptions()
+                or self.tab_solver.hasUnsavedOptions()):
             handleCloseEvent(self, event)
 
 
@@ -270,19 +272,23 @@ class TabColliderPoints(QWidget):
         self.selfLayout.addLayout(self.hl_tabColliderPointsBelowTableBar)
 
 
-class TabSolver(QWidget):
-    def __init__(self, *args, **kwargs) -> None:
+class TabSolver(QWidget, OptionAdapter):
+    def __init__(self, configKey: str, *args, **kwargs) -> None:
         """Create the "solver" tab with it's content
         """
 
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
 
-        # This keeps track of the current visible solver to we know
-        # if we need to swap out the selection
-        self.currentSolver = ""
+        self._currentSolver = ""
+        self._solverOptionMapping = []
 
+        self._configKey = configKey + ".solver"
         self.buildUi()
+        # after UI is setup load options into ui elements
+        self.loadOptsToGui(config, self._configKey)
+        # update ui-element visibility
+        self.changeSolver(config.get(f"{self._configKey}.solverType"))
 
     def buildUi(self):
         """Initialize UI elements.
@@ -299,13 +305,30 @@ class TabSolver(QWidget):
         self.cb_solverType.setObjectName("cb_solverType")
         self.cb_solverType.setCurrentText("Mlat")
         self.cb_solverType.currentTextChanged.connect(self.changeSolver)
-        # or textActivated, well see
+        self.addOpt("solverType", self.cb_solverType)
 
         self.selfLayout.addRow("Solver Type:", self.cb_solverType)
 
-        # assemble the solvers settings here, always show all options
-        # just hide the ones we don't need
-        # add ui elements to mapping object with key=type and list of opts
+        # upper sphere check
+        self.cb_allowOnlyUpperSphereHalf = QCheckBox(self)
+        self.cb_allowOnlyUpperSphereHalf.setObjectName(
+            "cb_allowOnlyUpperSphereHalf")
+        self.cb_allowOnlyUpperSphereHalf.setText(
+            "Only allow upper sphere half")
+        self.addOpt("enableHalfSphereCheck",
+                    self.cb_allowOnlyUpperSphereHalf, bool)
+        self._solverOptionMapping.append(
+            ("Mlat", self.cb_allowOnlyUpperSphereHalf))
+
+        self.selfLayout.addRow("", self.cb_allowOnlyUpperSphereHalf)
+
+        # contact only (on/off instead of pwm, might be better in the contact point?)
+        self.cb_contactOnly = QCheckBox(self)
+        self.cb_contactOnly.setObjectName("cb_contactOnly")
+        self.cb_contactOnly.setText("Contact only")
+        self.addOpt("contactOnly", self.cb_contactOnly, bool)
+
+        self.selfLayout.addRow("", self.cb_contactOnly)
 
         # spacer
         self.spacer1 = QSpacerItem(
@@ -313,12 +336,29 @@ class TabSolver(QWidget):
         self.selfLayout.addItem(self.spacer1)
 
     def changeSolver(self, selected: str):
-        # change which solver options are shown here
-        self.currentSolver = selected
-        pass
+        self._currentSolver = selected
+        for solver, uiElement in self._solverOptionMapping:
+            if solver == self._currentSolver:
+                uiElement.show()
+            else:
+                uiElement.hide()
 
-    def getMlatSolverSettings(self):
-        pass
+    def hasUnsavedOptions(self) -> bool:
+        """Check if this tab has unsaved options.
+
+        Returns:
+            bool: True if there are modified options otherwise False.
+        """
+
+        changedPaths = self.saveOptsFromGui(config, self._configKey, True)
+        return bool(changedPaths)
+
+    def saveOptions(self) -> None:
+        """Save the options from this tab.
+        """
+
+        logger.debug(f"saveOptions in {__class__.__name__}")
+        self.saveOptsFromGui(config, self._configKey)
 
 
 if __name__ == "__main__":
