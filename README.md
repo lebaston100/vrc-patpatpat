@@ -6,11 +6,11 @@ An open hardware and software project which tries to implement spatial haptic he
  
 The current development is happening in the refactor branch! The "old" basic working server version can still be accessed from the master branch.
 
-### Todo overview :
+### Rough todo overview :
 
 Server:
 
-- [ ] Main UI (design in progress)
+- [ ] Main UI
 - [ ] Configuration windows
 - [ ] 3D visualizer
 - [x] Log viewer
