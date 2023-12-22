@@ -1,8 +1,9 @@
 from typing import Any, cast
 
-from PyQt6.QtWidgets import QComboBox, QLineEdit, QSpinBox, QRadioButton
+from PyQt6.QtWidgets import (QCheckBox, QComboBox, QLineEdit, QRadioButton,
+                             QSpinBox)
 
-from utils import LoggerClass, PathReader
+from utils import LoggerClass
 
 logger = LoggerClass.getSubLogger(__name__)
 
@@ -76,6 +77,8 @@ class OptionAdapter():
                 method = cast(QComboBox, element).setCurrentText
             case "QRadioButton":
                 method = cast(QRadioButton, element).setChecked
+            case "QCheckBox":
+                method = cast(QCheckBox, element).setChecked
             case _:
                 logger.error(
                     "tried to set value for an unknown ui element type")
@@ -113,6 +116,8 @@ class OptionAdapter():
                 method = cast(QComboBox, element).currentText
             case "QRadioButton":
                 method = cast(QRadioButton, element).isChecked
+            case "QCheckBox":
+                method = cast(QCheckBox, element).isChecked
             case _:
                 logger.warn(
                     "tried to get value from an unknown ui element type")
