@@ -15,24 +15,18 @@ logger = LoggerClass.getSubLogger(__name__)
 
 
 class EspSettingsDialog(QWidget, OptionAdapter):
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, configKey: str, *args, **kwargs) -> None:
         """Initialize esp settings window
         """
 
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
 
+        self._configKey = "esps.esp" + configKey
         self.buildUi()
-        self._configKey = "TBD"
-
-        # TODO: This is an issue because one of the options is the a subkey.
-        # we need a way for this window so find out which esp is belongs to
-        # so we can solve that then
-        # maybe we extend the normal get/set methods for the global config
-        # do that it can also deal with the paths
 
         # after UI is setup load options into ui elements
-        # self.loadOptsToGui(config.get(self._configKey))
+        self.loadOptsToGui(config, self._configKey)
 
     def buildUi(self):
         """Initialize UI elements.
@@ -49,6 +43,7 @@ class EspSettingsDialog(QWidget, OptionAdapter):
         # ID
         self.sb_espId = QSpinBox(self)
         self.sb_espId.setObjectName("sb_espId")
+        self.addOpt("id", self.sb_espId, int)
 
         self.selfLayout.addRow("ID:", self.sb_espId)
 
@@ -56,6 +51,7 @@ class EspSettingsDialog(QWidget, OptionAdapter):
         self.le_espName = QLineEdit(self)
         self.le_espName.setObjectName("le_espName")
         self.le_espName.setMaxLength(30)
+        self.addOpt("name", self.le_espName)
 
         self.selfLayout.addRow("Name:", self.le_espName)
 
@@ -63,6 +59,7 @@ class EspSettingsDialog(QWidget, OptionAdapter):
         self.sb_espNumMotors = QSpinBox(self)
         self.sb_espNumMotors.setObjectName("sb_espNumMotors")
         self.sb_espNumMotors.setMinimum(1)
+        self.addOpt("numMotors", self.sb_espNumMotors, int)
 
         self.selfLayout.addRow("Number of motors:", self.sb_espNumMotors)
 
@@ -71,6 +68,7 @@ class EspSettingsDialog(QWidget, OptionAdapter):
         self.le_espLastIp.setObjectName("le_espLastIp")
         self.le_espLastIp.setEnabled(False)
         self.le_espLastIp.setReadOnly(True)
+        self.addOpt("lastIp", self.le_espLastIp)
 
         self.selfLayout.addRow("Last Device IP:", self.le_espLastIp)
 
@@ -78,6 +76,7 @@ class EspSettingsDialog(QWidget, OptionAdapter):
         self.le_espMac = QLineEdit(self)
         self.le_espMac.setObjectName("le_espMac")
         self.le_espMac.setInputMask("Hh:Hh:Hh:Hh:Hh:Hh")
+        self.addOpt("wifiMac", self.le_espMac)
 
         self.selfLayout.addRow("Device MAC:", self.le_espMac)
 
@@ -99,9 +98,7 @@ class EspSettingsDialog(QWidget, OptionAdapter):
 
     def handleSaveButton(self) -> None:
         logger.debug("Save button pressed")
-        updatedSettings, changedPaths = self.getOptsFromGui(
-            config.get(self._configKey))
-        config.set(self._configKey, updatedSettings, changedPaths)
+        self.saveOptsFromGui(config, self._configKey)
         self.close()
 
     # handle the close event for the log window
@@ -116,8 +113,7 @@ class EspSettingsDialog(QWidget, OptionAdapter):
 
         # this might be removed later if it blocks processing data
         # check and warn for unsaved changes
-        updatedSettings, changedPaths = self.getOptsFromGui(
-            config.get(self._configKey))
+        changedPaths = self.saveOptsFromGui(config, self._configKey, True)
         if changedPaths:
             handleCloseEvent(self, event)
 
