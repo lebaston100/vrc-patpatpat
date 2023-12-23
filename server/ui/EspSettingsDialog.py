@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (QDialogButtonBox, QFormLayout, QLineEdit,
                              QSizePolicy, QSpacerItem, QSpinBox, QWidget)
 
 from modules import OptionAdapter, config
-from ui.uiHelpers import handleCloseEvent
+from ui.uiHelpers import handleClosePrompt
 from utils import LoggerClass
 
 logger = LoggerClass.getSubLogger(__name__)
@@ -115,7 +115,7 @@ class EspSettingsDialog(QWidget, OptionAdapter):
         # check and warn for unsaved changes
         changedPaths = self.saveOptsFromGui(config, self._configKey, True)
         if changedPaths:
-            handleCloseEvent(self, event)
+            handleClosePrompt(self, event)
 
 
 if __name__ == "__main__":

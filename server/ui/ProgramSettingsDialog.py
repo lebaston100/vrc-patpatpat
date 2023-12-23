@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (QComboBox, QDialogButtonBox, QFormLayout, QLabel,
                              QWidget)
 
 from modules import OptionAdapter, config
-from ui.uiHelpers import handleCloseEvent
+from ui.uiHelpers import handleClosePrompt
 from utils import LoggerClass
 
 logger = LoggerClass.getSubLogger(__name__)
@@ -113,7 +113,7 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
         # check and warn for unsaved changes
         changedPaths = self.saveOptsFromGui(config, self._configKey, True)
         if changedPaths:
-            handleCloseEvent(self, event)
+            handleClosePrompt(self, event)
 
 
 if __name__ == "__main__":
