@@ -32,7 +32,7 @@ class ContactGroupSettings(QWidget, OptionAdapter):
 
         self.buildUi()
 
-    def buildUi(self):
+    def buildUi(self) -> None:
         """Initialize UI elements.
         All of the tabs are in their own subclass.
         """
@@ -92,7 +92,7 @@ class ContactGroupSettings(QWidget, OptionAdapter):
         """Handle window close event cleanly.
 
         Args:
-            event QCloseEvent): The QCloseEvent.
+            event (QCloseEvent): The QCloseEvent.
         """
 
         logger.debug(f"closeEvent in {__class__.__name__}")
@@ -119,7 +119,7 @@ class TabGeneral(QWidget, OptionAdapter):
         # after UI is setup load options into ui elements
         self.loadOptsToGui(config, self._configKey)
 
-    def buildUi(self):
+    def buildUi(self) -> None:
         """Initialize UI elements.
         """
 
@@ -164,7 +164,7 @@ class TabMotors(QWidget):
 
         self.buildUi()
 
-    def buildUi(self):
+    def buildUi(self) -> None:
         """Initialize UI elements.
         """
 
@@ -228,7 +228,7 @@ class TabColliderPoints(QWidget):
 
         # TODO: Add custom QItemDelegate for the view (float fields)
 
-    def buildUi(self):
+    def buildUi(self) -> None:
         """Initialize UI elements.
         """
 
@@ -282,7 +282,7 @@ class TabColliderPoints(QWidget):
 
         self.selfLayout.addLayout(self.hl_tabColliderPointsBelowTableBar)
 
-    def handleSelectionDelete(self, index: int):
+    def handleSelectionDelete(self, index: int) -> None:
         col1 = self.colliderPointsTableModel.data(
             self.colliderPointsTableModel.index(index, 0),
             Qt.ItemDataRole.UserRole)
@@ -290,7 +290,7 @@ class TabColliderPoints(QWidget):
         if promptResult:
             self.colliderPointsTableModel.removeRows(index, 1)
 
-    def handleAddButton(self):
+    def handleAddButton(self) -> None:
         self.colliderPointsTableModel.insertRows(0)
 
     def hasUnsavedOptions(self) -> bool:
@@ -329,7 +329,7 @@ class TabSolver(QWidget, OptionAdapter):
         # update ui-element visibility
         self.changeSolver(config.get(f"{self._configKey}.solverType"))
 
-    def buildUi(self):
+    def buildUi(self) -> None:
         """Initialize UI elements.
         """
 
@@ -374,7 +374,7 @@ class TabSolver(QWidget, OptionAdapter):
             20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
         self.selfLayout.addItem(self.spacer1)
 
-    def changeSolver(self, selected: str):
+    def changeSolver(self, selected: str) -> None:
         self._currentSolver = selected
         for solver, uiElement in self._solverOptionMapping:
             if solver == self._currentSolver:
@@ -406,7 +406,23 @@ type validValueTypes = type[str] | type[int] | type[float] \
 # maybe we can re-use this for the motors table?
 # don't see why not, can just make the few things configurable in init
 class ColliderPointSettingsTableModel(QAbstractTableModel):
-    def __init__(self, data):
+    """A table model for handling collider point settings.
+
+    Attributes:
+        settingsWereChanged (bool): Flag for tracking changes in settings.
+        _data: The data for the table.
+        _headerLabels (list): The labels for the table headers.
+        _settingsOrder (list): The order of the settings.
+        _settingsDataTypes (list): The data types for the settings.
+    """
+
+    def __init__(self, data: dict) -> None:
+        """Initializes the ColliderPointSettingsTableModel.
+
+        Args:
+            data (dict): The data for the table.
+        """
+
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__()
         self.settingsWereChanged = False
@@ -419,7 +435,14 @@ class ColliderPointSettingsTableModel(QAbstractTableModel):
         self._settingsDataTypes = [str, str, float, float, float, float]
 
     def data(self, index: QModelIndex, role: int) -> Any:
-        """Handle initial data display for each cell
+        """Gets the current data for each cell.
+
+        Args:
+            index (QModelIndex): The index of the cell.
+            role (int): The action role.
+
+        Returns:
+            Any: The data for the cell.
         """
 
         if role in (Qt.ItemDataRole.DisplayRole,
@@ -429,11 +452,21 @@ class ColliderPointSettingsTableModel(QAbstractTableModel):
 
     def setData(self, index: QModelIndex, value: Any,
                 role: int = Qt.ItemDataRole.EditRole) -> bool:
-        """Handle new data entry for each cell
+        """Sets new data for each cell.
+
+        Args:
+            index (QModelIndex): The index of the cell.
+            value (Any): The new value for the cell.
+            role (int, optional): The action role. Defaults to
+                Qt.ItemDataRole.EditRole.
+
+        Returns:
+            bool: True if the data was set successfully,
+                False otherwise.
         """
 
         if role in (Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole):
-            logger.debug(f"EditRole: {role} Row: {index.row()}"
+            logger.debug(f"EditRole: {role} Row: {index.row()} "
                          f"Col: {index.column()} Value: {value}")
             dataType = self._getDataTypeForCol(index)
             # Don't allow empty values
@@ -450,6 +483,20 @@ class ColliderPointSettingsTableModel(QAbstractTableModel):
 
     def removeRows(self, row: int, count: int = 1,
                    parent: QModelIndex = QModelIndex()) -> bool:
+        """Removes rows from the table.
+
+        Args:
+            row (int): The row to remove.
+            count (int, optional): The number of rows to remove.
+                Defaults to 1.
+            parent (QModelIndex, optional): The parent index. Defaults
+                to QModelIndex(). Unused because Table
+
+        Returns:
+            bool: False if the last entry is being removed,
+                True otherwise.
+        """
+
         # don't allow removing the last entry
         if self.rowCount() <= 1:
             return False
@@ -461,6 +508,19 @@ class ColliderPointSettingsTableModel(QAbstractTableModel):
 
     def insertRows(self, row: int, count: int = 1,
                    parent: QModelIndex = QModelIndex()) -> bool:
+        """Inserts rows into the table.
+
+        Args:
+            row (int): The row to insert at.
+            count (int, optional): The number of rows to insert.
+                Defaults to 1.
+            parent (QModelIndex, optional): The parent index. Defaults to
+                QModelIndex().
+
+        Returns:
+            bool: Always true.
+        """
+
         self.beginInsertRows(parent, self.rowCount(), self.rowCount()+count-1)
         PathReader.setOption(
             self._data, str(self.rowCount()), deepcopy(
@@ -471,13 +531,15 @@ class ColliderPointSettingsTableModel(QAbstractTableModel):
         return True
 
     def _getRowColConfigVal(self, index: QModelIndex) -> Any:
-        """Return the current configuration for a given cell"""
+        """Return the current configuration for a given cell
+        """
 
         return PathReader.getOption(
             self._data[index.row()], self._colToKey(index))
 
     def _setRowColConfigVal(self, index: QModelIndex, newValue) -> Any:
-        """Update the option with a new value based on the given cell"""
+        """Update the option with a new value based on the given cell
+        """
 
         path = f"{index.row()}.{self._colToKey(index)}"
         PathReader.setOption(self._data, path, newValue, inPlace=True)
