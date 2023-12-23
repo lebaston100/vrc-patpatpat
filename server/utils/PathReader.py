@@ -136,7 +136,7 @@ def _recurse(d: dict, p: list, newValue: validValueTypes) -> None:
     if p:
         _recurse(d[key], p, newValue)
     else:
-        if type(d) == list:
+        if type(d) == list and len(d) <= key:
             d.append(newValue)
         else:
             d[key] = newValue
