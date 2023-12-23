@@ -69,13 +69,16 @@ class PathReader:
             return reduced
 
     @staticmethod
-    def setOption(inputDict: dict, path: str, newValue: validValueTypes) -> dict:
+    def setOption(inputDict: dict, path: str, newValue: validValueTypes,
+                  inPlace: bool = False) -> dict:
         """Updates an option inside a (nested) dict.
 
         Args:
             inputDict (dict): The dict to modify.
             path (str): The path to the option written in dot notation.
             nv (validValueTypes): The new value.
+            inPlace (bool): If the dict should be modified in-place.
+                Defaults to False.
 
         Raises:
             KeyError: When specified option is not found.
@@ -87,7 +90,7 @@ class PathReader:
 
         try:
             # create copy of settings to work on
-            workingDict = deepcopy(inputDict)
+            workingDict = inputDict if inPlace else deepcopy(inputDict)
             # convert str to ints for list indices
             keys = map(lambda k: int(k) if k.isdigit() else k, path.split("."))
             # run recursive function over dict
@@ -133,7 +136,10 @@ def _recurse(d: dict, p: list, newValue: validValueTypes) -> None:
     if p:
         _recurse(d[key], p, newValue)
     else:
-        d[key] = newValue
+        if type(d) == list:
+            d.append(newValue)
+        else:
+            d[key] = newValue
 
 
 def _recurseDelete(d: dict, p: list) -> None:
