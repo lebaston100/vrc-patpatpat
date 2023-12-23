@@ -14,8 +14,7 @@ logger = LoggerClass.getSubLogger(__name__)
 
 
 class StaticLabel(QLabel):
-    """A simple expansion of QLabel with a static prefix text.
-    """
+    """A simple expansion of QLabel with a static prefix text."""
 
     def __init__(self, prefixText: str, text: str | None = None, *args, **kwargs) -> None:
         """Initialize the label.

@@ -17,8 +17,7 @@ logger = LoggerClass.getSubLogger(__name__)
 
 class ProgramSettingsDialog(QWidget, OptionAdapter):
     def __init__(self, *args, **kwargs) -> None:
-        """Initialize programm settings window
-        """
+        """Initialize programm settings window"""
 
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
@@ -30,8 +29,7 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
         self.loadOptsToGui(config, self._configKey)
 
     def buildUi(self):
-        """Initialize UI elements.
-        """
+        """Initialize UI elements."""
 
         # the widget and it's layout
         self.setWindowTitle("Program Settings")

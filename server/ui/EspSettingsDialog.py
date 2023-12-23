@@ -16,8 +16,7 @@ logger = LoggerClass.getSubLogger(__name__)
 
 class EspSettingsDialog(QWidget, OptionAdapter):
     def __init__(self, configKey: str, *args, **kwargs) -> None:
-        """Initialize esp settings window
-        """
+        """Initialize esp settings window"""
 
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
@@ -29,8 +28,7 @@ class EspSettingsDialog(QWidget, OptionAdapter):
         self.loadOptsToGui(config, self._configKey)
 
     def buildUi(self):
-        """Initialize UI elements.
-        """
+        """Initialize UI elements."""
 
         # the widget and it's layout
         self.setWindowTitle("ESP Settings")
@@ -97,7 +95,8 @@ class EspSettingsDialog(QWidget, OptionAdapter):
         self.selfLayout.addRow(self.bt_saveCancelButtons)
 
     def handleSaveButton(self) -> None:
-        logger.debug("Save button pressed")
+        """Handle save button press"""
+
         self.saveOptsFromGui(config, self._configKey)
         self.close()
 

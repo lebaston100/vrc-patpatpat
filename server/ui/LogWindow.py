@@ -36,8 +36,7 @@ class LogWindow(QWidget):
         self.buildUi()
 
     def buildUi(self) -> None:
-        """Initialize UI elements.
-        """
+        """Initialize UI elements."""
 
         # the widget and it's layout
         self.setWindowTitle("Log Window")
