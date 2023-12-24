@@ -14,8 +14,8 @@ from PyQt6.QtWidgets import (QAbstractItemView, QAbstractScrollArea, QCheckBox,
                              QVBoxLayout, QWidget)
 
 from modules import OptionAdapter, config
+from ui.Delegates import FloatSpinBoxDelegate, IntSpinBoxDelegate
 from ui.uiHelpers import handleClosePrompt, handleDeletePrompt
-from ui.Delegates import FloatSpinBoxDelegate
 from utils import LoggerClass, PathReader
 
 logger = LoggerClass.getSubLogger(__name__)
@@ -82,6 +82,7 @@ class ContactGroupSettings(QWidget, OptionAdapter):
         logger.debug(f"handleSaveButton in {__class__.__name__}")
         # TODO: Save other tabs too
         self.tab_general.saveOptions()
+        self.tab_motors.saveOptions()
         self.tab_colliderPoints.saveOptions()
         self.tab_solver.saveOptions()
         self.close()
@@ -100,8 +101,9 @@ class ContactGroupSettings(QWidget, OptionAdapter):
         # check and warn for unsaved changes
         # TODO: Check other tabs too
         if (self.tab_general.hasUnsavedOptions()
-                or self.tab_solver.hasUnsavedOptions()
-                or self.tab_colliderPoints.hasUnsavedOptions()):
+                or self.tab_motors.hasUnsavedOptions()
+                or self.tab_colliderPoints.hasUnsavedOptions()
+                or self.tab_solver.hasUnsavedOptions()):
             handleClosePrompt(self, event)
 
 
@@ -156,6 +158,7 @@ class TabMotors(QWidget):
         super().__init__(*args, **kwargs)
 
         self._configKey = configKey + ".motors"
+        self._data = deepcopy(config.get(self._configKey))
 
         self.buildUi()
 
@@ -174,11 +177,46 @@ class TabMotors(QWidget):
         self.tv_motorsTable.setHorizontalScrollMode(
             QAbstractItemView.ScrollMode.ScrollPerPixel)
         self.tv_motorsTable.setCornerButtonEnabled(False)
-        # self.tv_motorsTable.verticalHeader().setVisible(True)
+        self.tv_motorsTable.setSelectionMode(
+            QTableView.SelectionMode.SingleSelection)
+        cast(QHeaderView, self.tv_motorsTable.verticalHeader()
+             ).setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+        cast(QHeaderView, self.tv_motorsTable.verticalHeader()
+             ).sectionClicked.connect(self.handleSelectionDelete)
+        cast(QHeaderView, self.tv_motorsTable.horizontalHeader()
+             ).setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        cast(QHeaderView, self.tv_motorsTable.horizontalHeader()
+             ).setSelectionMode(QHeaderView.SelectionMode.NoSelection)
 
-        # TODO: we need a table model
-        # self.tv_motorsTable.setModel()
+        # Setup the table model
+        self.motorsTableModel = SettingsTableModel(self._data)
+        self.motorsTableModel.setHorizontalHeaderLabels(
+            "Name", "ESP Id", "ESP Channel", "Min PWM", "Max PWM",
+            "Radius", "X", "Y", "Z", "Radius")
+        self.motorsTableModel.setSettingsOrder(
+            "name", "espAddr.0", "espAddr.1", "minPwm", "maxPwm",
+            "xyz.0", "xyz.1", "xyz.2", "r")
+        self.motorsTableModel.setSettingsDataTypes(
+            str, int, int, int, int, float, float, float, float)
 
+        # Assign the right delegate to the columns
+        self.floatSpinBoxDelegate = FloatSpinBoxDelegate(4, -20.0, 20.0)
+        self.pwmSpinBoxDelegate = IntSpinBoxDelegate(0, 255)
+        self.espIdSpinBoxDelegate = IntSpinBoxDelegate(0, 20)
+        for i, (t, n) in enumerate(zip(
+                self.motorsTableModel.getSettingsDataTypes(),
+                self.motorsTableModel.getSettingsOrder())):
+            if t == float:
+                self.tv_motorsTable.setItemDelegateForColumn(
+                    i, self.floatSpinBoxDelegate)
+            elif n in ("espAddr.0", "espAddr.1"):
+                self.tv_motorsTable.setItemDelegateForColumn(
+                    i, self.espIdSpinBoxDelegate)
+            elif n in ("minPwm", "maxPwm"):
+                self.tv_motorsTable.setItemDelegateForColumn(
+                    i, self.pwmSpinBoxDelegate)
+
+        self.tv_motorsTable.setModel(self.motorsTableModel)
         self.selfLayout.addWidget(self.tv_motorsTable)
 
         # the bar below the table
@@ -191,20 +229,42 @@ class TabMotors(QWidget):
             40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         self.hl_tabMotorsBelowTableBar.addItem(self.spacer1)
 
-        # the remove and add button
-        self.pb_removeMotor = QPushButton(self)
-        self.pb_removeMotor.setObjectName("pb_removeMotor")
-        self.pb_removeMotor.setMaximumSize(QSize(40, 16777215))
-        self.pb_removeMotor.setText("\u2795")
-        self.hl_tabMotorsBelowTableBar.addWidget(self.pb_removeMotor)
-
+        # the add button
         self.pb_addMotor = QPushButton(self)
         self.pb_addMotor.setObjectName("pb_addMotor")
         self.pb_addMotor.setMaximumSize(QSize(40, 16777215))
-        self.pb_addMotor.setText("\u2796")
+        self.pb_addMotor.setText("\u2795")
+        self.pb_addMotor.clicked.connect(self.handleAddButton)
         self.hl_tabMotorsBelowTableBar.addWidget(self.pb_addMotor)
 
         self.selfLayout.addLayout(self.hl_tabMotorsBelowTableBar)
+
+    def handleSelectionDelete(self, index: int) -> None:
+        col1 = self.motorsTableModel.data(
+            self.motorsTableModel.index(index, 0),
+            Qt.ItemDataRole.DisplayRole)
+        promptResult = handleDeletePrompt(self, col1)
+        if promptResult:
+            self.motorsTableModel.removeRows(index, 1)
+
+    def handleAddButton(self) -> None:
+        self.motorsTableModel.insertRows(0)
+
+    def hasUnsavedOptions(self) -> bool:
+        """Check if this tab has unsaved options.
+
+        Returns:
+            bool: True if there are modified options otherwise False.
+        """
+
+        # only need to look at the table
+        return self.motorsTableModel.settingsWereChanged
+
+    def saveOptions(self) -> None:
+        """Save the options from this tab."""
+
+        config.set(self._configKey, self._data)
+        self.motorsTableModel.settingsWereChanged = False
 
 
 class TabColliderPoints(QWidget):
@@ -245,6 +305,7 @@ class TabColliderPoints(QWidget):
         cast(QHeaderView, self.tv_colliderPointsTable.horizontalHeader()
              ).setSelectionMode(QHeaderView.SelectionMode.NoSelection)
 
+        # Setup the table model
         self.colliderPointsTableModel = SettingsTableModel(self._data)
         self.colliderPointsTableModel.setHorizontalHeaderLabels(
             "Name", "ContactReceiver Name", "X", "Y", "Z", "Radius")
@@ -253,6 +314,7 @@ class TabColliderPoints(QWidget):
         self.colliderPointsTableModel.setSettingsDataTypes(
             str, str, float, float, float, float)
 
+        # Assign the right delegate to the columns
         self.floatSpinBoxDelegate = FloatSpinBoxDelegate(4, -20.0, 20.0)
         for i, item in enumerate(self.colliderPointsTableModel
                                  .getSettingsDataTypes()):
@@ -274,13 +336,13 @@ class TabColliderPoints(QWidget):
         self.hl_tabColliderPointsBelowTableBar.addItem(self.spacer1)
 
         # the add button
-        self.pb_removeColliderPoint = QPushButton(self)
-        self.pb_removeColliderPoint.setObjectName("pb_removeColliderPoint")
-        self.pb_removeColliderPoint.setMaximumSize(QSize(40, 16777215))
-        self.pb_removeColliderPoint.setText("\u2795")
-        self.pb_removeColliderPoint.clicked.connect(self.handleAddButton)
+        self.pb_addColliderPoint = QPushButton(self)
+        self.pb_addColliderPoint.setObjectName("pb_addColliderPoint")
+        self.pb_addColliderPoint.setMaximumSize(QSize(40, 16777215))
+        self.pb_addColliderPoint.setText("\u2795")
+        self.pb_addColliderPoint.clicked.connect(self.handleAddButton)
         self.hl_tabColliderPointsBelowTableBar.addWidget(
-            self.pb_removeColliderPoint)
+            self.pb_addColliderPoint)
 
         self.selfLayout.addLayout(self.hl_tabColliderPointsBelowTableBar)
 
@@ -402,8 +464,6 @@ type validValueTypes = type[str] | type[int] | type[float] \
     | type[bool] | type[list] | type[dict]
 
 
-# maybe we can re-use this for the motors table?
-# don't see why not, can just make the few things configurable in init
 class SettingsTableModel(QAbstractTableModel):
     """A table model for handling settings.
 
@@ -435,6 +495,9 @@ class SettingsTableModel(QAbstractTableModel):
 
     def setSettingsOrder(self, *settingsOrder: str) -> None:
         self._settingsOrder = settingsOrder
+
+    def getSettingsOrder(self) -> tuple:
+        return self._settingsOrder
 
     def setSettingsDataTypes(self, *settingsDataTypes) -> None:
         self._settingsDataTypes = settingsDataTypes
@@ -477,7 +540,7 @@ class SettingsTableModel(QAbstractTableModel):
                          f"Col: {index.column()} Value: {value}")
             dataType = self._getDataTypeForCol(index)
             # Don't allow empty values
-            if not value:
+            if value == "":
                 return False
             # check if supplied data is right type
             try:
