@@ -6,5 +6,5 @@ from .ProgramSettingsDialog import ProgramSettingsDialog
 from .EspSettingsDialog import EspSettingsDialog
 from .ContactGroupSettings import ContactGroupSettings
 
-from .Delegates import FloatSpinBoxDelegate
+from .Delegates import FloatSpinBoxDelegate, IntSpinBoxDelegate
 from .uiHelpers import handleClosePrompt, handleDeletePrompt
