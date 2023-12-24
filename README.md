@@ -11,7 +11,7 @@ The current development is happening in the refactor branch! The "old" basic wor
 Server:
 
 - [ ] Main UI
-- [ ] Configuration windows
+- [x] Configuration windows
 - [ ] 3D visualizer
 - [x] Log viewer
 - [x] Config file
