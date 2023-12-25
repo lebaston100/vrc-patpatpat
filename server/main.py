@@ -12,6 +12,5 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     window = MainWindow()
-    window.setFixedSize(800, 430)
     window.show()
     sys.exit(app.exec())
