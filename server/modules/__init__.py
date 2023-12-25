@@ -6,5 +6,9 @@ Exposes:
     OptionAdapter
 """
 
+from .AvatarPoint import AvatarPoint
+from .ESP import ESP
 from .GlobalConfig import config
+from .Motor import Motor
 from .OptionAdapter import OptionAdapter
+from .Points import Point3D

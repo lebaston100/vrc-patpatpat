@@ -7,6 +7,6 @@ Exposes:
     FileHelper
 """
 
-from .Logger import LoggerClass, SignalLogHandler
 from .FileHelper import FileHelper
+from .Logger import LoggerClass, SignalLogHandler
 from .PathReader import PathReader
