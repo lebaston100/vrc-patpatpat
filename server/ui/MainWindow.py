@@ -3,7 +3,6 @@
 
 import webbrowser
 # from PyQt6.QtCore import pyqtSignal as Signal
-from email.headerregistry import HeaderRegistry
 
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QCloseEvent, QFont
@@ -23,6 +22,8 @@ class MainWindow(QMainWindow):
         super().__init__(*args, **kwargs)
 
         self.setupUi()
+
+        self._logWindow: ui.LogWindow | None = None
 
     def setupUi(self):
         """Initialize the main UI."""
@@ -65,6 +66,7 @@ class MainWindow(QMainWindow):
         self.bt_openLogWindow.setObjectName("bt_openLogWindow")
         self.bt_openLogWindow.setMaximumSize(QSize(60, 16777215))
         self.bt_openLogWindow.setText("Log")
+        self.bt_openLogWindow.clicked.connect(self.handleLogWindowOpen)
         self.hl_topBar.addWidget(self.bt_openLogWindow)
 
         # open programm settings button
@@ -124,6 +126,19 @@ class MainWindow(QMainWindow):
         # add layout to central widget to mainwindow
         self.theCentralWidet.setLayout(self.selfLayout)
         self.setCentralWidget(self.theCentralWidet)
+
+    def handleLogWindowOpen(self):
+        if self._logWindow:
+            self._logWindow.raise_()
+            self._logWindow.activateWindow()
+        else:
+            self._logWindow = ui.LogWindow(logger)
+            self._logWindow.destroyed.connect(self.handleLogWindowClose)
+            self._logWindow.show()
+
+    def handleLogWindowClose(self):
+        if self._logWindow:
+            self._logWindow = None
 
     # handle the close event for the log window
     def closeEvent(self, event: QCloseEvent) -> None:
