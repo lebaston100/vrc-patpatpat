@@ -1,7 +1,7 @@
 from PyQt6.QtGui import QVector3D
 
 
-class Point3D(QVector3D):
+class Sphere3D(QVector3D):
     """A 3D Point with a name and radius."""
 
     def __init__(self, name: str = "", radius: float = 0,

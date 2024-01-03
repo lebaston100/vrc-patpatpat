@@ -2,7 +2,7 @@ from math import ceil
 
 from PyQt6.QtCore import QObject
 
-from modules.Points import Point3D
+from modules.Points import Sphere3D
 
 
 class Motor(QObject):
@@ -14,7 +14,7 @@ class Motor(QObject):
         self._espAddr: list[int] = settings["espAddr"]
         self._minPwm: int = settings["minPwm"]
         self._maxPwm: int = settings["maxPwm"]
-        self._point = Point3D(self._name)
+        self._point = Sphere3D(self._name)
         self._point.setXYZ(settings["xyz"])
 
         self.currentPWM: int = 0

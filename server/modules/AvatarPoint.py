@@ -1,7 +1,7 @@
-from modules.Points import Point3D
+from modules.Points import Sphere3D
 
 
-class AvatarPoint(Point3D):
+class AvatarPoint(Sphere3D):
     def __init__(self, settings: dict, *args, **kwargs):
         self._name: str = settings["name"]
         self._receiverId: str = settings["receiverId"]
