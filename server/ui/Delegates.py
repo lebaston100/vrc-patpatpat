@@ -1,11 +1,13 @@
 """
-This module provides a custom item delegate for handling float values in
-a QSpinBox.
+This module provides multiple custom item delegates.
 
 The `FloatSpinBoxDelegate` class is a custom item delegate that uses a
 QDoubleSpinBox to handle float values. This class can be used as a
 delegate for a QTableView or similar widget to allow for editing of
 float values within the view.
+
+The `IntSpinBoxDelegate` does the same as `FloatSpinBoxDelegate` just
+for ints.
 
 Additional classes may be added to this module in the future to handle
 other data types.
@@ -55,15 +57,16 @@ class FloatSpinBoxDelegate(QItemDelegate):
         editor.setStepType(QDoubleSpinBox.StepType.AdaptiveDecimalStepType)
         return editor
 
-    def setEditorData(self, spinBox, index) -> None:
+    def setEditorData(self, spinBox: QDoubleSpinBox, index) -> None:
         """Set the data for the editor."""
 
         value = index.model().data(index, Qt.ItemDataRole.EditRole)
         spinBox.setValue(value)
 
-    def setModelData(self, spinBox, model, index) -> None:
-        """Set the model data."""
+    def setModelData(self, spinBox: QDoubleSpinBox, model, index) -> None:
+        """Write value from editor into models data"""
 
+        spinBox.interpretText()
         value = spinBox.value()
         model.setData(index, value, Qt.ItemDataRole.EditRole)
 
@@ -89,14 +92,15 @@ class IntSpinBoxDelegate(QItemDelegate):
         editor.setStepType(QDoubleSpinBox.StepType.AdaptiveDecimalStepType)
         return editor
 
-    def setEditorData(self, spinBox, index) -> None:
+    def setEditorData(self, spinBox: QSpinBox, index) -> None:
         """Set the data for the editor."""
 
         value = index.model().data(index, Qt.ItemDataRole.EditRole)
         spinBox.setValue(value)
 
-    def setModelData(self, spinBox, model, index) -> None:
-        """Set the model data."""
+    def setModelData(self, spinBox: QSpinBox, model, index) -> None:
+        """Write value from editor into models data"""
 
+        spinBox.interpretText()
         value = spinBox.value()
         model.setData(index, value, Qt.ItemDataRole.EditRole)
