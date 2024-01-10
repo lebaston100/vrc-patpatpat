@@ -150,6 +150,9 @@ class MainWindow(QMainWindow):
 
         logger.debug(f"closeEvent in {__class__.__name__}")
 
+        if self._logWindow:
+            self._logWindow.close()
+
 
 if __name__ == "__main__":
     logger.error("There is no point running this file directly")
