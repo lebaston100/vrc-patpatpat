@@ -4,7 +4,7 @@
 from copy import deepcopy
 from typing import Any, cast
 
-from PyQt6.QtCore import QAbstractTableModel, QModelIndex, QSize, Qt
+from PyQt6.QtCore import QAbstractTableModel, QModelIndex, QSize, Qt, QVariant
 from PyQt6.QtCore import pyqtSignal as Signal
 from PyQt6.QtGui import QCloseEvent
 from PyQt6.QtWidgets import (QAbstractItemView, QAbstractScrollArea, QCheckBox,
@@ -513,8 +513,11 @@ class SettingsTableModel(QAbstractTableModel):
             role (int): The action role.
 
         Returns:
-            Any: The data for the cell.
+            Any: The data for the cell or QVariant if index is invalid
         """
+
+        if not index.isValid():
+            return QVariant()
 
         if role in (Qt.ItemDataRole.DisplayRole,
                     Qt.ItemDataRole.EditRole):
