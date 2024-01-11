@@ -4,7 +4,7 @@ An open hardware and software project which tries to implement spatial haptic he
 
 ## This project is actively work in progress
  
-The current development is happening in the refactor branch! The "old" basic working server version can still be accessed from the master branch.
+The current development is happening in the refactor branch! The "old" basic working server version can still be accessed from the master branch. If nothing is happening in this repo for some time it's probably from me learning more (or struggling with) QT stuff or not having pushed to gh yet.
 
 ### Rough todo overview :
 
