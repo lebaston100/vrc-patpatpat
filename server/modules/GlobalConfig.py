@@ -106,7 +106,7 @@ class GlobalConfig(QObject):
             self.mutex.unlock()
 
     def get(self, path: str,
-            fallback: str | None = None) -> Any:
+            fallback: Any = None) -> Any:
         """Return a config option by the given key.
 
         Args:
