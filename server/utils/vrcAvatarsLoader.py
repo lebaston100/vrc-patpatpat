@@ -1,6 +1,6 @@
 """
-This module provides functionality to read the OSC parameters of all available
-VRC avatars from the local installation.
+This module provides functionality to read the OSC parameters of all
+available VRC avatars from the local installation.
 """
 
 import json
@@ -22,7 +22,8 @@ class VrcAvatar:
 
     id: str = ""
     name: str = ""
-    parameters: list = field(default_factory=list)
+    inputParameters: list = field(default_factory=list)
+    outputParameters: list = field(default_factory=list)
 
     def load(self, filePath):
         """
@@ -38,7 +39,24 @@ class VrcAvatar:
         data = self._loadJson(filePath)
         self.id = data.get("id", "")
         self.name = data.get("name", "")
-        self.parameters = data.get("parameters", [])
+        self.inputParameters = []
+        self.outputParameters = []
+
+        parameters = data.get("parameters", [])
+        if parameters:
+            self.inputParameters = list(
+                map(
+                    lambda x: {"name": x["name"], **x["input"]},
+                    filter(lambda x: "input" in x, parameters),
+                )
+            )
+            self.outputParameters = list(
+                map(
+                    lambda x: {"name": x["name"], **x["output"]},
+                    filter(lambda x: "output" in x, parameters),
+                )
+            )
+
         return self
 
     def _loadJson(self, filePath) -> dict:
@@ -80,4 +98,4 @@ def getVrcAvatars() -> list[VrcAvatar] | list:
 if __name__ == "__main__":
     avatars = getVrcAvatars()
     for avatar in avatars:
-        print(avatar.__dict__)
+        print(json.dumps(avatar.__dict__, indent=4))
