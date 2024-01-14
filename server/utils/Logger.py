@@ -1,18 +1,22 @@
+import html
 import logging
 import logging.handlers
 from collections.abc import Iterator
-from logging import LogRecord, _levelToName, _nameToLevel
+from logging import LogRecord, _levelToName
 
 from PyQt6.QtCore import QObject
 from PyQt6.QtCore import pyqtSignal as QSignal
 
 
 class LoggerClass():
-    @staticmethod
-    def getRootLogger(filename: str = "customlog.log",
+    __rootLogger = None
+
+    @classmethod
+    def getRootLogger(cls, filename: str = "customlog.log",
                       level=logging.DEBUG) -> logging.Logger:
         """Return the "root" logger.
         "root" because technically it is not the real root logger
+        Returns the same logger if called repeatedly
 
         Args:
             level (logging.LEVEL, optional): The logging level.
@@ -21,6 +25,11 @@ class LoggerClass():
         Returns:
             logging.Logger: The logging.Logger object.
         """
+
+        # return existing logger if we ask for it, this is basically
+        # a singleton now
+        if cls.__rootLogger:
+            return cls.__rootLogger
 
         # rotating log file handler
         fileLogHandler = logging.handlers.RotatingFileHandler(
@@ -47,12 +56,13 @@ class LoggerClass():
         logger.setLevel(level)
         logger.addHandler(fileLogHandler)
         logger.addHandler(cmdLogHandler)
+        cls.__rootLogger = logger
         return logger
 
     @staticmethod
     def getSubLogger(name: str, level: str = "DEBUG") -> logging.Logger:
         """Return a usable logger for current submodule that is a child
-        of our root logger "vrc-ppp".
+        of our root logger "patpatpat".
 
         Args:
             name (str): Module name aka __name__
@@ -84,7 +94,7 @@ class LoggerClass():
 class LogWindowSignaler(QObject):
     """Keeper of QSignals for the new-log-line Signal.
     Done because SingalLogHandler already inherits from logging.Handler
-    and we need to Subclass QObject for Signals to work
+    and we need to subclass QObject for Signals to work
     Maybe we'll find a better way for this some day.
     For right now this works.
 
@@ -129,7 +139,7 @@ class SignalLogHandler(logging.Handler):
         """
 
         try:
-            formatedText = self.format(record)
+            formatedText = html.escape(self.format(record))
             # text color red when WARN or above
             if record.levelno > 20:
                 formatedText = f"<font color=\"Red\">{formatedText}</font>"

@@ -28,14 +28,14 @@ class LogWindow(QWidget):
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
         self._logWindowHandler = SignalLogHandler()
-        self._initialLogLevel = initialLogLevel
-        self._logWindowHandler.changeLevel(self._initialLogLevel)
+        self._logWindowHandler.changeLevel(initialLogLevel)
         self._rootLogger = logger
+        logger.debug(self._rootLogger)
         # only attach the handler while the window is alive
         self._rootLogger.addHandler(self._logWindowHandler)
-        self.buildUi()
+        self.buildUi(initialLogLevel)
 
-    def buildUi(self) -> None:
+    def buildUi(self, initialLogLevel) -> None:
         """Initialize UI elements."""
 
         # the widget and it's layout
@@ -73,7 +73,7 @@ class LogWindow(QWidget):
         self.cb_logLevel = QComboBox(self)
         for level in LoggerClass.getLoggingLevelStrings():
             self.cb_logLevel.addItem(level)
-        self.cb_logLevel.setCurrentText(self._initialLogLevel)
+        self.cb_logLevel.setCurrentText(initialLogLevel)
         self.cb_logLevel.setObjectName("cb_logLevel")
         self.footerRowLayout.addWidget(self.cb_logLevel)
 

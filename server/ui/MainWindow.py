@@ -18,7 +18,6 @@ from utils import LoggerClass
 
 
 logger = LoggerClass.getSubLogger(__name__)
-rootLogger = LoggerClass.getRootLogger()
 
 
 class MainWindow(QMainWindow):
@@ -146,7 +145,7 @@ class MainWindow(QMainWindow):
             window = None
             match windowReference:
                 case "logwindow":
-                    window = ui.LogWindow(rootLogger)
+                    window = ui.LogWindow(LoggerClass.getRootLogger())
                 case "programmsettings":
                     window = ui.ProgramSettingsDialog()
             if window:
