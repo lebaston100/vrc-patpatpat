@@ -7,9 +7,6 @@ from utils import LoggerClass
 
 logger = LoggerClass.getSubLogger(__name__)
 
-# TODO:
-# add more error handling
-
 # TODO: Some day once i understand typing figure this all out
 # type allowedWidgetTypes = QLineEdit | QSpinBox | QComboBox
 # type validDataTypes = Type[str] | Type[int] | Type[float] | Type[bool] | Type[list[Any]
@@ -132,7 +129,8 @@ class OptionAdapter():
         corresponding UI elements to the values from the dictionary.
 
         Args:
-            config (GlobalConfig): The GlobalConfig instance to update.
+            config (GlobalConfigSingleton): The GlobalConfigSingleton
+                instance to update.
             configKey (str): The base config key path.
 
         Returns:
@@ -158,7 +156,8 @@ class OptionAdapter():
         keeps track of the keys (or paths) that have changed.
 
         Args:
-            config (GlobalConfig): The GlobalConfig instance to update.
+            config (GlobalConfigSingleton): The GlobalConfigSingleton
+                instance to update.
             configKey (str): The base config key path.
             diff (bool): Only return the difference without saving.
 
