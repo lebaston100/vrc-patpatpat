@@ -2,7 +2,6 @@
 """
 
 import webbrowser
-# from PyQt6.QtCore import pyqtSignal as Signal
 
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QCloseEvent, QFont
@@ -14,6 +13,9 @@ import ui
 from modules import config
 from utils import LoggerClass
 
+# from PyQt6.QtCore import pyqtSignal as Signal
+
+
 logger = LoggerClass.getSubLogger(__name__)
 
 
@@ -21,11 +23,12 @@ class MainWindow(QMainWindow):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
+        self._logWindow: ui.LogWindow | None = None
+        self._programmSettingsWindow: ui.ProgramSettingsDialog | None = None
+
         self.setupUi()
 
-        self._logWindow: ui.LogWindow | None = None
-
-    def setupUi(self):
+    def setupUi(self) -> None:
         """Initialize the main UI."""
 
         # the widget and it's layout
@@ -58,7 +61,8 @@ class MainWindow(QMainWindow):
         self.bt_openGithub.setMaximumSize(QSize(60, 16777215))
         self.bt_openGithub.setText("Help")
         self.bt_openGithub.clicked.connect(lambda: webbrowser.open(
-            "https://github.com/lebaston100/vrc-patpatpat"))
+            "https://github.com/lebaston100/vrc-patpatpat"
+            "?tab=readme-ov-file#vrc-patpatpat"))
         self.hl_topBar.addWidget(self.bt_openGithub)
 
         # open log window button
@@ -66,7 +70,7 @@ class MainWindow(QMainWindow):
         self.bt_openLogWindow.setObjectName("bt_openLogWindow")
         self.bt_openLogWindow.setMaximumSize(QSize(60, 16777215))
         self.bt_openLogWindow.setText("Log")
-        self.bt_openLogWindow.clicked.connect(self.handleLogWindowOpen)
+        self.bt_openLogWindow.clicked.connect(self.handleLogWinOpen)
         self.hl_topBar.addWidget(self.bt_openLogWindow)
 
         # open programm settings button
@@ -78,6 +82,8 @@ class MainWindow(QMainWindow):
         self.bt_openProgramSettings.setFont(font)
         self.bt_openProgramSettings.setToolTip("Program Settings")
         self.bt_openProgramSettings.setText("\ud83d\udd27")
+        self.bt_openProgramSettings.clicked.connect(
+            self.handleProgrammSettingsWinOpen)
         self.hl_topBar.addWidget(self.bt_openProgramSettings)
 
         self.selfLayout.addLayout(self.hl_topBar)
@@ -127,20 +133,34 @@ class MainWindow(QMainWindow):
         self.theCentralWidet.setLayout(self.selfLayout)
         self.setCentralWidget(self.theCentralWidet)
 
-    def handleLogWindowOpen(self):
+    # this is a lot of boilerplate code, needs refactoring
+    def handleLogWinOpen(self) -> None:
         if self._logWindow:
             self._logWindow.raise_()
             self._logWindow.activateWindow()
         else:
             self._logWindow = ui.LogWindow(logger)
-            self._logWindow.destroyed.connect(self.handleLogWindowClose)
+            self._logWindow.destroyed.connect(self.handleLogWinClose)
             self._logWindow.show()
 
-    def handleLogWindowClose(self):
+    def handleLogWinClose(self) -> None:
         if self._logWindow:
             self._logWindow = None
 
-    # handle the close event for the log window
+    def handleProgrammSettingsWinOpen(self) -> None:
+        if self._programmSettingsWindow:
+            self._programmSettingsWindow.raise_()
+            self._programmSettingsWindow.activateWindow()
+        else:
+            self._programmSettingsWindow = ui.ProgramSettingsDialog()
+            self._programmSettingsWindow.destroyed.connect(
+                self.handleProgrammSettingsWinClose)
+            self._programmSettingsWindow.show()
+
+    def handleProgrammSettingsWinClose(self) -> None:
+        if self._programmSettingsWindow:
+            self._programmSettingsWindow = None
+
     def closeEvent(self, event: QCloseEvent) -> None:
         """Handle window close event cleanly.
 
@@ -152,6 +172,9 @@ class MainWindow(QMainWindow):
 
         if self._logWindow:
             self._logWindow.close()
+
+        if self._programmSettingsWindow:
+            self._programmSettingsWindow.close()
 
 
 if __name__ == "__main__":
