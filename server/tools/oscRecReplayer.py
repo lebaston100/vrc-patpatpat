@@ -1,3 +1,4 @@
+# type: ignore
 # a hacked together utility to record and replay osc data
 # help for command line options are available via -h
 # timing is not 100% accurate but good enough(TM) for testing purposes
@@ -6,7 +7,7 @@
 import logging
 import time
 import threading
-from modules.jsonFile import fileHelper
+from utils.FileHelper import FileHelper
 from pythonosc.osc_server import BlockingOSCUDPServer
 from pythonosc.dispatcher import Dispatcher
 from pythonosc.udp_client import SimpleUDPClient
@@ -38,7 +39,7 @@ parser.add_argument("-f", "--filter", required=False, type=str,
 args = parser.parse_args()
 
 # init vars
-file = fileHelper(args.name)
+file = FileHelper(args.name)
 dataBuffer = []
 startTime = 0
 
