@@ -1,6 +1,7 @@
 """The main application window
 """
 
+from functools import partial
 import webbrowser
 
 from PyQt6.QtCore import QSize, Qt
@@ -17,6 +18,7 @@ from utils import LoggerClass
 
 
 logger = LoggerClass.getSubLogger(__name__)
+rootLogger = LoggerClass.getRootLogger()
 
 
 class MainWindow(QMainWindow):
@@ -25,6 +27,8 @@ class MainWindow(QMainWindow):
 
         self._logWindow: ui.LogWindow | None = None
         self._programmSettingsWindow: ui.ProgramSettingsDialog | None = None
+
+        self._singleWindows: dict[str, QWidget] = {}
 
         self.setupUi()
 
@@ -70,7 +74,8 @@ class MainWindow(QMainWindow):
         self.bt_openLogWindow.setObjectName("bt_openLogWindow")
         self.bt_openLogWindow.setMaximumSize(QSize(60, 16777215))
         self.bt_openLogWindow.setText("Log")
-        self.bt_openLogWindow.clicked.connect(self.handleLogWinOpen)
+        self.bt_openLogWindow.clicked.connect(
+            partial(self.openSingleWindow, "logwindow"))
         self.hl_topBar.addWidget(self.bt_openLogWindow)
 
         # open programm settings button
@@ -83,7 +88,7 @@ class MainWindow(QMainWindow):
         self.bt_openProgramSettings.setToolTip("Program Settings")
         self.bt_openProgramSettings.setText("\ud83d\udd27")
         self.bt_openProgramSettings.clicked.connect(
-            self.handleProgrammSettingsWinOpen)
+            partial(self.openSingleWindow, "programmsettings"))
         self.hl_topBar.addWidget(self.bt_openProgramSettings)
 
         self.selfLayout.addLayout(self.hl_topBar)
@@ -133,33 +138,29 @@ class MainWindow(QMainWindow):
         self.theCentralWidet.setLayout(self.selfLayout)
         self.setCentralWidget(self.theCentralWidet)
 
-    # this is a lot of boilerplate code, needs refactoring
-    def handleLogWinOpen(self) -> None:
-        if self._logWindow:
-            self._logWindow.raise_()
-            self._logWindow.activateWindow()
+    def openSingleWindow(self, windowReference: str):
+        if windowReference in self._singleWindows:
+            self._singleWindows[windowReference].raise_()
+            self._singleWindows[windowReference].activateWindow()
         else:
-            self._logWindow = ui.LogWindow(logger)
-            self._logWindow.destroyed.connect(self.handleLogWinClose)
-            self._logWindow.show()
+            window = None
+            match windowReference:
+                case "logwindow":
+                    window = ui.LogWindow(rootLogger)
+                case "programmsettings":
+                    window = ui.ProgramSettingsDialog()
+            if window:
+                window.destroyed.connect(
+                    partial(self.closedSingleWindow, windowReference))
+                window.show()
+                self._singleWindows[windowReference] = window
+        logger.debug(self._singleWindows)
 
-    def handleLogWinClose(self) -> None:
-        if self._logWindow:
-            self._logWindow = None
-
-    def handleProgrammSettingsWinOpen(self) -> None:
-        if self._programmSettingsWindow:
-            self._programmSettingsWindow.raise_()
-            self._programmSettingsWindow.activateWindow()
-        else:
-            self._programmSettingsWindow = ui.ProgramSettingsDialog()
-            self._programmSettingsWindow.destroyed.connect(
-                self.handleProgrammSettingsWinClose)
-            self._programmSettingsWindow.show()
-
-    def handleProgrammSettingsWinClose(self) -> None:
-        if self._programmSettingsWindow:
-            self._programmSettingsWindow = None
+    def closedSingleWindow(self, windowReference):
+        logger.debug(f"closed window {windowReference}")
+        if windowReference in self._singleWindows:
+            del self._singleWindows[windowReference]
+        logger.debug(self._singleWindows)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Handle window close event cleanly.
@@ -169,6 +170,9 @@ class MainWindow(QMainWindow):
         """
 
         logger.debug(f"closeEvent in {__class__.__name__}")
+
+        for window in self._singleWindows.values():
+            window.close()
 
         if self._logWindow:
             self._logWindow.close()
