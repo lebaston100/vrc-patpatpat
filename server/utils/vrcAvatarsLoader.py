@@ -7,6 +7,7 @@ import json
 import os
 import pathlib
 from dataclasses import dataclass, field
+from typing import Self
 
 
 @dataclass
@@ -20,12 +21,13 @@ class VrcAvatar:
         parameters (list): The parameters of the avatar.
     """
 
-    id: str = ""
+    aid: str = ""
     name: str = ""
     inputParameters: list = field(default_factory=list)
     outputParameters: list = field(default_factory=list)
 
-    def load(self, filePath):
+    @classmethod
+    def fromFile(cls, filePath: pathlib.Path) -> Self:
         """
         Load avatar data from a JSON file.
 
@@ -36,30 +38,31 @@ class VrcAvatar:
             VrcAvatar: The avatar object with loaded data.
         """
 
-        data = self._loadJson(filePath)
-        self.id = data.get("id", "")
-        self.name = data.get("name", "")
-        self.inputParameters = []
-        self.outputParameters = []
+        data = cls._loadJson(filePath)
+        aid = data.get("id", "")
+        name = data.get("name", "")
+        inputParameters = []
+        outputParameters = []
 
         parameters = data.get("parameters", [])
         if parameters:
-            self.inputParameters = list(
+            inputParameters = list(
                 map(
                     lambda x: {"name": x["name"], **x["input"]},
                     filter(lambda x: "input" in x, parameters),
                 )
             )
-            self.outputParameters = list(
+            outputParameters = list(
                 map(
                     lambda x: {"name": x["name"], **x["output"]},
                     filter(lambda x: "output" in x, parameters),
                 )
             )
 
-        return self
+        return cls(aid, name, inputParameters, outputParameters)
 
-    def _loadJson(self, filePath) -> dict:
+    @staticmethod
+    def _loadJson(filePath: pathlib.Path) -> dict:
         """
         Load data from a JSON file.
 
@@ -91,7 +94,7 @@ def getVrcAvatars() -> list[VrcAvatar] | list:
         vrcfolder = pathlib.Path(
             appdata
         ).joinpath("..", "LocalLow", "VRChat", "VRChat", "OSC")
-        return [VrcAvatar().load(f) for f in vrcfolder.rglob("avtr_*.json")]
+        return [VrcAvatar.fromFile(f) for f in vrcfolder.rglob("avtr_*.json")]
     return []
 
 
