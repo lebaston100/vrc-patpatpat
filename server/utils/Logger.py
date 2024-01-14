@@ -2,7 +2,7 @@ import html
 import logging
 import logging.handlers
 from collections.abc import Iterator
-from logging import LogRecord, _levelToName
+from logging import LogRecord, _levelToName, _nameToLevel
 
 from PyQt6.QtCore import QObject
 from PyQt6.QtCore import pyqtSignal as QSignal
@@ -51,18 +51,19 @@ class LoggerClass():
             style="{"))
 
         # setup main logger
-        logger = logging.getLogger("patpatpat")
+        logger = logging.getLogger("ppp")
         logger.propagate = False
         logger.setLevel(level)
         logger.addHandler(fileLogHandler)
         logger.addHandler(cmdLogHandler)
+        LoggerClass.attachLoggingLevels(logger)
         cls.__rootLogger = logger
         return logger
 
     @staticmethod
     def getSubLogger(name: str, level: str = "DEBUG") -> logging.Logger:
         """Return a usable logger for current submodule that is a child
-        of our root logger "patpatpat".
+        of our root logger "ppp".
 
         Args:
             name (str): Module name aka __name__
@@ -73,9 +74,15 @@ class LoggerClass():
             logging.Logger: A logging logger.
         """
 
-        logger = logging.getLogger("patpatpat").getChild(name)
+        logger = logging.getLogger("ppp").getChild(name)
         logger.setLevel(logging.getLevelName(level))
+        LoggerClass.attachLoggingLevels(logger)
         return logger
+
+    @staticmethod
+    def attachLoggingLevels(logger):
+        for level in LoggerClass.getLoggingLevelStrings():
+            setattr(logger, level, _nameToLevel[level])
 
     @staticmethod
     def getLoggingLevelStrings() -> Iterator[str]:

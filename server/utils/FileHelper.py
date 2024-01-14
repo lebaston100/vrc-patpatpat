@@ -6,7 +6,7 @@ from utils.Logger import LoggerClass
 import logging
 
 logger = LoggerClass.getSubLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logger.INFO)  # type: ignore
 
 
 class FileHelper:
