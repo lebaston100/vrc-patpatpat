@@ -1,9 +1,10 @@
 import logging
-from logging import LogRecord
-from logging import _levelToName
-from collections.abc import Iterator
 import logging.handlers
-from PyQt6.QtCore import QObject, pyqtSignal as QSignal
+from collections.abc import Iterator
+from logging import LogRecord, _levelToName, _nameToLevel
+
+from PyQt6.QtCore import QObject
+from PyQt6.QtCore import pyqtSignal as QSignal
 
 
 class LoggerClass():
