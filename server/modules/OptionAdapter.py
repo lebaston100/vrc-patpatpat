@@ -140,9 +140,13 @@ class OptionAdapter():
         """
 
         for path, (uiElem, dataType) in self._uiElems.items():
-            newValue = dataType(config.get(f"{configKey}.{path}"))
-            # logger.debug(f"{configKey}.{path}: {str(newValue)}")
-            self._setUiOpt(uiElem, newValue)
+            try:
+                newValue = dataType(config.get(f"{configKey}.{path}"))
+                # logger.debug(f"{configKey}.{path}: {str(newValue)}")
+            except TypeError:
+                logger.error(f"Failed to read {configKey}.{path} from config")
+            else:
+                self._setUiOpt(uiElem, newValue)
 
     def saveOptsFromGui(self, config, configKey: str,
                         diff: bool = False) -> list[str | None]:

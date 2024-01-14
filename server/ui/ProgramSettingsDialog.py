@@ -71,9 +71,6 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
         self.cb_logLevel.setObjectName("cb_logLevel")
         self.addOpt("logLevel", self.cb_logLevel)
 
-        self.addOpt("testarray.0", self.sb_tps, dataType=int)
-        self.addOpt("testarray.1", self.sb_tps, dataType=int)
-
         self.selfLayout.addRow("Log Level:", self.cb_logLevel)
 
         # spacer
