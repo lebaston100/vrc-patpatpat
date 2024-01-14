@@ -2,11 +2,11 @@ import sys
 
 from PyQt6.QtWidgets import QApplication
 
-import utils
+from utils import LoggerClass
 from modules import config
 from ui import MainWindow
 
-logger = utils.LoggerClass.getRootLogger()
+logger = LoggerClass.getRootLogger()
 
 REQUIRED_CONFIG_VERSION = 1
 
@@ -20,6 +20,12 @@ sys.excepthook = handleUncaughtExceptions
 
 
 def checkConfigVersion() -> bool:
+    """Checks the config version and runs upgrades if needed.
+
+    Returns:
+        bool: True if config (and upgrade) was ok, False otherwise
+    """
+
     logger.debug("Checking config version")
     configVersion = config.get("configVersion", 0)
     if configVersion < REQUIRED_CONFIG_VERSION:
@@ -39,4 +45,8 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
-    sys.exit(app.exec())
+
+    returnCode = app.exec()
+    logger.info(f"Exiting vrc-patpatpat with return code {returnCode}")
+    # Do any other deconstructing here if we need to
+    sys.exit(returnCode)
