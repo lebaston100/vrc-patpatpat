@@ -7,8 +7,7 @@ Typical usage example:
     value = config.get("option")
 """
 
-from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Type, TypeVar
 
 from PyQt6.QtCore import QMutex, QObject
 from PyQt6.QtCore import pyqtSignal as QSignal
@@ -17,62 +16,80 @@ from utils import FileHelper, LoggerClass, PathReader
 
 logger = LoggerClass.getSubLogger(__name__)
 
+T = TypeVar('T', bound='GlobalConfigSingleton')
 
-class GlobalConfig(QObject):
-    """A globally exposed config object to share program configuration
 
-    Signals:
-        configPathHasChanged(key: str): Emitted when a config
-            option was updated.
-        configPathWasDeleted(key: str): Emitted when a config
-            option was deleted.
+class GlobalConfigSingleton(QObject):
+    """
+    Singleton class for global configuration.
 
+    Attributes:
+        __instance (GlobalConfigSingleton): Singleton instance.
+        configPathHasChanged (QSignal): Signal for config path change.
+        configPathWasDeleted (QSignal): Signal for config path deletion.
     """
 
+    __instance = None
     configPathHasChanged = QSignal(str)
     configPathWasDeleted = QSignal(str)
 
-    def __init__(self, file: str, *args, **kwargs) -> None:
-        """Initialize config handler.
-
-        Args:
-            file (str): A path string to the config file.
+    @classmethod
+    def getInstance(cls: Type[T]) -> Optional[T]:
+        """
+        Get the singleton instance.
 
         Returns:
-            None
+            GlobalConfigSingleton: Singleton instance.
+        """
+
+        return cls.__instance
+
+    @classmethod
+    def fromFile(cls: Type[T], filename: str) -> T:
+        return cls(FileHelper(filename))
+
+    def __init__(self, configHandler: FileHelper, *args, **kwargs) -> None:
+        """
+        Initialize the singleton instance.
+
+        Args:
+            configHandler (FileHelper): Config file handler.
 
         Raises:
-            Exception: If reading the config file failed.
+            RuntimeError: If multiple singleton instances are initialized.
         """
+
+        if GlobalConfigSingleton.__instance:
+            raise RuntimeError("Can't initialize multiple singleton instances")
 
         super().__init__()
         logger.debug(f"Creating {__class__.__name__}")
 
-        self.mutex = QMutex()
+        self._mutex = QMutex()
+        self._configHandler = configHandler
+        self._configOptions: dict[str, Any] = {}
+
         try:
-            self._file = Path(file)
-            self._fh = FileHelper(self._file)
+            self.parse()
         except Exception as E:
             logger.exception(E)
             raise E
-        self._configOptions = {}
-        self.parse()
+
+        GlobalConfigSingleton.__instance = self
 
     def parse(self) -> None:
         """
-        Reads options from a config file or creates an empty one.
+        Parse the config file.
 
-        This function reads all options from a config file. If the file 
-        does not exist, it creates an empty one.
-
-        Returns:
-            None
+        Raises:
+            RuntimeError: If config file is not found.
         """
 
-        if not self._file.is_file():
+        if not self._configHandler.hasData():
             logger.warn("No config file. Creating empty one.")
-            self._flushDataToFile()
-        self._configOptions = self._fh.read()
+            self._configHandler.initializeConfig()
+            self._writeOptions()
+        self._configOptions = self._configHandler.read()
 
     def set(self, path: str,
             newVal: str | list | dict | int | float,
@@ -91,7 +108,7 @@ class GlobalConfig(QObject):
         """
 
         try:
-            self.mutex.lock()
+            self._mutex.lock()
             self._configOptions.update(PathReader.setOption(
                 self._configOptions, path, newVal))
             # logger.debug(f"changed <{path}> to <{newVal}>")
@@ -101,9 +118,9 @@ class GlobalConfig(QObject):
         else:
             if wasChanged:
                 self.configPathHasChanged.emit(path)
-            return self._flushDataToFile()
+            return self._writeOptions()
         finally:
-            self.mutex.unlock()
+            self._mutex.unlock()
 
     def get(self, path: str,
             fallback: Any = None) -> Any:
@@ -160,19 +177,19 @@ class GlobalConfig(QObject):
         PathReader.delOption(self._configOptions, path)
         self.configPathWasDeleted.emit(path)
 
-    def _flushDataToFile(self) -> bool:
+    def _writeOptions(self) -> bool:
         """Write config options from memory to file.
 
         Returns:
             bool: True if write was successful otherwise False.
         """
 
-        return self._fh.write(self._configOptions)
+        return self._configHandler.write(self._configOptions)
 
 
 # any work to find out what the config would need to be done here
 # this is a globally available class INSTANCE, not the class itself
-config = GlobalConfig(file="prototype-config.conf")
+config = GlobalConfigSingleton.fromFile("prototype-config.conf")
 
 if __name__ == "__main__":
     print("There is no point running this file directly")
