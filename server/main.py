@@ -11,6 +11,14 @@ logger = utils.LoggerClass.getRootLogger()
 REQUIRED_CONFIG_VERSION = 1
 
 
+def handleUncaughtExceptions(exc_type, exc_value, exc_traceback):
+    logger.exception("Unhandled Exception",
+                     exc_info=(exc_type, exc_value, exc_traceback))
+
+
+sys.excepthook = handleUncaughtExceptions
+
+
 def checkConfigVersion() -> bool:
     logger.debug("Checking config version")
     configVersion = config.get("configVersion", 0)
@@ -23,9 +31,12 @@ def checkConfigVersion() -> bool:
 
 if __name__ == "__main__":
     logger.info("Starting vrc-patpatpat V0.1")
-    checkConfigVersion()
-    app = QApplication(sys.argv)
 
+    # check config version and exit if upgrade did not work
+    if not checkConfigVersion():
+        sys.exit(1)
+
+    app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
