@@ -1,8 +1,8 @@
 """The main application window
 """
 
-from functools import partial
 import webbrowser
+from functools import partial
 
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QCloseEvent, QFont
@@ -24,9 +24,6 @@ class MainWindow(QMainWindow):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self._logWindow: ui.LogWindow | None = None
-        self._programmSettingsWindow: ui.ProgramSettingsDialog | None = None
-
         self._singleWindows: dict[str, QWidget] = {}
 
         self.setupUi()
@@ -35,13 +32,6 @@ class MainWindow(QMainWindow):
         """Initialize the main UI."""
 
         # the widget and it's layout
-        sizePolicy = QSizePolicy(
-            QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.sizePolicy().hasHeightForWidth())
-        # self.setSizePolicy(sizePolicy) # might not be needed
         self.resize(QSize(800, 430))
         self.setWindowTitle("VRC-patpatpat")
         self.theCentralWidet = QWidget(self)
@@ -74,7 +64,7 @@ class MainWindow(QMainWindow):
         self.bt_openLogWindow.setMaximumSize(QSize(60, 16777215))
         self.bt_openLogWindow.setText("Log")
         self.bt_openLogWindow.clicked.connect(
-            partial(self.openSingleWindow, "logwindow"))
+            partial(self.openSingleWindow, "LogWindow"))
         self.hl_topBar.addWidget(self.bt_openLogWindow)
 
         # open programm settings button
@@ -87,7 +77,7 @@ class MainWindow(QMainWindow):
         self.bt_openProgramSettings.setToolTip("Program Settings")
         self.bt_openProgramSettings.setText("\ud83d\udd27")
         self.bt_openProgramSettings.clicked.connect(
-            partial(self.openSingleWindow, "programmsettings"))
+            partial(self.openSingleWindow, "ProgramSettingsDialog"))
         self.hl_topBar.addWidget(self.bt_openProgramSettings)
 
         self.selfLayout.addLayout(self.hl_topBar)
@@ -96,13 +86,6 @@ class MainWindow(QMainWindow):
         self.espRowFrame = QFrame(self)
         self.espRowFrame.setObjectName("espRowFrame")
         self.espRowFrame.setEnabled(True)
-        sizePolicy1 = QSizePolicy(
-            QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Maximum)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(
-            self.espRowFrame.sizePolicy().hasHeightForWidth())
-        # self.espRowFrame.setSizePolicy(sizePolicy1)
         self.espRowFrame.setFrameShape(QFrame.Shape.Box)
         self.espRowFrame.setFrameShadow(QFrame.Shadow.Sunken)
         self.espRowFrame.setLineWidth(1)
@@ -144,9 +127,9 @@ class MainWindow(QMainWindow):
         else:
             window = None
             match windowReference:
-                case "logwindow":
+                case "LogWindow":
                     window = ui.LogWindow(LoggerClass.getRootLogger())
-                case "programmsettings":
+                case "ProgramSettingsDialog":
                     window = ui.ProgramSettingsDialog()
             if window:
                 window.destroyed.connect(
@@ -172,12 +155,6 @@ class MainWindow(QMainWindow):
 
         for window in self._singleWindows.values():
             window.close()
-
-        if self._logWindow:
-            self._logWindow.close()
-
-        if self._programmSettingsWindow:
-            self._programmSettingsWindow.close()
 
 
 if __name__ == "__main__":
