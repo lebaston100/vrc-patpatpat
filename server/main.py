@@ -9,6 +9,7 @@ from ui import MainWindow
 logger = LoggerClass.getRootLogger()
 
 REQUIRED_CONFIG_VERSION = 1
+SEMVER = f"0.1.0"
 
 
 def handleUncaughtExceptions(exc_type, exc_value, exc_traceback):
@@ -36,7 +37,7 @@ def checkConfigVersion() -> bool:
 
 
 if __name__ == "__main__":
-    logger.info("Starting vrc-patpatpat V0.1")
+    logger.info(f"Starting vrc-patpatpat v{SEMVER}")
 
     # check config version and exit if upgrade did not work
     if not checkConfigVersion():
