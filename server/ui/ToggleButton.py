@@ -6,6 +6,7 @@ Typical usage example:
     myButton = ToggleButton(("Unchecked", "Checked"), "Prefix")
 """
 
+from PyQt6.QtCore import pyqtSignal as Signal
 from PyQt6.QtWidgets import QPushButton
 
 from utils import LoggerClass
@@ -16,7 +17,14 @@ logger = LoggerClass.getSubLogger(__name__)
 class ToggleButton(QPushButton):
     """A simple expansion of the QPushButton that is toggable and
     changes it's text depending on the toggle state.
+
+    Signals:
+        toggledOn: Emitted when the button state changed to on
+        toggleOff: Emitted when the button state changed to off
     """
+
+    toggledOn = Signal()
+    toggledOff = Signal()
 
     def __init__(self, stateText: tuple, prefixText: str | None = None,
                  *args, **kwargs) -> None:
@@ -31,6 +39,7 @@ class ToggleButton(QPushButton):
 
         super().__init__(*args, **kwargs)
         self._stateText = stateText
+        self._togglesStates = (self.toggledOff, self.toggledOn)
         self._prefixText = prefixText + " " if prefixText else ""
         self.setCheckable(True)
         self.toggled.connect(self.setStateText)
@@ -47,6 +56,7 @@ class ToggleButton(QPushButton):
         """
 
         self.setText(self._prefixText + self._stateText[state])
+        self._togglesStates[state].emit()
 
 
 if __name__ == "__main__":
