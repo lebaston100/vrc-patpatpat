@@ -30,7 +30,6 @@ class LogWindow(QWidget):
         self._logWindowHandler = SignalLogHandler()
         self._logWindowHandler.changeLevel(initialLogLevel)
         self._rootLogger = logger
-        logger.debug(self._rootLogger)
         # only attach the handler while the window is alive
         self._rootLogger.addHandler(self._logWindowHandler)
         self.buildUi(initialLogLevel)
