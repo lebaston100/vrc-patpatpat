@@ -39,6 +39,9 @@ class StaticLabel(QLabel):
 
         return super().setText(self._prefixText + text)
 
+    def setNum(self, num: int) -> None:
+        self.setText(str(num))
+
 
 if __name__ == "__main__":
     print("There is no point running this file directly")
