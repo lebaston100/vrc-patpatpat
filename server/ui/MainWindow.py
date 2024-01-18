@@ -4,7 +4,7 @@
 import webbrowser
 from functools import partial
 
-from PyQt6.QtCore import QSize, Qt
+from PyQt6.QtCore import QSize, Qt, QObject
 from PyQt6.QtGui import QCloseEvent, QFont
 from PyQt6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMainWindow,
                              QPushButton, QScrollArea, QSizePolicy, QSlider,
@@ -223,7 +223,7 @@ class BaseRow(QFrame):
     """ The base for hardware and group rows with an expandable row """
 
     def __init__(self, parent: QWidget | None) -> None:
-        logger.debug(f"Creating {__class__.__name__}")
+        # logger.debug(f"Creating {__class__.__name__}")
         super().__init__(parent)
 
         self.expandingWidget = None
@@ -252,6 +252,26 @@ class BaseRow(QFrame):
             self.selfLayout.removeWidget(self.expandingWidget)
             self.expandingWidget.close()
             self.expandingWidget = None
+
+
+class ExpandedWidgetDataBaseRow(QHBoxLayout):
+    """ The base for the expanding widgets """
+
+    def __init__(self, *args, **kwargs) -> None:
+        # logger.debug(f"Creating {__class__.__name__}")
+        super().__init__()
+
+        self.buildCommonUi()
+        self.buildUi()
+
+    def buildCommonUi(self):
+        self.setContentsMargins(8, 0, -1, 2)
+
+    def buildUi(self):
+        raise NotImplementedError
+
+    def updateValue(self):
+        raise NotImplementedError
 
 
 class HardwareEspRow(BaseRow):
@@ -354,32 +374,25 @@ class EspMoreInfoWidget(QWidget):
         self.lb_motorsRow = ui.StaticLabel("Motors: ", "", self)
         self.selfLayout.addWidget(self.lb_motorsRow)
 
-        # TODO: one slider row, this needs to be refactored later!!
-        self.espMotorChannelRow = QHBoxLayout()
-        self.espMotorChannelRow.setContentsMargins(8, 0, -1, 2)
-        self.lb_motorNum = QLabel(self)
-        self.lb_motorNum.setText("Channel 1")
-        self.espMotorChannelRow.addWidget(self.lb_motorNum)
-        self.hsld_motorVal = QSlider(self)
-        self.hsld_motorVal.setMinimumSize(QSize(100, 0))
-        self.hsld_motorVal.setMaximum(255)
-        self.hsld_motorVal.setValue(20)
-        self.hsld_motorVal.setTracking(True)
-        self.hsld_motorVal.setOrientation(Qt.Orientation.Horizontal)
-        self.espMotorChannelRow.addWidget(self.hsld_motorVal)
-        self.lb_motorVal = ui.StaticLabel("PWM: ", "20", self)
-        self.hsld_motorVal.valueChanged.connect(self.lb_motorVal.setNum)
-        self.espMotorChannelRow.addWidget(self.lb_motorVal)
-        self.selfLayout.addLayout(self.espMotorChannelRow)
+        # TODO: this will later be dynamic, just for testing now
+        self.rows = []
+        for id in range(5):
+            row = HardwareMotorChannelRow(id)
+            self.selfLayout.addLayout(row)
+            self.rows.append(row)
 
+        # a horizontal row for the buttons
+        self.bottomButtonRow = QHBoxLayout()
         # the stop app button
         self.bt_stopAllMotors = QPushButton(self)
         self.bt_stopAllMotors.setMaximumWidth(60)
         self.bt_stopAllMotors.setText("Stop all")
-        self.selfLayout.addWidget(self.bt_stopAllMotors)
+        self.bottomButtonRow.addWidget(
+            self.bt_stopAllMotors, 0, Qt.AlignmentFlag.AlignLeft)
+
+        self.selfLayout.addLayout(self.bottomButtonRow)
 
     # handle the close event
-
     def closeEvent(self, event: QCloseEvent) -> None:
         """Handle window close event cleanly.
 
@@ -388,6 +401,60 @@ class EspMoreInfoWidget(QWidget):
         """
 
         logger.debug(f"closeEvent in {__class__.__name__}")
+
+
+class HardwareMotorChannelRow(ExpandedWidgetDataBaseRow):
+    def __init__(self, rowId: int, *args, **kwargs) -> None:
+        """Initialize HardwareMotorChannelRow"""
+
+        logger.debug(f"Creating {__class__.__name__}")
+        self.rowId = rowId
+        self.sliderLocked = False
+        super().__init__(*args, **kwargs)
+
+    def buildUi(self) -> None:
+        # Motor number
+        self.lb_motorNum = ui.StaticLabel("Channel ", str(self.rowId))
+        self.addWidget(self.lb_motorNum)
+
+        # the pwm slider
+        self.hsld_motorVal = QSlider(Qt.Orientation.Horizontal)
+        self.hsld_motorVal.setMinimumSize(QSize(100, 0))
+        self.hsld_motorVal.setMaximum(255)
+        self.hsld_motorVal.setValue(0)
+        self.hsld_motorVal.setTracking(True)
+        self.addWidget(self.hsld_motorVal)
+
+        # the pwm number
+        self.lb_motorVal = ui.StaticLabel("PWM: ", "0")
+        self.addWidget(self.lb_motorVal)
+
+        # enable slider locking while mouse has it grabbed
+        self.hsld_motorVal.sliderPressed.connect(self._lockSlider)
+        self.hsld_motorVal.sliderReleased.connect(self._unlockSlider)
+
+    # handle the close event
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """Handle window close event cleanly.
+
+        Args:
+            event QCloseEvent): The QCloseEvent.
+        """
+
+        logger.debug(f"closeEvent in {__class__.__name__}")
+
+    def _lockSlider(self):
+        logger.debug("Slider locked")
+        self.sliderLocked = True
+
+    def _unlockSlider(self):
+        logger.debug("Slider unlocked")
+        self.sliderLocked = False
+
+    def updateValue(self, value: int):
+        self.lb_motorVal.setNum(value)
+        if not self.sliderLocked:
+            self.hsld_motorVal.setValue(value)
 
 
 class ContactGroupRow(BaseRow):
@@ -476,19 +543,12 @@ class ContactGroupPointsWidget(QWidget):
         self.lb_pointsRow.setText("Points:")
         self.selfLayout.addWidget(self.lb_pointsRow)
 
-        # TODO: one point row, need to be refactored later!!
-        self.pointRow = QHBoxLayout()
-        self.pointRow.setContentsMargins(8, -1, -1, 8)
-        self.lb_groupPointName = QLabel(self)
-        self.lb_groupPointName.setText("Name: ")
-        self.pointRow.addWidget(self.lb_groupPointName)
-        self.lb_groupPointValue = ui.StaticLabel("Value: ", "0.2", self)
-        self.pointRow.addWidget(self.lb_groupPointValue)
-        self.spc_groupRow_2 = QSpacerItem(
-            40, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-        self.pointRow.addItem(self.spc_groupRow_2)
-
-        self.selfLayout.addLayout(self.pointRow)
+        # TODO: this will later be dynamic, just for testing now
+        self.rows = []
+        for id in range(5):
+            row = PointDetailsRow(id)
+            self.selfLayout.addLayout(row)
+            self.rows.append(row)
 
     # handle the close event
     def closeEvent(self, event: QCloseEvent) -> None:
@@ -499,6 +559,27 @@ class ContactGroupPointsWidget(QWidget):
         """
 
         logger.debug(f"closeEvent in {__class__.__name__}")
+
+
+class PointDetailsRow(ExpandedWidgetDataBaseRow):
+    def __init__(self, rowId: int, *args, **kwargs) -> None:
+        """Initialize PointDetailsRow"""
+
+        logger.debug(f"Creating {__class__.__name__}")
+        self.rowId = rowId
+        super().__init__(*args, **kwargs)
+
+    def buildUi(self) -> None:
+        self.lb_groupPointName = ui.StaticLabel(
+            "Name: ", str(self.rowId), parent=self.parent())
+        self.addWidget(self.lb_groupPointName, 0, Qt.AlignmentFlag.AlignLeft)
+        self.lb_groupPointValue = ui.StaticLabel(
+            "Value: ", "0.2", parent=self.parent())
+        self.addWidget(self.lb_groupPointValue, 0, Qt.AlignmentFlag.AlignLeft)
+        self.addStretch(1)
+
+    def updateValue(self, value: float):
+        self.lb_groupPointValue.setNum(value)
 
 
 if __name__ == "__main__":
