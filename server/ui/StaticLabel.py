@@ -39,7 +39,7 @@ class StaticLabel(QLabel):
 
         return super().setText(self._prefixText + text)
 
-    def setNum(self, num: int) -> None:
+    def setNum(self, num: int | float) -> None:
         self.setText(str(num))
 
 
