@@ -39,8 +39,11 @@ class StaticLabel(QLabel):
 
         return super().setText(self._prefixText + text)
 
-    def setNum(self, num: int | float) -> None:
+    def setNum(self, num: int) -> None:
         self.setText(str(num))
+
+    def setFloat(self, num: float, dec: int = 2) -> None:
+        self.setText(str(round(num, dec)))
 
 
 if __name__ == "__main__":
