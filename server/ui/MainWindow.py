@@ -11,11 +11,8 @@ from PyQt6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMainWindow,
                              QSpacerItem, QSplitter, QVBoxLayout, QWidget)
 
 import ui
-from modules import config
+from modules import config, ServerSingleton
 from utils import LoggerClass
-
-# from PyQt6.QtCore import pyqtSignal as Signal
-
 
 logger = LoggerClass.getSubLogger(__name__)
 
@@ -31,6 +28,8 @@ class MainWindow(QMainWindow):
         # r"program\.mainTps$", self.handleConfigChange)
         config.registerChangeCallback(
             r"program\..*", self.handleConfigChange)
+        self.server = ServerSingleton.getInstance()
+        self.server.test()
 
     def setupUi(self) -> None:
         """Initialize the main UI."""
