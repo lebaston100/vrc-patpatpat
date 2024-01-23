@@ -49,6 +49,7 @@ Other stuff/notes to later add to the readme:
 - Firewall might make issues if network access to python is denied (maybe add a firewall.bat?)
 - Document motor mounting ideas
 - Don't forget pcb BOM and pcb specific software stuff
+- Explain how different solvers work incl. advantages and disadvantages
 
 Tech stack:
 
