@@ -263,7 +263,7 @@ class BaseRow(QFrame):
             self.expandingWidget = None
 
 
-class ExpandedWidgetDataBaseRow(QHBoxLayout):
+class ExpandedWidgetDataRowBase(QHBoxLayout):
     """ The base for the expanding widgets """
 
     def __init__(self, *args, **kwargs) -> None:
@@ -412,7 +412,7 @@ class EspMoreInfoWidget(QWidget):
         logger.debug(f"closeEvent in {__class__.__name__}")
 
 
-class HardwareMotorChannelRow(ExpandedWidgetDataBaseRow):
+class HardwareMotorChannelRow(ExpandedWidgetDataRowBase):
     def __init__(self, rowId: int, *args, **kwargs) -> None:
         """Initialize HardwareMotorChannelRow"""
 
@@ -570,7 +570,7 @@ class ContactGroupPointsWidget(QWidget):
         logger.debug(f"closeEvent in {__class__.__name__}")
 
 
-class PointDetailsRow(ExpandedWidgetDataBaseRow):
+class PointDetailsRow(ExpandedWidgetDataRowBase):
     def __init__(self, rowId: int, *args, **kwargs) -> None:
         """Initialize PointDetailsRow"""
 
