@@ -1,12 +1,20 @@
+import logging
 import sys
 
 from PyQt6.QtWidgets import QApplication
 
-from utils import LoggerClass
 from modules import config
 from ui import MainWindow
+from utils import LoggerClass
 
 logger = LoggerClass.getRootLogger()
+
+# set initial logging level for root and child loggers from config
+logLevel = config.get("program.logLevel", "INFO")
+logger.setLevel(logLevel)
+for l in [logging.getLogger(name)
+          for name in logging.root.manager.loggerDict]:
+    l.setLevel(logLevel)
 
 REQUIRED_CONFIG_VERSION = 1
 SEMVER = f"0.1.0"
