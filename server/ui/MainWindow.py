@@ -4,11 +4,11 @@
 import webbrowser
 from functools import partial
 
-from PyQt6.QtCore import QSize, Qt, QObject
+from PyQt6.QtCore import QObject, QSize, Qt
 from PyQt6.QtGui import QCloseEvent, QFont
 from PyQt6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMainWindow,
                              QPushButton, QScrollArea, QSizePolicy, QSlider,
-                             QSpacerItem, QVBoxLayout, QWidget)
+                             QSpacerItem, QSplitter, QVBoxLayout, QWidget)
 
 import ui
 from modules import config
@@ -41,6 +41,12 @@ class MainWindow(QMainWindow):
         self.setSizePolicy(sizePolicy)
         self.theCentralWidet = QWidget(self)
         self.selfLayout = QVBoxLayout(self.theCentralWidet)
+
+        # the splitter for the data rows
+        self.splitter = QSplitter(self)
+        self.splitter.setOrientation(Qt.Orientation.Vertical)
+        self.splitter.setOpaqueResize(False)
+        self.splitter.setChildrenCollapsible(False)
 
         # the top bar horizontal layout
         self.hl_topBar = QHBoxLayout()
@@ -119,14 +125,14 @@ class MainWindow(QMainWindow):
 
         # set the hardware scroll areas only widget to our scrollarea content widget
         self.hardwareScrollArea.setWidget(self.hardwareScrollAreaWidgetContent)
-        # finally add the scroll area to out main window layout
-        self.selfLayout.addWidget(self.hardwareScrollArea)
+        # finally add the scroll area to our splitter
+        self.splitter.addWidget(self.hardwareScrollArea)
 
         # contact group label
         self.lb_groupRowHeader = QLabel(self)
         self.lb_groupRowHeader.setText("Contact Groups:")
         self.lb_groupRowHeader.setMaximumHeight(25)
-        self.selfLayout.addWidget(self.lb_groupRowHeader)
+        self.splitter.addWidget(self.lb_groupRowHeader)
 
         # contact group row
 
@@ -157,15 +163,11 @@ class MainWindow(QMainWindow):
         # set hardware scroll areas only widget to our scrollarea content widget
         self.contactGroupScrollArea.setWidget(
             self.contactGroupScrollAreaWidgetContent)
-        # finally add the scroll area to out main window layout
-        self.selfLayout.addWidget(self.contactGroupScrollArea)
-
-        # spacer on bottom of window
-        # self.pageScalingSpacer = QSpacerItem(
-        # 20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-        # self.selfLayout.addItem(self.pageScalingSpacer)
+        # finally add the scroll area to our splitter
+        self.splitter.addWidget(self.contactGroupScrollArea)
 
         # add layout to central widget to mainwindow
+        self.selfLayout.addWidget(self.splitter)
         self.theCentralWidet.setLayout(self.selfLayout)
         self.setCentralWidget(self.theCentralWidet)
 
@@ -579,7 +581,7 @@ class PointDetailsRow(ExpandedWidgetDataBaseRow):
         self.addStretch(1)
 
     def updateValue(self, value: float):
-        self.lb_groupPointValue.setNum(value)
+        self.lb_groupPointValue.setFloat(value)
 
 
 if __name__ == "__main__":
