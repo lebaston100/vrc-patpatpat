@@ -7,7 +7,8 @@ Typical usage example:
     value = config.get("option")
 """
 
-from typing import Any, Optional, Type, TypeVar
+import re
+from typing import Any, Callable, Optional, Type, TypeVar
 
 from PyQt6.QtCore import QMutex, QObject
 from PyQt6.QtCore import pyqtSignal as QSignal
@@ -68,6 +69,8 @@ class GlobalConfigSingleton(QObject):
         self._mutex = QMutex()
         self._configHandler = configHandler
         self._configOptions: dict[str, Any] = {}
+        self._configPathChangedCallbacks: dict[str, Callable] = {}
+        self._configPathDeletedCallbacks: dict[str, Callable] = {}
 
         try:
             self.parse()
@@ -75,6 +78,8 @@ class GlobalConfigSingleton(QObject):
             logger.exception(E)
             raise E
 
+        self.configPathHasChanged.connect(self._runChangeCallbacks)
+        self.configPathWasDeleted.connect(self._runRemoveCallbacks)
         GlobalConfigSingleton.__instance = self
 
     def parse(self) -> None:
@@ -101,7 +106,7 @@ class GlobalConfigSingleton(QObject):
             newVal ([str | list | dict | int | float]): The value to
                 write for the fiven key.
             wasChanged (bool): If the path was changed and a signal
-                should be emitted
+                hould be emitted
 
         Returns:
             bool: True if flush was successful otherwise False.
@@ -185,6 +190,84 @@ class GlobalConfigSingleton(QObject):
         """
 
         return self._configHandler.write(self._configOptions)
+
+    def registerChangeCallback(self, pathPattern: str, callback: Callable) -> None:
+        """
+        Register a callback for a configuration change.
+
+        Args:
+            pathPattern (str): Regex pattern of the path to watch for changes.
+            callback (Callable): Function to call when a change is detected.
+        """
+
+        self._configPathChangedCallbacks.update({pathPattern: callback})
+        logger.debug(self._configPathChangedCallbacks)
+
+    def deleteChangeCallback(self, pathPattern: str) -> None:
+        """
+        Remove a registered callback.
+
+        Args:
+            pathPattern (str): Regex pattern of the path of the callback
+                to remove.
+        """
+
+        try:
+            self._configPathChangedCallbacks.pop(pathPattern)
+        except:
+            logger.error(f"Path {pathPattern} has no registered callbacks")
+        logger.debug(self._configPathChangedCallbacks)
+
+    def _runChangeCallbacks(self, changedPath: str) -> None:
+        """
+        Run callbacks for a given changed path.
+
+        Args:
+            changedPath (str): The path that has changed.
+        """
+
+        for pathPattern, cb in self._configPathChangedCallbacks.items():
+            if re.match(pathPattern + "$", changedPath):
+                cb(changedPath)
+
+    def registerRemoveCallback(self, pathPattern: str, callback: Callable) -> None:
+        """
+        Register a callback for a configuration change.
+
+        Args:
+            pathPattern (str): Regex pattern of the path to watch for changes.
+            callback (Callable): Function to call when a change is detected.
+        """
+
+        self._configPathDeletedCallbacks.update({pathPattern: callback})
+        logger.debug(self._configPathDeletedCallbacks)
+
+    def deleteRemoveCallback(self, pathPattern: str) -> None:
+        """
+        Remove a registered callback.
+
+        Args:
+            pathPattern (str): Regex pattern of the path of the callback
+                to remove.
+        """
+
+        try:
+            self._configPathDeletedCallbacks.pop(pathPattern)
+        except:
+            logger.error(f"Path {pathPattern} has no registered callbacks")
+        logger.debug(self._configPathDeletedCallbacks)
+
+    def _runRemoveCallbacks(self, removedPath: str) -> None:
+        """
+        Run callbacks for a given removed path.
+
+        Args:
+            removedPath (str): The path that has changed.
+        """
+
+        for pathPattern, cb in self._configPathChangedCallbacks.items():
+            if re.match(pathPattern + "$", removedPath):
+                cb(removedPath)
 
 
 # any work to find out what the config would need to be done here

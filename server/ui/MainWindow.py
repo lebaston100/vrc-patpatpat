@@ -27,6 +27,10 @@ class MainWindow(QMainWindow):
         self._singleWindows: dict[str, QWidget] = {}
 
         self.setupUi()
+        # config.registerChangeCallback(
+        # r"program\.mainTps$", self.handleConfigChange)
+        config.registerChangeCallback(
+            r"program\..*", self.handleConfigChange)
 
     def setupUi(self) -> None:
         """Initialize the main UI."""
@@ -207,6 +211,10 @@ class MainWindow(QMainWindow):
         if windowReference in self._singleWindows:
             del self._singleWindows[windowReference]
         logger.debug(self._singleWindows)
+
+    def handleConfigChange(self, path: str) -> None:
+        logger.debug(f"config changed for path {path} to new value "
+                     f"{str(config.get(path))}")
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Handle window close event cleanly.
