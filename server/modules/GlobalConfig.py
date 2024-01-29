@@ -265,7 +265,7 @@ class GlobalConfigSingleton(QObject):
             removedPath (str): The path that has changed.
         """
 
-        for pathPattern, cb in self._configPathChangedCallbacks.items():
+        for pathPattern, cb in self._configPathDeletedCallbacks.items():
             if re.match(pathPattern + "$", removedPath):
                 cb(removedPath)
 
