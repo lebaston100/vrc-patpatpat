@@ -13,3 +13,6 @@ from .Motor import Motor
 from .OptionAdapter import OptionAdapter
 from .Points import Sphere3D
 from .Server import ServerSingleton
+from .Solver import SolverRunner, LinearSolver, MlatSolver
+from .VrcOscDispatcher import VrcOscDispatcher
+from .VrcConnector import VrcConnectorImpl
