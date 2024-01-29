@@ -409,6 +409,9 @@ class TabSolver(QWidget, OptionAdapter):
 
         self.selfLayout.addRow("Solver Type:", self.cb_solverType)
 
+        # TODO: Refactor so each solver's setting is in their own class
+        # that is swapped out
+
         # upper sphere check
         self.cb_allowOnlyUpperSphereHalf = QCheckBox(self)
         self.cb_allowOnlyUpperSphereHalf.setObjectName(
