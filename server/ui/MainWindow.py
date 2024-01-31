@@ -224,6 +224,9 @@ class MainWindow(QMainWindow):
 
         logger.debug(f"closeEvent in {__class__.__name__}")
 
+        logger.debug("Stopping server...")
+        self.server.stop()
+
         for window in self._singleWindows.values():
             window.close()
 
