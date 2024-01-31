@@ -47,13 +47,32 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
 
         self.selfLayout.addRow("MQTT Broker IP:", self.le_mqttBrokerIp)
 
-        # vrchat osc port
-        self.sb_vrcOscRxPort = QSpinBox(self)
-        self.sb_vrcOscRxPort.setObjectName("sb_vrcOscRxPort")
-        self.sb_vrcOscRxPort.setMaximum(65535)
-        self.addOpt("vrcOscPort", self.sb_vrcOscRxPort, dataType=int)
+        # vrchat osc send ip
+        self.le_vrcOscReceiveAddress = QLineEdit(self)
+        self.le_vrcOscReceiveAddress.setObjectName("le_vrcOscReceiveAddress")
+        self.le_vrcOscReceiveAddress.setInputMask("900.900.900.900")
+        self.addOpt("vrcOscReceiveAddress", self.le_vrcOscReceiveAddress)
 
-        self.selfLayout.addRow("VRC OSC Rx Port:", self.sb_vrcOscRxPort)
+        self.selfLayout.addRow(
+            "VRC OSC Send IP:", self.le_vrcOscReceiveAddress)
+
+        # vrchat osc send port
+        self.sb_vrcOscSendPort = QSpinBox(self)
+        self.sb_vrcOscSendPort.setObjectName("sb_vrcOscSendPort")
+        self.sb_vrcOscSendPort.setMaximum(65535)
+        self.addOpt("vrcOscSendPort", self.sb_vrcOscSendPort, dataType=int)
+
+        self.selfLayout.addRow("VRC OSC Send Port:", self.sb_vrcOscSendPort)
+
+        # vrchat osc receive port
+        self.sb_vrcOscReceivePort = QSpinBox(self)
+        self.sb_vrcOscReceivePort.setObjectName("sb_vrcOscReceivePort")
+        self.sb_vrcOscReceivePort.setMaximum(65535)
+        self.addOpt("vrcOscReceivePort",
+                    self.sb_vrcOscReceivePort, dataType=int)
+
+        self.selfLayout.addRow("VRC OSC Receive Port:",
+                               self.sb_vrcOscReceivePort)
 
         # main tps
         self.sb_tps = QSpinBox(self)
