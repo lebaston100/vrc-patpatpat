@@ -2,7 +2,7 @@ from typing import Type, TypeVar
 
 from PyQt6.QtCore import QObject, QThread
 
-from utils import LoggerClass
+from utils import LoggerClass, threadAsStr
 from modules.Solver import SolverRunner
 from modules import config
 from modules.VrcConnector import VrcConnectorImpl
@@ -32,7 +32,8 @@ class ServerSingleton(QObject):
             raise RuntimeError("Can't initialize multiple singleton instances")
 
         super().__init__()
-        logger.debug(f"Creating {__class__.__name__}")
+        logger.debug(f"Creating {__class__.__name__} in thread {
+                     threadAsStr(QThread.currentThread())} ")
 
         self.vrcOscConnector = VrcConnectorImpl(config)
         self.vrcOscConnector.connect()
@@ -48,3 +49,13 @@ class ServerSingleton(QObject):
 
     def test(self):
         logger.debug("Hello from server")
+
+    def stop(self):
+        """Do everything needed to stop the server
+        """
+        if hasattr(self, "vrcOscConnector"):
+            self.vrcOscConnector.close()
+
+
+if __name__ == "__main__":
+    print("There is no point running this file directly")

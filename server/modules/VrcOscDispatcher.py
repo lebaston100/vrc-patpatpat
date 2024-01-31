@@ -7,7 +7,7 @@ from PyQt6.QtCore import QThread
 from pythonosc import osc_packet
 from pythonosc.dispatcher import Dispatcher
 
-from utils import LoggerClass
+from utils import LoggerClass, threadAsStr
 
 logger = LoggerClass.getSubLogger(__name__)
 
@@ -20,19 +20,20 @@ class VrcOscDispatcher(Dispatcher):
     overwritten functionalities are not required in this case.
 
     Attributes:
-        _server (OSCWorker): The OSC server.
+        _connector (OSCWorker): The OSC connector.
     """
 
-    def __init__(self, server) -> None:
+    def __init__(self, connector) -> None:
         """Initializes the VrcOscDispatcher.
 
         The superclass's __init__ method is intentionally not called.
 
         Args:
-            server (OSCWorker): The OSC server.
+            connector (OSCWorker): The OSC connector.
         """
 
-        self._server = server
+        self._connector = connector
+        self.matchTopics = []
         # TODO: Wee need an additional list of topics to match from the config
 
     def call_handlers_for_packet(self, data: bytes,
@@ -52,14 +53,15 @@ class VrcOscDispatcher(Dispatcher):
         try:
             packet = osc_packet.OscPacket(data)
             for msg in packet.messages:
-                if msg.message.address[:19] == "/avatar/parameters/":
-                    pid = str(int(QThread.currentThread().currentThreadId()))
+                if msg.message.address[:19] == "/avatar/parameters/" \
+                        and msg.message.address[19:] in self.matchTopics:
+                    pid = threadAsStr(QThread.currentThread())
                     logger.debug(
                         f"pid={pid} incoming osc from {client_address}: "
                         f"addr={msg.message.address} "
                         f"msg={str(msg.message.params)}"
                     )
-                    self._server.gotVrcContact.emit(
+                    self._connector.gotVrcContact.emit(
                         client_address,
                         msg.message.address,
                         msg.message.params

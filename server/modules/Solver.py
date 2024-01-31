@@ -58,7 +58,7 @@ class SolverRunner(QObject):
         """
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__()
-        logger.debug(config)
+        # logger.debug(config)
 
         self._solvers: list[Type[LinearSolver] | Type[MlatSolver]] = []
 

@@ -35,7 +35,7 @@ class FileHelper:
             bool: True if the write was sucessful.
         """
 
-        logger.debug("writing data to json file")
+        # logger.debug("writing data to json file")
         try:
             with open(self._file, mode="w") as f:
                 json.dump(data, f, indent=4)

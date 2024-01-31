@@ -4,69 +4,71 @@ from typing import TYPE_CHECKING, TypeVar
 from PyQt6.QtCore import QObject, QThread
 from PyQt6.QtCore import pyqtSignal as QSignal
 from PyQt6.QtCore import pyqtSlot as QSlot
+from pythonosc.osc_message_builder import ArgValue
 from pythonosc.osc_server import BlockingOSCUDPServer
-
-from modules.VrcOscDispatcher import VrcOscDispatcher
-from utils import LoggerClass
+from pythonosc.udp_client import SimpleUDPClient
 
 from modules.GlobalConfig import GlobalConfigSingleton
+from modules.VrcOscDispatcher import VrcOscDispatcher
+from utils import LoggerClass, threadAsStr
+
 # T = TypeVar('T', bound='GlobalConfigSingleton')
 
 logger = LoggerClass.getSubLogger(__name__)
 
 
-def threadAsStr(thread: QThread | None) -> str:
-    if thread:
-        return str(int(thread.currentThreadId()))  # type:ignore
-    return "Unknown"
-
-
 class VrcConnectionWorker(QObject):
-    def __init__(self):
+    def __init__(self, connector):
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__()
+        self._connector = connector
 
     def loadSettings(self, config: GlobalConfigSingleton):
-        self.port = config.get("program.vrcOscPort", 8000)
+        self._oscRxPort = config.get("program.vrcOscSendPort", 9001)
+        self._oscTxIp = config.get("program.vrcOscReceiveAddress", "127.0.0.1")
+        self._oscTxPort = config.get("program.vrcOscReceivePort", 9000)
 
     @QSlot()
-    def startOsc(self):
+    def startOscServer(self):
         logger.info(
-            f"pid     ={threadAsStr(QThread.currentThread())} startOsc")
+            f"startOsc pid     ={threadAsStr(QThread.currentThread())}")
         logger.info(
-            f"pid_self={threadAsStr(self.thread())} startOsc")
-        self.dispatcher = VrcOscDispatcher(self)
-        logger.info(f"starting osc on port {str(self.port)}")
-        self.oscRecv = BlockingOSCUDPServer(
-            ("127.0.0.1", self.port), self.dispatcher)
-        self.oscRecv.serve_forever()
+            f"startOsc pid_self={threadAsStr(self.thread())}")
+        self._dispatcher = VrcOscDispatcher(self._connector)
+        logger.info(f"starting osc server on port {str(self._oscRxPort)}")
+        self._oscRx = BlockingOSCUDPServer(
+            ("127.0.0.1", self._oscRxPort), self._dispatcher)
+        self._oscRx.serve_forever()
         logger.info("startOsc done, cleaning up...")
-        self.oscRecv.socket.close()
-        del self.oscRecv  # dereferene so the gc can pick it up
-
-    def _receivedOsc(self, client: tuple, addr: str, params: list):
-        logger.info(f"osc from {str(client)}: addr={addr} msg={str(params)}")
+        self._oscRx.socket.close()
+        del self._oscRx  # dereferene so the gc can pick it up
 
     @QSlot()
-    def close(self):
-        """stop the infinite osc receiver loop
-        """
-        logger.debug(f"close in {__class__.__name__}")
-        if hasattr(self, "oscRecv"):
-            self.oscRecv.shutdown()
-
-    def restart(self):
+    def closeOscServer(self):
         """Restarts the thread that is running us
         self.thread returns the thread, but the thread is not the actual
         thread but instead the thread's manager running in the main thread"""
+        logger.debug(f"closeOscServer in {__class__.__name__}")
         selfThread = self.thread()
         logger.debug(f"pid_QThread.currentThread={threadAsStr(QThread.currentThread())} "
                      f"pid_selfThread={threadAsStr(selfThread)} ")
-        self.close()
+        if hasattr(self, "_oscRx"):
+            self._oscRx.shutdown()
         if selfThread:
             selfThread.quit()
             selfThread.wait()
-            selfThread.start()
+
+    def startOscSender(self) -> None:
+        self._oscTx = SimpleUDPClient(self._oscTxIp, self._oscTxPort)
+
+    def closeOscSender(self) -> None:
+        if hasattr(self, "_oscTx"):
+            self._oscTx._sock.close()
+            del self._oscTx
+
+    def sendOsc(self, path: str, values: ArgValue) -> None:
+        if hasattr(self, "_oscTx"):
+            self._oscTx.send_message(path, values)
 
 
 class IVrcConnector():
@@ -99,32 +101,39 @@ class VrcConnectorImpl(IVrcConnector, QObject):
     def __init__(self, config: GlobalConfigSingleton) -> None:
         super().__init__()
         self.config = config
-        self.worker = VrcConnectionWorker()
+        self.worker = VrcConnectionWorker(self)
         self.worker.loadSettings(self.config)
         self.workerThread = QThread()
 
-        self.workerThread.started.connect(self.worker.startOsc)
+        self.workerThread.started.connect(self.worker.startOscServer)
         self.worker.moveToThread(self.workerThread)
-        # self.worker.gotVrcContact.connect(self.timerworker.processOsc)
-        # self.btn_stopOsc.clicked.connect(self.oscworker.close, Qt.ConnectionType.DirectConnection)
-        # self.btn_startOsc.clicked.connect(self.oscworker.start_osc)
+        self.gotVrcContact.connect(self._receivedOsc)
 
-        self.config.registerChangeCallback(
-            r"program\.vrcOscPort", self._configChanged)
+        self.config.configRootUpdateDone.connect(self._oscGeneralConfigChanged)
+
+    def _receivedOsc(self, client: tuple, addr: str, params: list):
+        """Just a test function that prints if osc event was fired
+        """
+        logger.info(f"osc from {str(client)}: addr={addr} msg={str(params)}")
 
     def connect(self):
-        """ Start worker thread """
+        """ Start worker thread and osc sender"""
+        logger.debug("Starting vrc osc server and client")
         self.workerThread.start()
+        self.worker.startOscSender()
 
     def close(self):
         """Closes everything vrc osc related
         """
-        self.worker.close()
+        logger.debug("Closing vrc osc server and client")
+        self.worker.closeOscSender()
+        self.worker.closeOscServer()
         self.workerThread.quit()
         self.workerThread.wait()
 
     def restart(self):
         """ Close and restart sockets """
+        logger.debug("Restarting vrc osc server and client")
         self.close()
         self.connect()
 
@@ -133,14 +142,18 @@ class VrcConnectorImpl(IVrcConnector, QObject):
         """ TODO """
         raise NotImplementedError
 
-    def send(self):
-        """ TODO """
-        raise NotImplementedError
+    def send(self, path: str, values: ArgValue) -> None:
+        """Send an osc message to VRchat via the worker.
 
-    def _configChanged(self, key):
-        if key == "program.vrcOscPort":
-            self.worker.loadSettings(self.config)
-            self.restart()
+        Args:
+            path (str): The osc path
+            values (Any osc supported): The osc values
+        """
+        self.worker.sendOsc(path, values)
+
+    def _oscGeneralConfigChanged(self, root):
+        self.worker.loadSettings(self.config)
+        self.restart()
 
 
 if __name__ == "__main__":
