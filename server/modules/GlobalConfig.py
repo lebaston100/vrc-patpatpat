@@ -32,6 +32,7 @@ class GlobalConfigSingleton(QObject):
 
     __instance = None
     configPathHasChanged = QSignal(str)
+    configRootUpdateDone = QSignal(str)
     configPathWasDeleted = QSignal(str)
 
     @classmethod
@@ -106,7 +107,7 @@ class GlobalConfigSingleton(QObject):
             newVal ([str | list | dict | int | float]): The value to
                 write for the fiven key.
             wasChanged (bool): If the path was changed and a signal
-                hould be emitted
+                should be emitted
 
         Returns:
             bool: True if flush was successful otherwise False.

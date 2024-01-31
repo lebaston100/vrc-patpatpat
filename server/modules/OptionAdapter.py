@@ -173,6 +173,9 @@ class OptionAdapter():
                 changedKeys.append(path)
             if not diff:
                 config.set(path, newValue, keyChanged)
+        if changedKeys:
+            # This can only be ran from here
+            config.configRootUpdateDone.emit(configKey)
         return changedKeys
 
 
