@@ -105,7 +105,7 @@ class GlobalConfigSingleton(QObject):
         Args:
             path (str): The key to write.
             newVal ([str | list | dict | int | float]): The value to
-                write for the fiven key.
+                write for the given key.
             wasChanged (bool): If the path was changed and a signal
                 should be emitted
 
