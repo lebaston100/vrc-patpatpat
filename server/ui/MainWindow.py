@@ -29,7 +29,6 @@ class MainWindow(QMainWindow):
         config.registerChangeCallback(
             r"program\..*", self.handleConfigChange)
         self.server = ServerSingleton.getInstance()
-        self.server.test()
 
     def setupUi(self) -> None:
         """Initialize the main UI."""

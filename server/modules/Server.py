@@ -37,6 +37,7 @@ class ServerSingleton(QObject):
 
         self.vrcOscConnector = VrcConnectorImpl(config)
         self.vrcOscConnector.connect()
+        # self.vrcOscConnector.addToFilter("pat_2")
 
         self._solverRunnerThread = QThread()
         self.solverRunner = SolverRunner(config)
@@ -46,9 +47,6 @@ class ServerSingleton(QObject):
         # self._solverRunnerThread.start()
 
         ServerSingleton.__instance = self
-
-    def test(self):
-        logger.debug("Hello from server")
 
     def stop(self):
         """Do everything needed to stop the server

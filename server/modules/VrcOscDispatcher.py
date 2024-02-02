@@ -3,11 +3,15 @@ A drop-in replacement of the original osc dispatcher modified
 to have less overhead to faster handle the data coming from vrc
 """
 
+from typing import TYPE_CHECKING
 from PyQt6.QtCore import QThread
 from pythonosc import osc_packet
 from pythonosc.dispatcher import Dispatcher
 
 from utils import LoggerClass, threadAsStr
+
+if TYPE_CHECKING:
+    from .VrcConnector import VrcConnectorImpl
 
 logger = LoggerClass.getSubLogger(__name__)
 
@@ -23,7 +27,7 @@ class VrcOscDispatcher(Dispatcher):
         _connector (OSCWorker): The OSC connector.
     """
 
-    def __init__(self, connector) -> None:
+    def __init__(self, connector: VrcConnectorImpl) -> None:
         """Initializes the VrcOscDispatcher.
 
         The superclass's __init__ method is intentionally not called.
@@ -34,7 +38,6 @@ class VrcOscDispatcher(Dispatcher):
 
         self._connector = connector
         self.matchTopics = []
-        # TODO: Wee need an additional list of topics to match from the config
 
     def call_handlers_for_packet(self, data: bytes,
                                  client_address: tuple[str, int]) -> None:
@@ -56,11 +59,11 @@ class VrcOscDispatcher(Dispatcher):
                 if msg.message.address[:19] == "/avatar/parameters/" \
                         and msg.message.address[19:] in self.matchTopics:
                     pid = threadAsStr(QThread.currentThread())
-                    logger.debug(
-                        f"pid={pid} incoming osc from {client_address}: "
-                        f"addr={msg.message.address} "
-                        f"msg={str(msg.message.params)}"
-                    )
+                    # logger.debug(
+                    # f"pid={pid} incoming osc from {client_address}: "
+                    # f"addr={msg.message.address} "
+                    # f"msg={str(msg.message.params)}"
+                    # )
                     self._connector.gotVrcContact.emit(
                         client_address,
                         msg.message.address,
