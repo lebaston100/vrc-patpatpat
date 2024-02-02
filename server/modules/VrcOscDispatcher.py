@@ -3,15 +3,11 @@ A drop-in replacement of the original osc dispatcher modified
 to have less overhead to faster handle the data coming from vrc
 """
 
-from typing import TYPE_CHECKING
 from PyQt6.QtCore import QThread
 from pythonosc import osc_packet
 from pythonosc.dispatcher import Dispatcher
 
 from utils import LoggerClass, threadAsStr
-
-if TYPE_CHECKING:
-    from .VrcConnector import VrcConnectorImpl
 
 logger = LoggerClass.getSubLogger(__name__)
 
@@ -27,7 +23,7 @@ class VrcOscDispatcher(Dispatcher):
         _connector (OSCWorker): The OSC connector.
     """
 
-    def __init__(self, connector: VrcConnectorImpl) -> None:
+    def __init__(self, connector) -> None:
         """Initializes the VrcOscDispatcher.
 
         The superclass's __init__ method is intentionally not called.

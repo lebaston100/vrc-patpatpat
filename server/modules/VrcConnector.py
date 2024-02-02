@@ -17,7 +17,8 @@ logger = LoggerClass.getSubLogger(__name__)
 
 
 class IVrcConnector():
-    """ The interface """
+    """ The interface for server <-> vrc communication"""
+
     gotVrcContact = QSignal(tuple, str, list)
 
     def connect(self):
@@ -118,7 +119,7 @@ class VrcConnectorImpl(IVrcConnector, QObject):
 
         self.workerThread.started.connect(self.worker.startOscServer)
         self.worker.moveToThread(self.workerThread)
-        self.gotVrcContact.connect(self._receivedOsc)
+        # self.gotVrcContact.connect(self._receivedOsc)
 
         self.config.configRootUpdateDone.connect(self._oscGeneralConfigChanged)
 
