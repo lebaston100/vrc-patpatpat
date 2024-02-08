@@ -7,7 +7,7 @@ class TestFileHelper:
         from pathlib import Path
         try:
             from utils import FileHelper
-            h = FileHelper(Path("test.conf"))
+            h = FileHelper(Path("test.conf").as_posix())
         except Exception:
             assert False
 
@@ -17,7 +17,7 @@ class TestFileHelper:
         from pathlib import Path
         from utils import FileHelper
         path = Path("test/test.conf")
-        yield FileHelper(path)
+        yield FileHelper(path.as_posix())
         path.unlink()
 
     def test_FileHelper_Write(self, createFileHelper):
