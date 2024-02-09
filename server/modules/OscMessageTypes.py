@@ -2,8 +2,8 @@
 This module houses all possibel OSC connection messages as dataclasses
 """
 
-from dataclasses import dataclass
-from typing import Self
+from dataclasses import dataclass, field
+from datetime import datetime
 
 
 @dataclass(frozen=True)
@@ -15,13 +15,15 @@ class HeartbeatMessage:
         mac (str): The (wifi) mac of the sending esp
         uptime (int): The uptime of the esp in seconds
         vccBat (int): The current battery voltage
-        rssi (int): the wifi rssi
+        rssi (int): Rhe wifi rssi
+        ts (int): The time the object was created (aka received)
     """
 
     mac: str = "00:00:00:00:00:00"
     uptime: int = 0
     vccBat: int = 0
     rssi: int = 0
+    ts: datetime = field(default_factory=datetime.now)
 
     @staticmethod
     def isType(topic: str, params: list) -> bool:

@@ -3,7 +3,7 @@ import pytest
 
 class TestOscMessageTypes:
     def test_init(self):
-        """Test that the module imports and a  classes can be created"""
+        """Test that the module imports and classes can be created"""
         try:
             from modules import HeartbeatMessage
             HeartbeatMessage()
@@ -29,6 +29,7 @@ class TestOscMessageTypes:
     def test_HeartbeatMessage(self, validHeartbeatMessage, HeartbeatMessageData):
         from dataclasses import FrozenInstanceError
         from modules import HeartbeatMessage
+        from datetime import datetime
 
         """Test if it can check it's own message"""
         assert HeartbeatMessage.isType(*HeartbeatMessageData)
@@ -36,7 +37,8 @@ class TestOscMessageTypes:
         """Test if data is as expected"""
         m = validHeartbeatMessage
         assert m.mac == "AA:AA:AA:AA:AA:AA" \
-            and m.uptime == 1 and m.vccBat == 2 and m.rssi == 3
+            and m.uptime == 1 and m.vccBat == 2 and m.rssi == 3 \
+            and isinstance(m.ts, datetime)
 
         """Test if object is mutable"""
         with pytest.raises(FrozenInstanceError):
