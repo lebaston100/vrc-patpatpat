@@ -1,3 +1,4 @@
+from typing import Self
 from PyQt6.QtGui import QVector3D
 
 
@@ -19,10 +20,12 @@ class Sphere3D(QVector3D):
         self._radius = radius
         self._name = name
 
-    def setXYZ(self, xyz: list):
+    def setXYZ(self, xyz: list) -> Self:
         self.setX(xyz[0])
         self.setY(xyz[1])
         self.setZ(xyz[2])
+        return self
 
-    def setRadius(self, radius: float = 0.0):
+    def setRadius(self, radius: float = 0.0) -> Self:
         self._radius = radius
+        return self
