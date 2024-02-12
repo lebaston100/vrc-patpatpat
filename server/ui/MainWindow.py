@@ -289,7 +289,7 @@ class HardwareEspRow(BaseRow):
     """ A independent hardware row inside the scroll area """
 
     def __init__(self, parent: QWidget | None) -> None:
-        logger.debug(f"Creating {__class__.__name__}")
+        # logger.debug(f"Creating {__class__.__name__}")
         super().__init__(parent)
 
     def buildUi(self):
@@ -472,7 +472,7 @@ class ContactGroupRow(BaseRow):
     """ A independent contact group row inside the scroll area """
 
     def __init__(self, parent: QWidget | None) -> None:
-        logger.debug(f"Creating {__class__.__name__}")
+        # logger.debug(f"Creating {__class__.__name__}")
         super().__init__(parent)
 
     def buildUi(self):
@@ -594,4 +594,4 @@ class PointDetailsRow(ExpandedWidgetDataRowBase):
 
 
 if __name__ == "__main__":
-    logger.error("There is no point running this file directly")
+    print("There is no point running this file directly")
