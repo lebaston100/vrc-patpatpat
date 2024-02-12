@@ -66,4 +66,4 @@ class VrcOscDispatcher(Dispatcher):
                         msg.message.params
                     )
         except osc_packet.ParseError:
-            logger.debug("Could not parse osc message")
+            logger.error("Could not parse osc message")
