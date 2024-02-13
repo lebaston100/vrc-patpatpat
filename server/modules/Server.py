@@ -2,10 +2,11 @@ from typing import Type, TypeVar
 
 from PyQt6.QtCore import QObject, QThread
 
-from utils import LoggerClass, threadAsStr
-from modules.Solver import SolverRunner
 from modules import config
+from modules.HwManager import HwManager
+from modules.Solver import SolverRunner
 from modules.VrcConnector import VrcConnectorImpl
+from utils import LoggerClass, threadAsStr
 
 logger = LoggerClass.getSubLogger(__name__)
 
@@ -40,7 +41,7 @@ class ServerSingleton(QObject):
         self.vrcOscConnector.gotVrcContact.connect(self._vrcOscDataReceived)
         # self.vrcOscConnector.addToFilter("pat_2")
 
-        # self.hardwareConnector = EspHardwareConnector()
+        self.hwManager = HwManager()
 
         self._solverRunnerThread = QThread()
         self.solverRunner = SolverRunner(config)

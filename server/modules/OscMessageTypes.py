@@ -15,7 +15,7 @@ class HeartbeatMessage:
         mac (str): The (wifi) mac of the sending esp
         uptime (int): The uptime of the esp in seconds
         vccBat (int): The current battery voltage
-        rssi (int): Rhe wifi rssi
+        rssi (int): The wifi rssi
         ts (int): The time the object was created (aka received)
     """
 

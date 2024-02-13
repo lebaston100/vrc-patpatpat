@@ -9,12 +9,12 @@ Exposes:
 from .AvatarPoint import AvatarPoint
 from .ESP import ESP
 from .GlobalConfig import config
-from .HardwareComms import EspOscHardwareConnector
+from .HwManager import HwManager
 from .Motor import Motor
 from .OptionAdapter import OptionAdapter
+from .OscMessageTypes import *
 from .Points import Sphere3D
 from .Server import ServerSingleton
 from .Solver import LinearSolver, MlatSolver, SolverRunner
 from .VrcConnector import VrcConnectorImpl
 from .VrcOscDispatcher import VrcOscDispatcher
-from .OscMessageTypes import *
