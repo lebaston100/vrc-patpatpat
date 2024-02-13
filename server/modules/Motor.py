@@ -1,12 +1,15 @@
 from math import ceil
 
 from PyQt6.QtCore import QObject
+from PyQt6.QtCore import pyqtSignal as QSignal
 
 from modules.Points import Sphere3D
 
 
 class Motor(QObject):
     """Represents a motor attached to an ESP Pin (Channel)"""
+
+    speedChanged = QSignal(list, float)
 
     def __init__(self, settings: dict, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -42,4 +45,5 @@ class Motor(QObject):
         motorPwm = min(ceil(self._maxPwm * newSpeed), self._maxPwm)
         self.currentPWM = self._minPwm if (motorPwm < self._minPwm
                                            and motorPwm > 0) else motorPwm
+        self.speedChanged.emit(self._espAddr, self.currentPWM)
         return self.currentPWM
