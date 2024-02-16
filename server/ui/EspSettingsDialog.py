@@ -4,8 +4,9 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import pyqtSignal as Signal
 from PyQt6.QtGui import QCloseEvent
-from PyQt6.QtWidgets import (QDialogButtonBox, QFormLayout, QLineEdit,
-                             QSizePolicy, QSpacerItem, QSpinBox, QWidget)
+from PyQt6.QtWidgets import (QComboBox, QDialogButtonBox, QFormLayout,
+                             QLineEdit, QSizePolicy, QSpacerItem, QSpinBox,
+                             QWidget)
 
 from modules import OptionAdapter, config
 from ui.uiHelpers import handleClosePrompt
@@ -53,6 +54,16 @@ class EspSettingsDialog(QWidget, OptionAdapter):
 
         self.selfLayout.addRow("Name:", self.le_espName)
 
+        # Connection type
+        self.cb_connectionType = QComboBox(self)
+        self.cb_connectionType.addItem("OSC")
+        self.cb_connectionType.addItem("SlipSerial")
+        self.cb_connectionType.setCurrentText("OSC")
+        # self.cb_connectionType.setEnabled(False)
+        self.addOpt("connectionType", self.cb_connectionType)
+
+        self.selfLayout.addRow("Connection Type:", self.cb_connectionType)
+
         # Number of motors
         self.sb_espNumMotors = QSpinBox(self)
         self.sb_espNumMotors.setObjectName("sb_espNumMotors")
@@ -60,6 +71,15 @@ class EspSettingsDialog(QWidget, OptionAdapter):
         self.addOpt("numMotors", self.sb_espNumMotors, int)
 
         self.selfLayout.addRow("Number of motors:", self.sb_espNumMotors)
+
+        # Serial port name
+        self.le_serialPort = QLineEdit(self)
+        self.le_serialPort.setObjectName("le_serialPort")
+        self.le_serialPort.setEnabled(False)
+        self.le_serialPort.setReadOnly(True)
+        self.addOpt("serialPort", self.le_serialPort)
+
+        self.selfLayout.addRow("Serial Port:", self.le_serialPort)
 
         # Last Device IP
         self.le_espLastIp = QLineEdit(self)
