@@ -262,7 +262,7 @@ class BaseRow(QFrame):
         self.expandingWidget = instance
         self.selfLayout.addWidget(instance)
 
-    def deleteExpandingWidget(self) -> None
+    def deleteExpandingWidget(self) -> None:
         if self.expandingWidget:
             self.selfLayout.removeWidget(self.expandingWidget)
             self.expandingWidget.close()

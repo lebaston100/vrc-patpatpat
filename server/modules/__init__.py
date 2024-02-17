@@ -7,8 +7,8 @@ Exposes:
 """
 
 from .AvatarPoint import AvatarPoint
-from .HardwareDevice import HardwareDevice
 from .GlobalConfig import config
+from .HardwareDevice import HardwareDevice
 from .HwManager import HwManager
 from .Motor import Motor
 from .OptionAdapter import OptionAdapter
