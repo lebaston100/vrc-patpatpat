@@ -120,6 +120,12 @@ void osc_motors(OSCMessage &msg) {
     Serial.println();
 }
 
+void handle_discover(OSCMessage &msg) {
+    Serial.println("Discovery request received");
+    Serial.println(Udp.remoteIP());
+    Serial.println(Udp.remotePort());
+}
+
 void loop() {
     #ifdef ARDUINO_ARCH_ESP8266
         MDNS.update();
@@ -137,11 +143,11 @@ void loop() {
             lastPacketRecv = millis();
             // drive motors
             msg.dispatch("/m", osc_motors);
+            msg.dispatch("/patpatpat/discover", handle_discover);
 
             // handle heartbeat sending
             if (millis() - lastHeartbeatSend >= 1000) {
                 digitalWrite(INTERNAL_LED, LEDON);
-                // TODO Add hostname to addr
                 OSCMessage txmsg("/patpatpat/heartbeat");
                 txmsg.add(WiFi.macAddress().c_str());
                 txmsg.add((int)millis()/1000);
@@ -151,10 +157,10 @@ void loop() {
                 #else
                     txmsg.add(analogRead(s2batteryPin));
                 #endif
-                Serial.println(Udp.remoteIP());
-                Serial.println(Udp.remotePort());
+                // Serial.println(Udp.remoteIP());
+                // Serial.println(Udp.remotePort());
                 txmsg.add(WiFi.RSSI());
-                Udp.beginPacket(Udp.remoteIP(), VRC_UDP_PORT);
+                Udp.beginPacket(Udp.remoteIP(), Udp.remotePort()+1);
                 txmsg.send(Udp);
                 Udp.endPacket();
                 txmsg.empty();
