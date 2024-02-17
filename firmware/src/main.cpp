@@ -24,7 +24,7 @@
 WiFiUDP Udp;
 OSCErrorCode error;
 unsigned int ledState = LOW;
-byte numMotors = 0;
+byte numMotors = 7;
 unsigned long lastPacketRecv = millis();
 unsigned long lastHeartbeatSend = 0;
 
@@ -147,7 +147,18 @@ void loop() {
 
             // handle heartbeat sending
             if (millis() - lastHeartbeatSend >= 1000) {
+                // For testing only, send discovery response
+                OSCMessage discoverReply("/patpatpat/noticeme/senpai");
+                discoverReply.add(WiFi.macAddress().c_str());
+                discoverReply.add(numMotors);
+                Udp.beginPacket(Udp.remoteIP(), Udp.remotePort()+1);
+                discoverReply.send(Udp);
+                Udp.endPacket();
+                discoverReply.empty();
+
                 digitalWrite(INTERNAL_LED, LEDON);
+
+                // Send Heartbeat
                 OSCMessage txmsg("/patpatpat/heartbeat");
                 txmsg.add(WiFi.macAddress().c_str());
                 txmsg.add((int)millis()/1000);
