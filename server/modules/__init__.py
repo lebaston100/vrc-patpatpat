@@ -17,4 +17,3 @@ from .Points import Sphere3D
 from .Server import ServerSingleton
 from .Solver import LinearSolver, MlatSolver, SolverRunner
 from .VrcConnector import VrcConnectorImpl
-from .VrcOscDispatcher import VrcOscDispatcher
