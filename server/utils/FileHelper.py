@@ -72,7 +72,7 @@ class FileHelper:
 
         return self._file.is_file() and bool(self.read())
 
-    def initializeConfig(self):
+    def initializeConfig(self) -> None:
         pass
 
 

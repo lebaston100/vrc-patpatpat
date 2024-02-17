@@ -80,7 +80,7 @@ class LoggerClass():
         return logger
 
     @staticmethod
-    def attachLoggingLevels(logger):
+    def attachLoggingLevels(logger) -> None:
         for level in LoggerClass.getLoggingLevelStrings():
             setattr(logger, level, _nameToLevel[level])
 

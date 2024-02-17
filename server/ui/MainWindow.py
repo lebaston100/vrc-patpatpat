@@ -190,7 +190,7 @@ class MainWindow(QMainWindow):
                                 Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         return scrollArea
 
-    def openSingleWindow(self, windowReference: str):
+    def openSingleWindow(self, windowReference: str) -> None:
         if windowReference in self._singleWindows:
             self._singleWindows[windowReference].raise_()
             self._singleWindows[windowReference].activateWindow()
@@ -208,7 +208,7 @@ class MainWindow(QMainWindow):
                 self._singleWindows[windowReference] = window
         logger.debug(self._singleWindows)
 
-    def closedSingleWindow(self, windowReference):
+    def closedSingleWindow(self, windowReference) -> None:
         logger.debug(f"closed window {windowReference}")
         if windowReference in self._singleWindows:
             del self._singleWindows[windowReference]
@@ -245,7 +245,7 @@ class BaseRow(QFrame):
         self.buildCommonUi()
         self.buildUi()
 
-    def buildCommonUi(self):
+    def buildCommonUi(self) -> None:
         self.setEnabled(True)
         self.setFrameShape(QFrame.Shape.Box)
         self.setFrameShadow(QFrame.Shadow.Sunken)
@@ -255,14 +255,14 @@ class BaseRow(QFrame):
 
         self.selfLayout = QVBoxLayout(self)
 
-    def buildUi(self):
+    def buildUi(self) -> None:
         raise NotImplementedError
 
-    def createExpandingWidget(self, instance):
+    def createExpandingWidget(self, instance) -> None:
         self.expandingWidget = instance
         self.selfLayout.addWidget(instance)
 
-    def deleteExpandingWidget(self):
+    def deleteExpandingWidget(self) -> None
         if self.expandingWidget:
             self.selfLayout.removeWidget(self.expandingWidget)
             self.expandingWidget.close()
@@ -279,13 +279,13 @@ class ExpandedWidgetDataRowBase(QHBoxLayout):
         self.buildCommonUi()
         self.buildUi()
 
-    def buildCommonUi(self):
+    def buildCommonUi(self) -> None:
         self.setContentsMargins(8, 0, -1, 2)
 
-    def buildUi(self):
+    def buildUi(self) -> None:
         raise NotImplementedError
 
-    def updateValue(self):
+    def updateValue(self) -> None:
         raise NotImplementedError
 
 
@@ -296,7 +296,7 @@ class HardwareEspRow(BaseRow):
         # logger.debug(f"Creating {__class__.__name__}")
         super().__init__(parent)
 
-    def buildUi(self):
+    def buildUi(self) -> None:
         self.hl_espTopRow = QHBoxLayout()
         # self.hl_espTopRow.setSizeConstraint(QLayout.SetMinimumSize)
 
@@ -458,15 +458,15 @@ class HardwareMotorChannelRow(ExpandedWidgetDataRowBase):
 
         logger.debug(f"closeEvent in {__class__.__name__}")
 
-    def _lockSlider(self):
+    def _lockSlider(self) -> None:
         logger.debug("Slider locked")
         self.sliderLocked = True
 
-    def _unlockSlider(self):
+    def _unlockSlider(self) -> None:
         logger.debug("Slider unlocked")
         self.sliderLocked = False
 
-    def updateValue(self, value: int):
+    def updateValue(self, value: int) -> None:
         self.lb_motorVal.setNum(value)
         if not self.sliderLocked:
             self.hsld_motorVal.setValue(value)
@@ -479,7 +479,7 @@ class ContactGroupRow(BaseRow):
         # logger.debug(f"Creating {__class__.__name__}")
         super().__init__(parent)
 
-    def buildUi(self):
+    def buildUi(self) -> None:
         self.hl_groupTopRow = QHBoxLayout()
 
         # all fonts that we need
@@ -593,7 +593,7 @@ class PointDetailsRow(ExpandedWidgetDataRowBase):
         self.addWidget(self.lb_groupPointValue, 0, Qt.AlignmentFlag.AlignLeft)
         self.addStretch(1)
 
-    def updateValue(self, value: float):
+    def updateValue(self, value: float) -> None:
         self.lb_groupPointValue.setFloat(value)
 
 

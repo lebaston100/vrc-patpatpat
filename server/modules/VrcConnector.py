@@ -53,19 +53,19 @@ class IVrcConnector():
 
 
 class VrcConnectionWorker(QObject):
-    def __init__(self, connector, *args, **kwargs):
+    def __init__(self, connector, *args, **kwargs) -> None:
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
         self._connector = connector
         self.dispatcher = VrcOscDispatcher(self._connector)
 
-    def loadSettings(self, config: GlobalConfigSingleton):
+    def loadSettings(self, config: GlobalConfigSingleton) -> None:
         self._oscRxPort = config.get("program.vrcOscSendPort", 9000)
         self._oscTxIp = config.get("program.vrcOscReceiveAddress", "127.0.0.1")
         self._oscTxPort = config.get("program.vrcOscReceivePort", 9001)
 
     @QSlot()
-    def startOscServer(self):
+    def startOscServer(self) -> None:
         logger.info(
             f"startOsc pid     ={threadAsStr(QThread.currentThread())}")
         logger.info(
@@ -82,7 +82,7 @@ class VrcConnectionWorker(QObject):
         del self._oscRx  # dereferene so the gc can pick it up
 
     @QSlot()
-    def closeOscServer(self):
+    def closeOscServer(self) -> None:
         """Restarts the thread that is running us
         self.thread returns the thread, but the thread is not the actual
         thread but instead the thread's manager running in the main thread"""
@@ -124,18 +124,18 @@ class VrcConnectorImpl(IVrcConnector, QObject):
 
         self.config.configRootUpdateDone.connect(self._oscGeneralConfigChanged)
 
-    def _receivedOsc(self, client: tuple, addr: str, params: list):
+    def _receivedOsc(self, client: tuple, addr: str, params: list) -> None:
         """Just a test function that prints if osc event was fired
         """
         logger.info(f"osc from {str(client)}: addr={addr} msg={str(params)}")
 
-    def connect(self):
+    def connect(self) -> None:
         """ Start worker thread and osc sender"""
         logger.debug("Starting vrc osc server and client")
         self.workerThread.start()
         self.worker.startOscSender()
 
-    def close(self):
+    def close(self) -> None:
         """Closes everything vrc osc related
         """
         logger.debug("Closing vrc osc server and client")
@@ -144,13 +144,13 @@ class VrcConnectorImpl(IVrcConnector, QObject):
         self.workerThread.quit()
         self.workerThread.wait()
 
-    def restart(self):
+    def restart(self) -> None:
         """ Close and restart sockets """
         logger.debug("Restarting vrc osc server and client")
         self.close()
         self.connect()
 
-    def isAlive(self):
+    def isAlive(self) -> None:
         # Not sure about this one yet, maybe signal based instead
         """ TODO """
         raise NotImplementedError
@@ -164,15 +164,15 @@ class VrcConnectorImpl(IVrcConnector, QObject):
         """
         self.worker.sendOsc(path, values)
 
-    def addToFilter(self, relativePath: str):
+    def addToFilter(self, relativePath: str) -> None:
         if relativePath not in self.worker.dispatcher.matchTopics:
             self.worker.dispatcher.matchTopics.append(relativePath)
 
-    def removeFromFilter(self, relativePath: str):
+    def removeFromFilter(self, relativePath: str) -> None:
         if relativePath in self.worker.dispatcher.matchTopics:
             self.worker.dispatcher.matchTopics.remove(relativePath)
 
-    def _oscGeneralConfigChanged(self, root):
+    def _oscGeneralConfigChanged(self, root) -> None:
         self.worker.loadSettings(self.config)
         self.restart()
 

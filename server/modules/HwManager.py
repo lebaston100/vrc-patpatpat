@@ -5,7 +5,7 @@ including discovery
 import socket
 from typing import TYPE_CHECKING, TypeVar
 
-from PyQt6.QtCore import QObject, QThread, QTimer, QTimerEvent
+from PyQt6.QtCore import QObject, QThread, QTimer
 from PyQt6.QtCore import pyqtSignal as QSignal
 from PyQt6.QtCore import pyqtSlot as QSlot
 from pythonosc.dispatcher import Dispatcher
@@ -72,7 +72,7 @@ class HwManager(QObject):
         return next((device["id"] for device in hardwareDevices.values()
                      if device["wifiMac"] == mac), None)
 
-    def close(self):
+    def close(self) -> None:
         """Closes everything hardware related
         """
 
@@ -161,7 +161,7 @@ class HwOscRxWorker(QObject):
                             needs_reply_address=True)
         self.dispatcher.set_default_handler(self._defaultHandler)
 
-    def _defaultHandler(self, topic: str, *args):
+    def _defaultHandler(self, topic: str, *args) -> None:
         logger.debug(f"Unknown osc message: {topic}, {str(args)}")
 
     def _handleDiscoveryResponseMessage(self, client: tuple,
@@ -181,7 +181,7 @@ class HwOscRxWorker(QObject):
             self.gotOscHardwareHeartbeat.emit(msg)
 
     @QSlot()
-    def startOscServer(self):
+    def startOscServer(self) -> None:
         logger.info(
             f"startOsc pid     ={threadAsStr(QThread.currentThread())}")
         logger.info(
@@ -196,7 +196,7 @@ class HwOscRxWorker(QObject):
         self._oscRx.socket.close()
         del self._oscRx  # dereferene so the gc can pick it up
 
-    def closeOscServer(self):
+    def closeOscServer(self) -> None:
         """Stops and closes the osc server
         """
 
@@ -235,7 +235,7 @@ class HwOscRx(QObject):
         logger.debug("Starting heartbeat osc server and client")
         self.workerThread.start()
 
-    def close(self):
+    def close(self) -> None:
         """Closes everything heartbeat osc related
         """
         logger.debug("Closing heartbeat osc")

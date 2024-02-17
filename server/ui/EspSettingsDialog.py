@@ -28,7 +28,7 @@ class EspSettingsDialog(QWidget, OptionAdapter):
         # after UI is setup load options into ui elements
         self.loadOptsToGui(config, self._configKey)
 
-    def buildUi(self):
+    def buildUi(self) -> None:
         """Initialize UI elements."""
 
         # the widget and it's layout

@@ -20,7 +20,7 @@ REQUIRED_CONFIG_VERSION = 1
 SEMVER = f"0.1.0"
 
 
-def handleUncaughtExceptions(exc_type, exc_value, exc_traceback):
+def handleUncaughtExceptions(exc_type, exc_value, exc_traceback) -> None:
     logger.exception("Unhandled Exception",
                      exc_info=(exc_type, exc_value, exc_traceback))
 

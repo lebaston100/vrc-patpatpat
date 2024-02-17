@@ -33,8 +33,8 @@ class ServerSingleton(QObject):
             raise RuntimeError("Can't initialize multiple singleton instances")
 
         super().__init__()
-        logger.debug(f"Creating {__class__.__name__} in thread {
-                     threadAsStr(QThread.currentThread())}")
+        logger.debug(f"Creating {__class__.__name__} in thread "
+                     f"{threadAsStr(QThread.currentThread())}")
 
         self.vrcOscConnector = VrcConnectorImpl(config)
         self.vrcOscConnector.connect()
@@ -52,7 +52,7 @@ class ServerSingleton(QObject):
 
         ServerSingleton.__instance = self
 
-    def _vrcOscDataReceived(self, client: tuple, addr: str, params: list):
+    def _vrcOscDataReceived(self, client: tuple, addr: str, params: list) -> None:
         """Handle osc data coming from vrchat.
         We can distribute the contacts to the right callback here
 
@@ -63,7 +63,7 @@ class ServerSingleton(QObject):
         """
         logger.info(f"osc from {str(client)}: addr={addr} msg={str(params)}")
 
-    def stop(self):
+    def stop(self) -> None:
         """Do everything needed to stop the server
         """
         logger.debug(f"Stopping {__class__.__name__}")
