@@ -68,8 +68,13 @@ class ServerSingleton(QObject):
     def stop(self):
         """Do everything needed to stop the server
         """
+        logger.debug(f"Stopping {__class__.__name__}")
+
         if hasattr(self, "vrcOscConnector"):
             self.vrcOscConnector.close()
+
+        if hasattr(self, "hwManager"):
+            self.hwManager.close()
 
 
 if __name__ == "__main__":
