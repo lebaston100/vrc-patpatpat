@@ -13,6 +13,7 @@ from pythonosc.osc_message_builder import ArgValue
 from pythonosc.osc_server import BlockingOSCUDPServer
 from pythonosc.udp_client import SimpleUDPClient
 
+from modules import config
 from modules.GlobalConfig import GlobalConfigSingleton
 from modules.OscMessageTypes import DiscoveryResponseMessage, HeartbeatMessage
 from utils import LoggerClass, threadAsStr
@@ -23,6 +24,8 @@ logger = LoggerClass.getSubLogger(__name__)
 class HwManager(QObject):
     """Handles all hardware related tasks
     """
+
+    hwListUpdated = QSignal(dict)
 
     def __init__(self, *args, **kwargs) -> None:
         logger.debug(f"Creating {__class__.__name__}")
@@ -46,6 +49,28 @@ class HwManager(QObject):
             value (float | int, optional): The value to write. Defaults to 0.
         """
         ...
+
+    def sendHwUpdate(self, espId: int = 0) -> None:
+        """Triggers a sendPinValues() on the destined Hardware
+
+        Args:
+            espId (int, optional): Id of the destined HardwareDevice. Defaults to 0.
+        """
+        ...
+
+    def _checkDeviceExistance(self, mac: str) -> int | None:
+        """Checks config if given mac adress already exists
+
+        Args:
+            mac (str): The mac adress to look for
+
+        Returns:
+            int | None: If mac is found in config, it's id, otherwise None
+        """
+
+        hardwareDevices = config.get("esps")
+        return next((device["id"] for device in hardwareDevices.values()
+                     if device["wifiMac"] == mac), None)
 
     def close(self):
         """Closes everything hardware related
