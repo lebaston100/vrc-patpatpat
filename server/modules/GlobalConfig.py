@@ -8,11 +8,11 @@ Typical usage example:
 """
 
 import re
-from typing import Any, Callable, Optional, Type, TypeVar
+from typing import Any, Optional, Type, TypeVar
 
 from PyQt6.QtCore import QMutex, QObject
 from PyQt6.QtCore import pyqtSignal as QSignal
-
+from PyQt6.QtCore import pyqtBoundSignal
 from utils import FileHelper, LoggerClass, PathReader
 
 logger = LoggerClass.getSubLogger(__name__)
@@ -70,8 +70,8 @@ class GlobalConfigSingleton(QObject):
         self._mutex = QMutex()
         self._configHandler = configHandler
         self._configOptions: dict[str, Any] = {}
-        self._configPathChangedCallbacks: dict[str, Callable] = {}
-        self._configPathDeletedCallbacks: dict[str, Callable] = {}
+        self._configPathChangedSignals: dict[str, pyqtBoundSignal] = {}
+        self._configPathDeletedSignals: dict[str, pyqtBoundSignal] = {}
 
         try:
             self.parse()
@@ -79,8 +79,8 @@ class GlobalConfigSingleton(QObject):
             logger.exception(E)
             raise E
 
-        self.configPathHasChanged.connect(self._runChangeCallbacks)
-        self.configPathWasDeleted.connect(self._runRemoveCallbacks)
+        self.configPathHasChanged.connect(self._runChangeSignals)
+        self.configPathWasDeleted.connect(self._runRemoveSignals)
         GlobalConfigSingleton.__instance = self
 
     def parse(self) -> None:
@@ -192,83 +192,85 @@ class GlobalConfigSingleton(QObject):
 
         return self._configHandler.write(self._configOptions)
 
-    def registerChangeCallback(self, pathPattern: str, callback: Callable) -> None:
+    def registerChangeSignal(self, pathPattern: str,
+                             signal: pyqtBoundSignal) -> None:
         """
-        Register a callback for a configuration change.
+        Register a signal to be emitted for a configuration change.
 
         Args:
             pathPattern (str): Regex pattern of the path to watch for changes.
-            callback (Callable): Function to call when a change is detected.
+            signal (pyqtBoundSignal): Signal to emit when a change is detected.
         """
 
-        self._configPathChangedCallbacks.update({pathPattern: callback})
-        logger.debug(self._configPathChangedCallbacks)
+        self._configPathChangedSignals.update({pathPattern: signal})
+        logger.debug(self._configPathChangedSignals)
 
-    def deleteChangeCallback(self, pathPattern: str) -> None:
+    def deleteChangeSignal(self, pathPattern: str) -> None:
         """
-        Remove a registered callback.
+        Remove a registered signal.
 
         Args:
-            pathPattern (str): Regex pattern of the path of the callback
+            pathPattern (str): Regex pattern of the path of the signal
                 to remove.
         """
 
         try:
-            self._configPathChangedCallbacks.pop(pathPattern)
+            self._configPathChangedSignals.pop(pathPattern)
         except:
-            logger.error(f"Path {pathPattern} has no registered callbacks")
-        logger.debug(self._configPathChangedCallbacks)
+            logger.error(f"Path {pathPattern} has no registered signals")
+        logger.debug(self._configPathChangedSignals)
 
-    def _runChangeCallbacks(self, changedPath: str) -> None:
+    def _runChangeSignals(self, changedPath: str) -> None:
         """
-        Run callbacks for a given changed path.
+        Emit signals for a given changed path.
 
         Args:
             changedPath (str): The path that has changed.
         """
 
-        for pathPattern, cb in self._configPathChangedCallbacks.items():
+        for pathPattern, signal in self._configPathChangedSignals.items():
             if re.match(pathPattern + "$", changedPath):
-                cb(changedPath)
+                signal.emit(changedPath)
 
-    def registerRemoveCallback(self, pathPattern: str, callback: Callable) -> None:
+    def registerRemoveSignal(self, pathPattern: str,
+                             signal: pyqtBoundSignal) -> None:
         """
-        Register a callback for a configuration change.
+        Register a signal to be emitted for a configuration change.
 
         Args:
             pathPattern (str): Regex pattern of the path to watch for changes.
-            callback (Callable): Function to call when a change is detected.
+            signal (pyqtBoundSignal): Signal to emit when a change is detected.
         """
 
-        self._configPathDeletedCallbacks.update({pathPattern: callback})
-        logger.debug(self._configPathDeletedCallbacks)
+        self._configPathDeletedSignals.update({pathPattern: signal})
+        logger.debug(self._configPathDeletedSignals)
 
-    def deleteRemoveCallback(self, pathPattern: str) -> None:
+    def deleteRemoveSignal(self, pathPattern: str) -> None:
         """
-        Remove a registered callback.
+        Remove a registered signal.
 
         Args:
-            pathPattern (str): Regex pattern of the path of the callback
+            pathPattern (str): Regex pattern of the path of the signal
                 to remove.
         """
 
         try:
-            self._configPathDeletedCallbacks.pop(pathPattern)
+            self._configPathDeletedSignals.pop(pathPattern)
         except:
-            logger.error(f"Path {pathPattern} has no registered callbacks")
-        logger.debug(self._configPathDeletedCallbacks)
+            logger.error(f"Path {pathPattern} has no registered signals")
+        logger.debug(self._configPathDeletedSignals)
 
-    def _runRemoveCallbacks(self, removedPath: str) -> None:
+    def _runRemoveSignals(self, removedPath: str) -> None:
         """
-        Run callbacks for a given removed path.
+        Emit signals for a given removed path.
 
         Args:
             removedPath (str): The path that has changed.
         """
 
-        for pathPattern, cb in self._configPathDeletedCallbacks.items():
+        for pathPattern, signal in self._configPathDeletedSignals.items():
             if re.match(pathPattern + "$", removedPath):
-                cb(removedPath)
+                signal.emit(removedPath)
 
 
 # any work to find out what the config would need to be done here

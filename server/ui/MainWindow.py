@@ -13,21 +13,25 @@ from PyQt6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMainWindow,
 import ui
 from modules import config, ServerSingleton
 from utils import LoggerClass
+from PyQt6.QtCore import pyqtSignal as QSignal
 
 logger = LoggerClass.getSubLogger(__name__)
 
 
 class MainWindow(QMainWindow):
+    myConfigChanged = QSignal(str)
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
         self._singleWindows: dict[str, QWidget] = {}
 
         self.setupUi()
-        # config.registerChangeCallback(
-        # r"program\.mainTps$", self.handleConfigChange)
-        config.registerChangeCallback(
-            r"program\..*", self.handleConfigChange)
+        # config.registerChangeSignal(
+        # r"program\.mainTps$", self.myConfigChanged)
+        config.registerChangeSignal(
+            r"program\..*", self.myConfigChanged)
+        self.myConfigChanged.connect(self.handleConfigChange)
         self.server = ServerSingleton.getInstance()
 
     def setupUi(self) -> None:
@@ -107,7 +111,7 @@ class MainWindow(QMainWindow):
         self.hardwareScrollAreaWidgetContentLayout.setContentsMargins(
             0, 0, 0, 0)
 
-        # a test entry in the hardware row
+        # TODO: a test entry in the hardware row
         # we need to factory this
         self.testHwInstance1 = HardwareEspRow(
             self.hardwareScrollAreaWidgetContent)
@@ -152,7 +156,7 @@ class MainWindow(QMainWindow):
         self.contactGroupScrollAreaWidgetContentLayout.setContentsMargins(
             0, 0, 0, 0)
 
-        # add rows here
+        # TODO: add rows here
         self.testContactGroupInstance1 = ContactGroupRow(
             self.contactGroupScrollAreaWidgetContent)
         self.testContactGroupInstance2 = ContactGroupRow(
