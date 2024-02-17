@@ -2,7 +2,7 @@ from PyQt6.QtCore import QObject
 from modules.GlobalConfig import GlobalConfigSingleton
 
 
-class ESP(QObject):
+class HardwareDevice(QObject):
     """Represents a physical ESP"""
 
     def __init__(self, key: str) -> None:

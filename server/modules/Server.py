@@ -34,7 +34,7 @@ class ServerSingleton(QObject):
 
         super().__init__()
         logger.debug(f"Creating {__class__.__name__} in thread {
-                     threadAsStr(QThread.currentThread())} ")
+                     threadAsStr(QThread.currentThread())}")
 
         self.vrcOscConnector = VrcConnectorImpl(config)
         self.vrcOscConnector.connect()
@@ -45,8 +45,6 @@ class ServerSingleton(QObject):
 
         self._solverRunnerThread = QThread()
         self.solverRunner = SolverRunner(config)
-
-        # self.oscCallbacks = []
 
         # self._solverRunnerThread.started.connect(self.solverRunner.runSolvers)
         # self.solverRunner.moveToThread(self._solverRunnerThread)

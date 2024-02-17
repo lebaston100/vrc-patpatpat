@@ -7,7 +7,7 @@ Exposes:
 """
 
 from .AvatarPoint import AvatarPoint
-from .ESP import ESP
+from .HardwareDevice import HardwareDevice
 from .GlobalConfig import config
 from .HwManager import HwManager
 from .Motor import Motor
