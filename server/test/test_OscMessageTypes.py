@@ -19,7 +19,7 @@ class TestOscMessageTypes:
     @pytest.fixture()
     def HeartbeatMessageData(self):
         return ("/patpatpat/heartbeat",
-                ["AA:AA:AA:AA:AA:AA", 1, 2, 3],
+                ("AA:AA:AA:AA:AA:AA", 1, 2, 3),
                 ["10.10.10.10", 2])
 
     @pytest.fixture()
@@ -52,7 +52,7 @@ class TestOscMessageTypes:
     @pytest.fixture()
     def DiscoveryResponseMessageData(self):
         return ("/patpatpat/noticeme/senpai",
-                ["AA:AA:AA:AA:AA:AA", 1],
+                ("AA:AA:AA:AA:AA:AA", 1),
                 ["10.10.10.10", 2])
 
     @pytest.fixture()

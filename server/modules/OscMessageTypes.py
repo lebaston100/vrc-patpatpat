@@ -28,7 +28,7 @@ class HeartbeatMessage:
     ts: datetime = field(default_factory=datetime.now)
 
     @staticmethod
-    def isType(topic: str, params: list) -> bool:
+    def isType(topic: str, params: tuple) -> bool:
         return topic == "/patpatpat/heartbeat" and len(params) == 4
 
 
@@ -51,7 +51,7 @@ class DiscoveryResponseMessage:
     ts: datetime = field(default_factory=datetime.now)
 
     @staticmethod
-    def isType(topic: str, params: list) -> bool:
+    def isType(topic: str, params: tuple) -> bool:
         return topic == "/patpatpat/noticeme/senpai" and len(params) == 2
 
 
