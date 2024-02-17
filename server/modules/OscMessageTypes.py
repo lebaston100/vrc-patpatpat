@@ -24,7 +24,7 @@ class HeartbeatMessage:
     uptime: int = 0
     vccBat: int = 0
     rssi: int = 0
-    source: list = field(default_factory=lambda: ["", 0])
+    source: str = ""
     ts: datetime = field(default_factory=datetime.now)
 
     @staticmethod
@@ -47,7 +47,7 @@ class DiscoveryResponseMessage:
 
     mac: str = "00:00:00:00:00:00"
     numMotors: int = 0
-    source: list = field(default_factory=lambda: ["", 0])
+    source: str = ""
     ts: datetime = field(default_factory=datetime.now)
 
     @staticmethod

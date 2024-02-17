@@ -20,7 +20,7 @@ class TestOscMessageTypes:
     def HeartbeatMessageData(self):
         return ("/patpatpat/heartbeat",
                 ("AA:AA:AA:AA:AA:AA", 1, 2, 3),
-                ["10.10.10.10", 2])
+                "10.10.10.10")
 
     @pytest.fixture()
     def validHeartbeatMessage(self, HeartbeatMessageData):
@@ -42,7 +42,7 @@ class TestOscMessageTypes:
         m = validHeartbeatMessage
         assert m.mac == "AA:AA:AA:AA:AA:AA" \
             and m.uptime == 1 and m.vccBat == 2 and m.rssi == 3 \
-            and m.source == ["10.10.10.10", 2] \
+            and m.source == "10.10.10.10" \
             and isinstance(m.ts, datetime)
 
         """Test if object is mutable"""
@@ -53,7 +53,7 @@ class TestOscMessageTypes:
     def DiscoveryResponseMessageData(self):
         return ("/patpatpat/noticeme/senpai",
                 ("AA:AA:AA:AA:AA:AA", 1),
-                ["10.10.10.10", 2])
+                "10.10.10.10")
 
     @pytest.fixture()
     def validDiscoveryResponseMessage(self, DiscoveryResponseMessageData):
@@ -75,7 +75,7 @@ class TestOscMessageTypes:
         m = validDiscoveryResponseMessage
         assert m.mac == "AA:AA:AA:AA:AA:AA" \
             and m.numMotors == 1 \
-            and m.source == ["10.10.10.10", 2]
+            and m.source == "10.10.10.10"
 
         """Test if object is mutable"""
         with pytest.raises(FrozenInstanceError):
