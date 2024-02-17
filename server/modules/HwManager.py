@@ -28,8 +28,24 @@ class HwManager(QObject):
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
 
+        # Start osc device discovery
         self.hwOscDiscoveryTx = HwOscDiscoveryTx()
         self.hwOscDiscoveryTx.start()
+
+        # Start osc receiver
+        self.hwOscRx = HwOscRx()
+
+        self.hardwareDevices: dict[int, object]
+
+    def writeSpeed(self, espId: int = 0, channelId: int = 0, value: float | int = 0) -> None:
+        """Write speed from motor into esp's state buffer
+
+        Args:
+            espId (int, optional): The destined esp. Defaults to 0.
+            channelId (int, optional): The destined esp's channel. Defaults to 0.
+            value (float | int, optional): The value to write. Defaults to 0.
+        """
+        ...
 
     def close(self):
         """Closes everything hardware related
@@ -38,6 +54,8 @@ class HwManager(QObject):
         logger.debug(f"Stopping {__class__.__name__}")
         if hasattr(self, "hwOscDiscoveryTx"):
             self.hwOscDiscoveryTx.stop()
+        if hasattr(self, "hwOscRx"):
+            self.hwOscRx.close()
 
 
 class HwOscDiscoveryTx(QObject):
@@ -46,10 +64,6 @@ class HwOscDiscoveryTx(QObject):
 
     def __init__(self, *args, **kwargs) -> None:
         """Initializes the HwOscDiscoveryTx object.
-
-        Args:
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
         """
 
         logger.debug(f"Creating {__class__.__name__}")
@@ -58,7 +72,6 @@ class HwOscDiscoveryTx(QObject):
         self._interfaces = socket.getaddrinfo(
             host=socket.gethostname(), port=None, family=socket.AF_INET)
         self._sockets: list[SimpleUDPClient] = []
-        logger.debug(self._interfaces)
 
         self._timer = QTimer(self)
         self._timer.timeout.connect(self.timerEvent)
@@ -128,19 +141,17 @@ class HwOscRxWorker(QObject):
 
     def _handleDiscoveryResponseMessage(self, client: tuple,
                                         topic: str, *args) -> None:
-        logger.debug("_handleDiscoveryResponseMessage: "
-                     f"{str(client)}, {topic}, {str(args)}")
+        # logger.debug(f"_handleDiscoveryResponseMessage: {str(client)}, {topic}, {str(args)}")
         if DiscoveryResponseMessage.isType(topic, args):
-            msg = DiscoveryResponseMessage(*args, source=[*client])
+            msg = DiscoveryResponseMessage(*args, source=client[0])
             logger.debug(msg)
             self.gotDiscoveryReply.emit(msg)
 
     def _handleHeartbeatMessage(self, client: tuple,
                                 topic: str, *args) -> None:
-        logger.debug("_handleHeartbeatMessage: "
-                     f"{str(client)}, {topic}, {str(args)}")
+        # logger.debug(f"_handleHeartbeatMessage: {str(client)}, {topic}, {str(args)}")
         if HeartbeatMessage.isType(topic, args):
-            msg = HeartbeatMessage(*args, source=[*client])
+            msg = HeartbeatMessage(*args, source=client[0])
             logger.debug(msg)
             self.gotOscHardwareHeartbeat.emit(msg)
 
