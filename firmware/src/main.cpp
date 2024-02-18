@@ -1,12 +1,10 @@
 #ifdef TARGET_D1_MINI
-    #include <ESP8266mDNS.h>
     #include <ESP8266WiFi.h>
     #define LEDON LOW
     #define LEDOFF HIGH
 #endif
 #ifdef TARGET_S2_MINI
     #include <WiFi.h>
-    #include <ESPmDNS.h>
     #include <WiFiClient.h>
     #define LEDON HIGH
     #define LEDOFF LOW
@@ -27,6 +25,8 @@ unsigned int ledState = LOW;
 byte numMotors = 7;
 unsigned long lastPacketRecv = millis();
 unsigned long lastHeartbeatSend = 0;
+unsigned int remotePort = 0;
+bool hasConnection = false;
 
 // Only needed if you want to use a static ip
 #if USE_STATIC_IP
@@ -91,17 +91,12 @@ void setup() {
     Serial.print(F("\nIP address: "));
     Serial.println(WiFi.localIP());
 
-    // Start the mDNS responder for patpatpat-<last6digitsofmac>.local
     byte mac [6];
     char hostname[11];
     WiFi.macAddress(mac);
     sprintf(hostname, "ppp-%02x%02x%02x", mac[3], mac[4], mac[5]);
-    if (!MDNS.begin(hostname)) {
-        Serial.println(F("Error setting up MDNS responder!"));
-    }
-    MDNS.addService("osc", "udp", OSC_IN_PORT);
-    MDNS.addServiceTxt("osc", "udp", "version", "1");
-    Serial.print(F("mDNS responder started with hostname "));
+    WiFi.setHostname(hostname);
+    Serial.print(F("Hostname "));
     Serial.println(hostname);
     Serial.println(F("Starting UDP OSC Receiver"));
     Udp.begin(OSC_IN_PORT);
@@ -121,9 +116,20 @@ void osc_motors(OSCMessage &msg) {
 }
 
 void handle_discover(OSCMessage &msg) {
+    if (hasConnection) return;
     Serial.println("Discovery request received");
-    Serial.println(Udp.remoteIP());
-    Serial.println(Udp.remotePort());
+
+    // Send discovery response
+    OSCMessage discoverReply("/patpatpat/noticeme/senpai");
+    discoverReply.add(WiFi.macAddress().c_str());
+    discoverReply.add(numMotors);
+    Udp.beginPacket(Udp.remoteIP(), remotePort);
+    discoverReply.send(Udp);
+    Udp.endPacket();
+    discoverReply.empty();
+    Serial.println("Sent discovery reply");
+
+    digitalWrite(INTERNAL_LED, LEDON);
 }
 
 void loop() {
@@ -138,50 +144,44 @@ void loop() {
         while (size--) {
             msg.fill(Udp.read());
         }
+        
         if (!msg.hasError()) {
+            remotePort = Udp.remotePort() + 1;
             // Serial.println("osc message is valid");
             lastPacketRecv = millis();
             // drive motors
             msg.dispatch("/m", osc_motors);
             msg.dispatch("/patpatpat/discover", handle_discover);
-
-            // handle heartbeat sending
-            if (millis() - lastHeartbeatSend >= 1000) {
-                // For testing only, send discovery response
-                OSCMessage discoverReply("/patpatpat/noticeme/senpai");
-                discoverReply.add(WiFi.macAddress().c_str());
-                discoverReply.add(numMotors);
-                Udp.beginPacket(Udp.remoteIP(), Udp.remotePort()+1);
-                discoverReply.send(Udp);
-                Udp.endPacket();
-                discoverReply.empty();
-
-                digitalWrite(INTERNAL_LED, LEDON);
-
-                // Send Heartbeat
-                OSCMessage txmsg("/patpatpat/heartbeat");
-                txmsg.add(WiFi.macAddress().c_str());
-                txmsg.add((int)millis()/1000);
-                // This will be replaced with reading the external battery voltage later
-                #ifdef ARDUINO_ARCH_ESP8266
-                    txmsg.add(ESP.getVcc());
-                #else
-                    txmsg.add(analogRead(s2batteryPin));
-                #endif
-                // Serial.println(Udp.remoteIP());
-                // Serial.println(Udp.remotePort());
-                txmsg.add(WiFi.RSSI());
-                Udp.beginPacket(Udp.remoteIP(), Udp.remotePort()+1);
-                txmsg.send(Udp);
-                Udp.endPacket();
-                txmsg.empty();
-                lastHeartbeatSend = millis();
-            }
+            hasConnection = true;
         } else {
             error = msg.getError();
             Serial.print(F("osc message error: "));
             Serial.println(error);
         }
+
+    }
+
+    // handle heartbeat sending
+    if (hasConnection && millis() - lastHeartbeatSend >= 5000) {
+        // Send Heartbeat
+        OSCMessage txmsg("/patpatpat/heartbeat");
+        txmsg.add(WiFi.macAddress().c_str());
+        txmsg.add((int)millis()/1000);
+        // This will be replaced with reading the external battery voltage later
+        #ifdef ARDUINO_ARCH_ESP8266
+            txmsg.add(ESP.getVcc());
+        #else
+            txmsg.add(analogRead(s2batteryPin));
+        #endif
+        // Serial.println(Udp.remoteIP());
+        // Serial.println(remotePort);
+        txmsg.add(WiFi.RSSI());
+        Udp.beginPacket(Udp.remoteIP(), remotePort);
+        txmsg.send(Udp);
+        Udp.endPacket();
+        txmsg.empty();
+        Serial.println("Sent heartbeat");
+        lastHeartbeatSend = millis();
     }
 
     // Disable led when we got no packets in the last 600ms
