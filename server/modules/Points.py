@@ -1,12 +1,20 @@
-from typing import Self
+from typing import Self, Type, TypeVar
+
 from PyQt6.QtGui import QVector3D
+
+T = TypeVar('T', bound='Sphere3D')
 
 
 class Sphere3D(QVector3D):
     """A 3D Point with a name and radius."""
 
+    @classmethod
+    # TODO get data from config and pass to constructor
+    def fromConfig(cls: Type[T], config, key: str) -> T:
+        return cls()
+
     def __init__(self, name: str = "", radius: float = 0,
-                 x: float = 0, y: float = 0, z: float = 0, *args, **kwargs):
+                 x: float = 0, y: float = 0, z: float = 0, *args, **kwargs) -> None:
         """Creates a new 3D Point.
 
         Args:

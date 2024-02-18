@@ -44,12 +44,10 @@ class OptionAdapter():
             dataType (validValueTypes, optional): The data type to cast
                 the option to. Defaults to str.
         """
-
         self._uiElems.update({path: (uiObject, dataType)})
 
     def _setUiOpt(self, element: object, value: Any) -> None:
-        """
-        Sets the value of a UI element based on its type.
+        """Sets the value of a UI element based on its type.
 
         This function sets the value of a UI element based on its type. 
         If the element type is not supported, it logs an error message.
@@ -61,7 +59,6 @@ class OptionAdapter():
         Returns:
             None
         """
-
         method = None
         match type(element).__name__:
             case "QLineEdit":
@@ -83,8 +80,7 @@ class OptionAdapter():
 
     def _getUiOpt(self, element: object,
                   dataType=str) -> Any:
-        """
-        Retrieves the value of a UI element based on its type.
+        """Retrieves the value of a UI element based on its type.
 
         This function retrieves the value of a UI element based on
         its type.
@@ -100,7 +96,6 @@ class OptionAdapter():
             Any: The value of the UI element, cast to the 
                 specified dataType.
         """
-
         method = None
         match type(element).__name__:
             case "QLineEdit":
@@ -120,8 +115,7 @@ class OptionAdapter():
             return dataType(method())
 
     def loadOptsToGui(self, config, configKey: str) -> None:
-        """
-        Loads options from a dictionary to UI elements.
+        """Loads options from a dictionary to UI elements.
 
         This function iterates over a dictionary of options and sets the 
         corresponding UI elements to the values from the dictionary.
@@ -134,7 +128,6 @@ class OptionAdapter():
         Returns:
             None
         """
-
         for path, (uiElem, dataType) in self._uiElems.items():
             try:
                 newValue = dataType(config.get(f"{configKey}.{path}"))
@@ -146,8 +139,7 @@ class OptionAdapter():
 
     def saveOptsFromGui(self, config, configKey: str,
                         diff: bool = False) -> list[str | None]:
-        """
-        Retrieves values from UI elements and updates the options dict.
+        """Retrieves values from UI elements and updates the options dict.
 
         This function iterates over all UI elements, retrieves their
         values, and updates the provided options dictionary. It also
@@ -163,7 +155,6 @@ class OptionAdapter():
             list[str | None]: A tuple containing the updated options dictionary and
             a list of keys that have changed.
         """
-
         changedKeys = []
         for path, (uiElem, dataType) in self._uiElems.items():
             path = f"{configKey}.{path}"

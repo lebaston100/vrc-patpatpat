@@ -30,7 +30,6 @@ class EspSettingsDialog(QWidget, OptionAdapter):
 
     def buildUi(self) -> None:
         """Initialize UI elements."""
-
         # the widget and it's layout
         self.setWindowTitle("ESP Settings")
         self.setObjectName(__class__.__name__)
@@ -115,8 +114,7 @@ class EspSettingsDialog(QWidget, OptionAdapter):
         self.selfLayout.addRow(self.bt_saveCancelButtons)
 
     def handleSaveButton(self) -> None:
-        """Handle save button press"""
-
+        """Handle save button press."""
         self.saveOptsFromGui(config, self._configKey)
         self.close()
 
@@ -127,7 +125,6 @@ class EspSettingsDialog(QWidget, OptionAdapter):
         Args:
             event QCloseEvent): The QCloseEvent.
         """
-
         logger.debug(f"closeEvent in {__class__.__name__}")
 
         # this might be removed later if it blocks processing data

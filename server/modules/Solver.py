@@ -18,10 +18,10 @@ T = TypeVar('T', bound='GlobalConfigSingleton')
 
 
 class ISolver():
-    """ The interface """
+    """The interface."""
 
     def solve(self):
-        """ A generic solve method to be reimplemented"""
+        """A generic solve method to be reimplemented."""
         raise NotImplementedError
 
 
@@ -54,7 +54,7 @@ class SolverFactory:
 class SolverRunner(QObject):
     def __init__(self, config) -> None:
         """This object is running inside the thread and manages
-        all the solvers
+        all the solvers.
         """
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__()

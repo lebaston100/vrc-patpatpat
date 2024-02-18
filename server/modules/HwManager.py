@@ -22,8 +22,7 @@ logger = LoggerClass.getSubLogger(__name__)
 
 
 class HwManager(QObject):
-    """Handles all hardware related tasks
-    """
+    """Handles all hardware related tasks."""
 
     hwListUpdated = QSignal(dict)
 
@@ -51,15 +50,16 @@ class HwManager(QObject):
         ...
 
     def sendHwUpdate(self, espId: int = 0) -> None:
-        """Triggers a sendPinValues() on the destined Hardware
+        """Triggers a sendPinValues() on the destined Hardware.
 
         Args:
-            espId (int, optional): Id of the destined HardwareDevice. Defaults to 0.
+            espId (int, optional): Id of the destined HardwareDevice.
+                Defaults to 0.
         """
         ...
 
     def _checkDeviceExistance(self, mac: str) -> int | None:
-        """Checks config if given mac adress already exists
+        """Checks config if given mac adress already exists.
 
         Args:
             mac (str): The mac adress to look for
@@ -67,15 +67,12 @@ class HwManager(QObject):
         Returns:
             int | None: If mac is found in config, it's id, otherwise None
         """
-
         hardwareDevices = config.get("esps")
         return next((device["id"] for device in hardwareDevices.values()
                      if device["wifiMac"] == mac), None)
 
     def close(self) -> None:
-        """Closes everything hardware related
-        """
-
+        """Closes everything hardware related."""
         logger.debug(f"Stopping {__class__.__name__}")
         if hasattr(self, "hwOscDiscoveryTx"):
             self.hwOscDiscoveryTx.stop()
@@ -90,7 +87,6 @@ class HwOscDiscoveryTx(QObject):
     def __init__(self, *args, **kwargs) -> None:
         """Initializes the HwOscDiscoveryTx object.
         """
-
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
 
@@ -107,7 +103,6 @@ class HwOscDiscoveryTx(QObject):
         Args:
             interval: The interval in seconds. Default is 3.
         """
-
         if interval:
             self._interval = interval
         if self._timer.isActive():
@@ -121,9 +116,7 @@ class HwOscDiscoveryTx(QObject):
         self._timer.start(self._interval * 1000)
 
     def stop(self) -> None:
-        """Stops the timer and closes all sockets.
-        """
-
+        """Stops the timer and closes all sockets."""
         logger.debug(f"Stopping {__class__.__name__}")
         for client in self._sockets:
             client._sock.shutdown(socket.SHUT_RDWR)
@@ -132,9 +125,7 @@ class HwOscDiscoveryTx(QObject):
         self._timer.stop()
 
     def timerEvent(self) -> None:
-        """Send out discovery messages when timer fires
-        """
-
+        """Send out discovery messages when timer fires."""
         # logger.debug("Sending out discovery broadcasts")
         for client in self._sockets:
             client.send_message("/patpatpat/discover", [])
@@ -142,8 +133,7 @@ class HwOscDiscoveryTx(QObject):
 
 
 class HwOscRxWorker(QObject):
-    """The thread receiving osc messages from hardware devices
-    """
+    """The thread receiving osc messages from hardware devices."""
 
     gotDiscoveryReply = QSignal(object)
     gotOscHardwareHeartbeat = QSignal(object)
@@ -197,8 +187,7 @@ class HwOscRxWorker(QObject):
         del self._oscRx  # dereferene so the gc can pick it up
 
     def closeOscServer(self) -> None:
-        """Stops and closes the osc server
-        """
+        """Stops and closes the osc server."""
 
         logger.debug(f"closeOscServer in {__class__.__name__}")
         selfThread = self.thread()
@@ -212,8 +201,7 @@ class HwOscRxWorker(QObject):
 
 
 class HwOscRx(QObject):
-    """The Thread Manager for the global Hardware Osc Receiver
-    """
+    """The Thread Manager for the global Hardware Osc Receiver."""
 
     gotDiscoveryReply = QSignal(object)
     gotOscHardwareHeartbeat = QSignal(object)
@@ -236,8 +224,7 @@ class HwOscRx(QObject):
         self.workerThread.start()
 
     def close(self) -> None:
-        """Closes everything heartbeat osc related
-        """
+        """Closes everything heartbeat osc related."""
         logger.debug("Closing heartbeat osc")
         self.worker.closeOscServer()
         self.workerThread.quit()

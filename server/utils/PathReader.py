@@ -57,7 +57,6 @@ class PathReader:
         Returns:
             validValueTypes: The options's value.
         """
-
         try:
             # convert str to ints for list indices
             keys = list(map(lambda a: int(a) if a.isdigit()
@@ -87,7 +86,6 @@ class PathReader:
             dict: A new copy of the input dict but with the updated
                 value.
         """
-
         try:
             # create copy of settings to work on
             workingDict = inputDict if inPlace else deepcopy(inputDict)
@@ -112,7 +110,6 @@ class PathReader:
         Returns:
             None
         """
-
         try:
             # convert str to ints for list indices
             keys = map(lambda k: int(k) if k.isdigit() else k, path.split("."))
@@ -131,7 +128,6 @@ def _recurse(d: dict, p: list, newValue: validValueTypes) -> None:
         p (list): The path to traverse.
         newValue (validValueTypes): The new value to set the option to.
     """
-
     key = p.pop(0)
     if p:
         _recurse(d[key], p, newValue)
@@ -149,7 +145,6 @@ def _recurseDelete(d: dict, p: list) -> None:
         d (dict): The dict to go though.
         p (list): The path to traverse.
     """
-
     key = p.pop(0)
     if p:
         _recurseDelete(d[key], p)

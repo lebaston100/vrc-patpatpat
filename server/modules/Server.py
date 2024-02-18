@@ -18,8 +18,7 @@ class ServerSingleton(QObject):
 
     @classmethod
     def getInstance(cls: Type[T]) -> T:
-        """
-        Get the singleton instance.
+        """Get the singleton instance.
 
         Returns:
             ServerSingleton: Singleton instance.
@@ -54,7 +53,7 @@ class ServerSingleton(QObject):
 
     def _vrcOscDataReceived(self, client: tuple, addr: str, params: list) -> None:
         """Handle osc data coming from vrchat.
-        We can distribute the contacts to the right callback here
+        We can distribute the contacts to the right callback here.
 
         Args:
             client (tuple): Remote ip/port
@@ -64,8 +63,7 @@ class ServerSingleton(QObject):
         logger.info(f"osc from {str(client)}: addr={addr} msg={str(params)}")
 
     def stop(self) -> None:
-        """Do everything needed to stop the server
-        """
+        """Do everything needed to stop the server."""
         logger.debug(f"Stopping {__class__.__name__}")
 
         if hasattr(self, "vrcOscConnector"):

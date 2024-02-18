@@ -22,7 +22,6 @@ class StaticLabel(QLabel):
         Args:
             prefixText (str): The static prefix text
         """
-
         super().__init__(*args, **kwargs)
         self._prefixText = prefixText
         self.setText(text or "")
@@ -36,7 +35,6 @@ class StaticLabel(QLabel):
         Returns:
             None
         """
-
         return super().setText(self._prefixText + text)
 
     def setNum(self, num: int) -> None:

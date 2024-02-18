@@ -23,7 +23,7 @@ logger = LoggerClass.getSubLogger(__name__)
 
 class ContactGroupSettings(QWidget, OptionAdapter):
     def __init__(self, configKey: str, *args, **kwargs) -> None:
-        """Initialize contact settings window"""
+        """Initialize contact settings window."""
 
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
@@ -36,7 +36,6 @@ class ContactGroupSettings(QWidget, OptionAdapter):
         """Initialize UI elements.
         All of the tabs are in their own subclass.
         """
-
         # the widget and it's layout
         self.setWindowTitle("Contact Group Settings")
         self.setObjectName(__class__.__name__)
@@ -77,8 +76,7 @@ class ContactGroupSettings(QWidget, OptionAdapter):
         self.selfLayout.addWidget(self.bt_saveCancelButtons)
 
     def handleSaveButton(self) -> None:
-        """Save all options when save button was pressed"""
-
+        """Save all options when save button was pressed."""
         logger.debug(f"handleSaveButton in {__class__.__name__}")
         # TODO: Save other tabs too
         self.tab_general.saveOptions()
@@ -94,7 +92,6 @@ class ContactGroupSettings(QWidget, OptionAdapter):
         Args:
             event (QCloseEvent): The QCloseEvent.
         """
-
         logger.debug(f"closeEvent in {__class__.__name__}")
 
         # this might be removed later if it blocks processing data
@@ -109,8 +106,7 @@ class ContactGroupSettings(QWidget, OptionAdapter):
 
 class TabGeneral(QWidget, OptionAdapter):
     def __init__(self, configKey: str, *args, **kwargs) -> None:
-        """Create the "general" tab with it's content"""
-
+        """Create the "general" tab with it's content."""
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
 
@@ -121,7 +117,6 @@ class TabGeneral(QWidget, OptionAdapter):
 
     def buildUi(self) -> None:
         """Initialize UI elements."""
-
         # the tab's layout
         self.selfLayout = QFormLayout(self)
         self.selfLayout.setObjectName("selfLayout")
@@ -152,8 +147,7 @@ class TabGeneral(QWidget, OptionAdapter):
 
 class TabMotors(QWidget):
     def __init__(self, configKey: str, *args, **kwargs) -> None:
-        """Create the "motors" tab with it's content"""
-
+        """Create the "motors" tab with it's content."""
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
 
@@ -164,7 +158,6 @@ class TabMotors(QWidget):
 
     def buildUi(self) -> None:
         """Initialize UI elements."""
-
         # the tab's layout
         self.selfLayout = QVBoxLayout(self)
         self.selfLayout.setObjectName("selfLayout")
@@ -256,20 +249,18 @@ class TabMotors(QWidget):
         Returns:
             bool: True if there are modified options otherwise False.
         """
-
         # only need to look at the table
         return self.motorsTableModel.settingsWereChanged
 
     def saveOptions(self) -> None:
         """Save the options from this tab."""
-
         config.set(self._configKey, self._data)
         self.motorsTableModel.settingsWereChanged = False
 
 
 class TabColliderPoints(QWidget):
     def __init__(self, configKey: str, *args, **kwargs) -> None:
-        """Create the "collider points" tab with it's content"""
+        """Create the "collider points" tab with it's content."""
 
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
@@ -281,7 +272,6 @@ class TabColliderPoints(QWidget):
 
     def buildUi(self) -> None:
         """Initialize UI elements."""
-
         # the tab's layout
         self.selfLayout = QVBoxLayout(self)
         self.selfLayout.setObjectName("selfLayout")
@@ -363,21 +353,18 @@ class TabColliderPoints(QWidget):
         Returns:
             bool: True if there are modified options otherwise False.
         """
-
         # only need to look at the table
         return self.colliderPointsTableModel.settingsWereChanged
 
     def saveOptions(self) -> None:
         """Save the options from this tab."""
-
         config.set(self._configKey, self._data)
         self.colliderPointsTableModel.settingsWereChanged = False
 
 
 class TabSolver(QWidget, OptionAdapter):
     def __init__(self, configKey: str, *args, **kwargs) -> None:
-        """Create the "solver" tab with it's content"""
-
+        """Create the "solver" tab with it's content."""
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
 
@@ -393,7 +380,6 @@ class TabSolver(QWidget, OptionAdapter):
 
     def buildUi(self) -> None:
         """Initialize UI elements."""
-
         # the tab's layout
         self.selfLayout = QFormLayout(self)
         self.selfLayout.setObjectName("selfLayout")
@@ -452,7 +438,6 @@ class TabSolver(QWidget, OptionAdapter):
         Returns:
             bool: True if there are modified options otherwise False.
         """
-
         changedPaths = self.saveOptsFromGui(config, self._configKey, True)
         return bool(changedPaths)
 
@@ -484,7 +469,6 @@ class SettingsTableModel(QAbstractTableModel):
         Args:
             data (dict): The data for the table.
         """
-
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__()
         self.settingsWereChanged = False
@@ -518,7 +502,6 @@ class SettingsTableModel(QAbstractTableModel):
         Returns:
             Any: The data for the cell or QVariant if index is invalid
         """
-
         if not index.isValid():
             return QVariant()
 
@@ -540,7 +523,6 @@ class SettingsTableModel(QAbstractTableModel):
             bool: True if the data was set successfully,
                 False otherwise.
         """
-
         if role in (Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole):
             logger.debug(f"EditRole: {role} Row: {index.row()} "
                          f"Col: {index.column()} Value: {value}")
@@ -572,7 +554,6 @@ class SettingsTableModel(QAbstractTableModel):
             bool: False if the last entry is being removed,
                 True otherwise.
         """
-
         # don't allow removing the last entry
         if self.rowCount() <= 1:
             return False
@@ -596,7 +577,6 @@ class SettingsTableModel(QAbstractTableModel):
         Returns:
             bool: Always true.
         """
-
         self.beginInsertRows(parent, self.rowCount(), self.rowCount()+count-1)
         PathReader.setOption(
             self._data, str(self.rowCount()), deepcopy(
@@ -607,32 +587,27 @@ class SettingsTableModel(QAbstractTableModel):
         return True
 
     def _getRowColConfigVal(self, index: QModelIndex) -> Any:
-        """Return the current configuration for a given cell
-        """
-
+        """Return the current configuration for a given cell."""
         return PathReader.getOption(
             self._data[index.row()], self._colToKey(index))
 
     def _setRowColConfigVal(self, index: QModelIndex, newValue) -> Any:
-        """Update the option with a new value based on the given cell"""
+        """Update the option with a new value based on the given cell."""
 
         path = f"{index.row()}.{self._colToKey(index)}"
         PathReader.setOption(self._data, path, newValue, inPlace=True)
         self.settingsWereChanged = True
 
     def _getDataTypeForCol(self, index: QModelIndex) -> validValueTypes:
-        """Return the data type required for the given cell"""
-
+        """Return the data type required for the given cell."""
         return self._settingsDataTypes[index.column()]
 
     def _colToKey(self, index: QModelIndex) -> str:
-        """Map a column id to the required configuration key"""
-
+        """Map a column id to the required configuration key."""
         return self._settingsOrder[index.column()]
 
     def rowCount(self, index: QModelIndex = QModelIndex()) -> int:
-        """Return the row count required for the table"""
-
+        """Return the row count required for the table."""
         return len(self._data)
 
     def columnCount(self, index: QModelIndex = QModelIndex()) -> int:
@@ -642,8 +617,7 @@ class SettingsTableModel(QAbstractTableModel):
 
     def headerData(self, section: int, orientation: Qt.Orientation,
                    role: int) -> str | None:
-        """Handle returning the header label based on the given index"""
-
+        """Handle returning the header label based on the given index."""
         if role == Qt.ItemDataRole.DisplayRole:
             if orientation == Qt.Orientation.Horizontal and self._headerLabels:
                 return self._headerLabels[section]
@@ -651,8 +625,7 @@ class SettingsTableModel(QAbstractTableModel):
                 return "\U0001F5D1"  # Yes it's the trash bin icon
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
-        """Add ItemIsEditable flag to the cell"""
-
+        """Add ItemIsEditable flag to the cell."""
         return super().flags(index) | Qt.ItemFlag.ItemIsEditable
 
 

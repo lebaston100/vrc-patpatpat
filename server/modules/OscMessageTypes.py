@@ -8,8 +8,7 @@ from datetime import datetime
 
 @dataclass(frozen=True)
 class HeartbeatMessage:
-    """
-    An incoming Heartbeat message
+    """An incoming Heartbeat message.
 
     Attributes:
         mac (str): The (wifi) mac of the sending esp
@@ -34,8 +33,7 @@ class HeartbeatMessage:
 
 @dataclass(frozen=True)
 class DiscoveryResponseMessage:
-    """
-    An incoming response to a device discovery request
+    """An incoming response to a device discovery request.
 
     Attributes:
         mac (str): The (wifi) mac of the sending esp

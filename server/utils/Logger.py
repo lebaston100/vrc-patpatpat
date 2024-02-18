@@ -25,7 +25,6 @@ class LoggerClass():
         Returns:
             logging.Logger: The logging.Logger object.
         """
-
         # return existing logger if we ask for it, this is basically
         # a singleton now
         if cls.__rootLogger:
@@ -73,7 +72,6 @@ class LoggerClass():
         Returns:
             logging.Logger: A logging logger.
         """
-
         logger = logging.getLogger("ppp").getChild(name)
         logger.setLevel(logging.getLevelName(level))
         LoggerClass.attachLoggingLevels(logger)
@@ -91,7 +89,6 @@ class LoggerClass():
         Yields:
             Iterator[str]: The log level string capitalized.
         """
-
         for level in _levelToName.values():
             if level == "NOTSET":
                 continue
@@ -108,7 +105,6 @@ class LogWindowSignaler(QObject):
     Signals:
         newLogEntry(str): Emited when a new log entry was generated
     """
-
     newLogEntry = QSignal(str)
 
     def __init__(self) -> None:
@@ -131,7 +127,6 @@ class SignalLogHandler(logging.Handler):
             level (logging.LEVEL, optional): The log level to use
                 for this logger. Defaults to logging.DEBUG.
         """
-
         super().__init__(level=level)
         self.signal = LogWindowSignaler()
         self.setFormatter(logging.Formatter(
@@ -139,12 +134,11 @@ class SignalLogHandler(logging.Handler):
             datefmt="%Y-%m-%d %H:%M:%S", style="{"))
 
     def emit(self, record: LogRecord) -> None:
-        """Generate signal when new LogRecord is created
+        """Generate signal when new LogRecord is created.
 
         Args:
             record (LogRecord): The LogRecord to emit
         """
-
         try:
             formatedText = html.escape(self.format(record))
             # text color red when WARN or above
@@ -156,12 +150,11 @@ class SignalLogHandler(logging.Handler):
             self.signal.newLogEntry.emit(formatedText)
 
     def changeLevel(self, level: str) -> None:
-        """Change the level of logger
+        """Change the level of logger.
 
         Args:
             level (str): The logging level to use
         """
-
         self.setLevel(logging.getLevelName(level))
 
 

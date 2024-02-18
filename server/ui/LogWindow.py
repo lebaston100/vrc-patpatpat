@@ -36,7 +36,6 @@ class LogWindow(QWidget):
 
     def buildUi(self, initialLogLevel) -> None:
         """Initialize UI elements."""
-
         # the widget and it's layout
         self.setWindowTitle("Log Window")
         self.setObjectName(__class__.__name__)
@@ -103,7 +102,6 @@ class LogWindow(QWidget):
         Returns:
             None
         """
-
         logger.debug(f"closeEvent in {__class__.__name__}")
         self._rootLogger.removeHandler(self._logWindowHandler)
 

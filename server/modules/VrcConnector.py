@@ -18,37 +18,37 @@ logger = LoggerClass.getSubLogger(__name__)
 
 
 class IVrcConnector():
-    """ The interface for server <-> vrc communication"""
+    """The interface for server <-> vrc communication."""
 
     gotVrcContact = QSignal(tuple, str, list)
 
     def connect(self):
-        """ A generic connect method to be reimplemented"""
+        """A generic connect method to be reimplemented."""
         raise NotImplementedError
 
     def close(self):
-        """ A generic close method to be reimplemented"""
+        """A generic close method to be reimplemented."""
         raise NotImplementedError
 
     def restart(self):
-        """ A generic restart method to be reimplemented"""
+        """A generic restart method to be reimplemented."""
         raise NotImplementedError
 
     def isAlive(self):
         # Not sure about this one yet, maybe signal based instead
-        """ A generic isAlive method to be reimplemented"""
+        """A generic isAlive method to be reimplemented."""
         raise NotImplementedError
 
     def send(self):
-        """ A generic send method to be reimplemented"""
+        """A generic send method to be reimplemented."""
         raise NotImplementedError
 
     def addToFilter(self, relativePath: str):
-        """ A generic addToFilter method to be reimplemented"""
+        """A generic addToFilter method to be reimplemented."""
         raise NotImplementedError
 
     def removeFromFilter(self, relativePath: str):
-        """ A generic removeFromFilter method to be reimplemented"""
+        """A generic removeFromFilter method to be reimplemented."""
         raise NotImplementedError
 
 
@@ -125,19 +125,17 @@ class VrcConnectorImpl(IVrcConnector, QObject):
         self.config.configRootUpdateDone.connect(self._oscGeneralConfigChanged)
 
     def _receivedOsc(self, client: tuple, addr: str, params: list) -> None:
-        """Just a test function that prints if osc event was fired
-        """
+        """Just a test function that prints if osc event was fired."""
         logger.info(f"osc from {str(client)}: addr={addr} msg={str(params)}")
 
     def connect(self) -> None:
-        """ Start worker thread and osc sender"""
+        """Start worker thread and osc sender"""
         logger.debug("Starting vrc osc server and client")
         self.workerThread.start()
         self.worker.startOscSender()
 
     def close(self) -> None:
-        """Closes everything vrc osc related
-        """
+        """Closes everything vrc osc related."""
         logger.debug("Closing vrc osc server and client")
         self.worker.closeOscSender()
         self.worker.closeOscServer()
@@ -145,7 +143,7 @@ class VrcConnectorImpl(IVrcConnector, QObject):
         self.workerThread.wait()
 
     def restart(self) -> None:
-        """ Close and restart sockets """
+        """Close and restart sockets."""
         logger.debug("Restarting vrc osc server and client")
         self.close()
         self.connect()
@@ -205,7 +203,6 @@ class VrcOscDispatcher(Dispatcher):
         Args:
             connector (OSCWorker): The OSC connector.
         """
-
         self._connector = connector
         self.matchTopics = []
 
@@ -222,11 +219,10 @@ class VrcOscDispatcher(Dispatcher):
             data (bytes): The incoming OSC packet data.
             client_address (tuple[str, int]): The client address.
         """
-
         try:
             packet = osc_packet.OscPacket(data)
             for msg in packet.messages:
-                if msg.message.address[:19] == "/avatar/parameters/" \
+                if msg.message.address.startswith("/avatar/parameters/") \
                         and msg.message.address[19:] in self.matchTopics:
                     pid = threadAsStr(QThread.currentThread())
                     # logger.debug(

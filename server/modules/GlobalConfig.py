@@ -37,13 +37,11 @@ class GlobalConfigSingleton(QObject):
 
     @classmethod
     def getInstance(cls: Type[T]) -> Optional[T]:
-        """
-        Get the singleton instance.
+        """Get the singleton instance.
 
         Returns:
             GlobalConfigSingleton: Singleton instance.
         """
-
         return cls.__instance
 
     @classmethod
@@ -60,7 +58,6 @@ class GlobalConfigSingleton(QObject):
         Raises:
             RuntimeError: If multiple singleton instances are initialized.
         """
-
         if GlobalConfigSingleton.__instance:
             raise RuntimeError("Can't initialize multiple singleton instances")
 
@@ -84,13 +81,11 @@ class GlobalConfigSingleton(QObject):
         GlobalConfigSingleton.__instance = self
 
     def parse(self) -> None:
-        """
-        Parse the config file.
+        """Parse the config file.
 
         Raises:
             RuntimeError: If config file is not found.
         """
-
         if not self._configHandler.hasData():
             logger.warn("No config file. Creating empty one.")
             self._configHandler.initializeConfig()
@@ -112,7 +107,6 @@ class GlobalConfigSingleton(QObject):
         Returns:
             bool: True if flush was successful otherwise False.
         """
-
         try:
             self._mutex.lock()
             self._configOptions.update(PathReader.setOption(
@@ -141,7 +135,6 @@ class GlobalConfigSingleton(QObject):
         Returns:
             Any: The requested data or the (default) fallback.
         """
-
         try:
             option = PathReader.getOption(self._configOptions, path)
         except:
@@ -159,7 +152,6 @@ class GlobalConfigSingleton(QObject):
             bool: True if a config option for the key exists,
                 otherwise False
         """
-
         try:
             PathReader.getOption(self._configOptions, path)
         except:
@@ -179,7 +171,6 @@ class GlobalConfigSingleton(QObject):
         Returns:
             None
         """
-
         PathReader.delOption(self._configOptions, path)
         self.configPathWasDeleted.emit(path)
 
@@ -189,31 +180,26 @@ class GlobalConfigSingleton(QObject):
         Returns:
             bool: True if write was successful otherwise False.
         """
-
         return self._configHandler.write(self._configOptions)
 
     def registerChangeSignal(self, pathPattern: str,
                              signal: pyqtBoundSignal) -> None:
-        """
-        Register a signal to be emitted for a configuration change.
+        """Register a signal to be emitted for a configuration change.
 
         Args:
             pathPattern (str): Regex pattern of the path to watch for changes.
             signal (pyqtBoundSignal): Signal to emit when a change is detected.
         """
-
         self._configPathChangedSignals.update({pathPattern: signal})
         logger.debug(self._configPathChangedSignals)
 
     def deleteChangeSignal(self, pathPattern: str) -> None:
-        """
-        Remove a registered signal.
+        """Remove a registered signal.
 
         Args:
             pathPattern (str): Regex pattern of the path of the signal
                 to remove.
         """
-
         try:
             self._configPathChangedSignals.pop(pathPattern)
         except:
@@ -221,39 +207,33 @@ class GlobalConfigSingleton(QObject):
         logger.debug(self._configPathChangedSignals)
 
     def _runChangeSignals(self, changedPath: str) -> None:
-        """
-        Emit signals for a given changed path.
+        """Emit signals for a given changed path.
 
         Args:
             changedPath (str): The path that has changed.
         """
-
         for pathPattern, signal in self._configPathChangedSignals.items():
             if re.match(pathPattern + "$", changedPath):
                 signal.emit(changedPath)
 
     def registerRemoveSignal(self, pathPattern: str,
                              signal: pyqtBoundSignal) -> None:
-        """
-        Register a signal to be emitted for a configuration change.
+        """Register a signal to be emitted for a configuration change.
 
         Args:
             pathPattern (str): Regex pattern of the path to watch for changes.
             signal (pyqtBoundSignal): Signal to emit when a change is detected.
         """
-
         self._configPathDeletedSignals.update({pathPattern: signal})
         logger.debug(self._configPathDeletedSignals)
 
     def deleteRemoveSignal(self, pathPattern: str) -> None:
-        """
-        Remove a registered signal.
+        """Remove a registered signal.
 
         Args:
             pathPattern (str): Regex pattern of the path of the signal
                 to remove.
         """
-
         try:
             self._configPathDeletedSignals.pop(pathPattern)
         except:
@@ -261,13 +241,11 @@ class GlobalConfigSingleton(QObject):
         logger.debug(self._configPathDeletedSignals)
 
     def _runRemoveSignals(self, removedPath: str) -> None:
-        """
-        Emit signals for a given removed path.
+        """Emit signals for a given removed path.
 
         Args:
             removedPath (str): The path that has changed.
         """
-
         for pathPattern, signal in self._configPathDeletedSignals.items():
             if re.match(pathPattern + "$", removedPath):
                 signal.emit(removedPath)

@@ -48,7 +48,6 @@ class FloatSpinBoxDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         """Create a QSpinBox as the editor for float values."""
-
         editor = QDoubleSpinBox(parent)
         editor.setFrame(False)
         editor.setDecimals(self._decimals)
@@ -59,13 +58,11 @@ class FloatSpinBoxDelegate(QItemDelegate):
 
     def setEditorData(self, spinBox: QDoubleSpinBox, index) -> None:
         """Set the data for the editor."""
-
         value = index.model().data(index, Qt.ItemDataRole.EditRole)
         spinBox.setValue(value)
 
     def setModelData(self, spinBox: QDoubleSpinBox, model, index) -> None:
         """Write value from editor into models data"""
-
         spinBox.interpretText()
         value = spinBox.value()
         model.setData(index, value, Qt.ItemDataRole.EditRole)
@@ -83,7 +80,6 @@ class IntSpinBoxDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         """Create a QSpinBox as the editor for float values."""
-
         editor = QSpinBox(parent)
         editor.setFrame(False)
         editor.setSingleStep(self._step)
@@ -94,13 +90,11 @@ class IntSpinBoxDelegate(QItemDelegate):
 
     def setEditorData(self, spinBox: QSpinBox, index) -> None:
         """Set the data for the editor."""
-
         value = index.model().data(index, Qt.ItemDataRole.EditRole)
         spinBox.setValue(value)
 
     def setModelData(self, spinBox: QSpinBox, model, index) -> None:
-        """Write value from editor into models data"""
-
+        """Write value from editor into models data."""
         spinBox.interpretText()
         value = spinBox.value()
         model.setData(index, value, Qt.ItemDataRole.EditRole)

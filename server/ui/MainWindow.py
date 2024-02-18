@@ -36,7 +36,6 @@ class MainWindow(QMainWindow):
 
     def setupUi(self) -> None:
         """Initialize the main UI."""
-
         # the widget and it's layout
         self.setWindowTitle("VRC-patpatpat")
         self.resize(QSize(800, 430))
@@ -224,7 +223,6 @@ class MainWindow(QMainWindow):
         Args:
             event (QCloseEvent  |  None]): The qt event.
         """
-
         logger.debug(f"closeEvent in {__class__.__name__}")
 
         logger.debug("Stopping server...")
@@ -235,7 +233,7 @@ class MainWindow(QMainWindow):
 
 
 class BaseRow(QFrame):
-    """ The base for hardware and group rows with an expandable row """
+    """The base for hardware and group rows with an expandable row."""
 
     def __init__(self, parent: QWidget | None) -> None:
         # logger.debug(f"Creating {__class__.__name__}")
@@ -290,7 +288,7 @@ class ExpandedWidgetDataRowBase(QHBoxLayout):
 
 
 class HardwareEspRow(BaseRow):
-    """ A independent hardware row inside the scroll area """
+    """A independent hardware row inside the scroll area."""
 
     def __init__(self, parent: QWidget | None) -> None:
         # logger.debug(f"Creating {__class__.__name__}")
@@ -366,8 +364,7 @@ class HardwareEspRow(BaseRow):
 
 class EspMoreInfoWidget(QWidget):
     def __init__(self, *args, **kwargs) -> None:
-        """Initialize EspMoreInfoWidget"""
-
+        """Initialize EspMoreInfoWidget."""
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
 
@@ -414,14 +411,12 @@ class EspMoreInfoWidget(QWidget):
         Args:
             event QCloseEvent): The QCloseEvent.
         """
-
         logger.debug(f"closeEvent in {__class__.__name__}")
 
 
 class HardwareMotorChannelRow(ExpandedWidgetDataRowBase):
     def __init__(self, rowId: int, *args, **kwargs) -> None:
-        """Initialize HardwareMotorChannelRow"""
-
+        """Initialize HardwareMotorChannelRow."""
         logger.debug(f"Creating {__class__.__name__}")
         self.rowId = rowId
         self.sliderLocked = False
@@ -455,7 +450,6 @@ class HardwareMotorChannelRow(ExpandedWidgetDataRowBase):
         Args:
             event QCloseEvent): The QCloseEvent.
         """
-
         logger.debug(f"closeEvent in {__class__.__name__}")
 
     def _lockSlider(self) -> None:
@@ -473,7 +467,7 @@ class HardwareMotorChannelRow(ExpandedWidgetDataRowBase):
 
 
 class ContactGroupRow(BaseRow):
-    """ A independent contact group row inside the scroll area """
+    """A independent contact group row inside the scroll area."""
 
     def __init__(self, parent: QWidget | None) -> None:
         # logger.debug(f"Creating {__class__.__name__}")
@@ -534,8 +528,7 @@ class ContactGroupRow(BaseRow):
 
 class ContactGroupPointsWidget(QWidget):
     def __init__(self, *args, **kwargs) -> None:
-        """Initialize ContactGroupPointsWidget"""
-
+        """Initialize ContactGroupPointsWidget."""
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
 
@@ -572,14 +565,12 @@ class ContactGroupPointsWidget(QWidget):
         Args:
             event QCloseEvent): The QCloseEvent.
         """
-
         logger.debug(f"closeEvent in {__class__.__name__}")
 
 
 class PointDetailsRow(ExpandedWidgetDataRowBase):
     def __init__(self, rowId: int, *args, **kwargs) -> None:
-        """Initialize PointDetailsRow"""
-
+        """Initialize PointDetailsRow."""
         logger.debug(f"Creating {__class__.__name__}")
         self.rowId = rowId
         super().__init__(*args, **kwargs)

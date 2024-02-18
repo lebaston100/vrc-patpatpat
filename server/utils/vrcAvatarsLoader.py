@@ -28,8 +28,7 @@ class VrcAvatar:
 
     @classmethod
     def fromFile(cls, filePath: pathlib.Path) -> Self:
-        """
-        Load avatar data from a JSON file.
+        """Load avatar data from a JSON file.
 
         Args:
             filePath (Path): The path of the JSON file.
@@ -37,7 +36,6 @@ class VrcAvatar:
         Returns:
             VrcAvatar: The avatar object with loaded data.
         """
-
         data = cls._loadJson(filePath)
         aid = data.get("id", "")
         name = data.get("name", "")
@@ -63,8 +61,7 @@ class VrcAvatar:
 
     @staticmethod
     def _loadJson(filePath: pathlib.Path) -> dict:
-        """
-        Load data from a JSON file.
+        """Load data from a JSON file.
 
         Args:
             filePath (Path): The path of the JSON file.
@@ -72,7 +69,6 @@ class VrcAvatar:
         Returns:
             dict: The data loaded from the JSON file.
         """
-
         try:
             with filePath.open(mode="r", encoding="utf-8-sig") as f:
                 return json.load(f)
@@ -81,14 +77,12 @@ class VrcAvatar:
 
 
 def getVrcAvatars() -> list[VrcAvatar] | list:
-    """
-    Get all available VRC avatars from the local installation.
+    """Get all available VRC avatars from the local installation.
 
     Returns:
         list[VrcAvatar] | list: A list of VRC avatars if available, else
         an empty list.
     """
-
     appdata = os.getenv("APPDATA")
     if appdata:
         vrcfolder = pathlib.Path(

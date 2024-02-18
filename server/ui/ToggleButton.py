@@ -36,7 +36,6 @@ class ToggleButton(QPushButton):
             prefixText ([str | None], optional): A static prefix. 
                 Defaults to None.
         """
-
         super().__init__(*args, **kwargs)
         self._stateText = stateText
         self._togglesStates = (self.toggledOff, self.toggledOn)
@@ -54,7 +53,6 @@ class ToggleButton(QPushButton):
         Returns:
             None
         """
-
         self.setText(self._prefixText + self._stateText[state])
         self._togglesStates[state].emit()
 

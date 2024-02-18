@@ -20,7 +20,6 @@ def handleClosePrompt(parent: QWidget | None, event: QCloseEvent) -> bool:
     Returns:
         bool: If event was accepted or not.
     """
-
     result = QMessageBox.question(parent, "Unsaved changes",
                                   "You have unsaved changes, do you "
                                   + "want to close anyways?",
@@ -45,7 +44,6 @@ def handleDeletePrompt(parent: QWidget | None, elementName: str = "") -> bool:
     Returns:
         bool: If event was accepted or not.
     """
-
     message = f"Do you want to remove {
         elementName if elementName else "the selected item"}?"
     result = QMessageBox.question(parent, "Delete Item", message,
