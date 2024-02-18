@@ -3,8 +3,7 @@ from PyQt6.QtCore import QObject, QTimer
 from PyQt6.QtCore import pyqtSignal as QSignal
 from PyQt6.QtCore import pyqtSlot as QSlot
 
-from modules import config
-from modules.GlobalConfig import GlobalConfigSingleton
+from modules.GlobalConfig import GlobalConfigSingleton, config
 from modules.OscMessageTypes import DiscoveryResponseMessage, HeartbeatMessage
 from utils import LoggerClass, threadAsStr
 
@@ -22,8 +21,13 @@ class HardwareDevice(QObject):
         super().__init__()
         self._configKey = f"esps.{key}"
         self._isConnected = False
+
+        # Heartbeat checker
         self._lastHeartbeat: None | HeartbeatMessage = None
         self._heartbeatTimer = QTimer()
+        self._heartbeatTimer.timeout.connect(self.updateConnectionStatus)
+        self._heartbeatTimer.start(10)
+
         self.loadSettingsFromConfig()
         self.pinStates: dict[int, int | float] = {
             i: 0 for i in range(self._numMotors)}
@@ -33,13 +37,15 @@ class HardwareDevice(QObject):
         if hardwareCommunicationAdapterClass:
             self.hardwareCommunicationAdapter = \
                 hardwareCommunicationAdapterClass()
+        else:
+            raise RuntimeError("Unknown hardware connection type.")
 
     def loadSettingsFromConfig(self) -> None:
         """Load settings from settings file into object."""
         self._id: int = config.get(f"{self._configKey}.id")
         self._name: str = config.get(f"{self._configKey}.name", "")
         self._connectionType: int = config.get(
-            f"{self._configKey}.connectionType", "osc")
+            f"{self._configKey}.connectionType", "OSC")
         self._lastIp: str = config.get(f"{self._configKey}.lastIp")
         self._wifiMac: str = config.get(f"{self._configKey}.wifiMac")
         self._serialPort: str = config.get(f"{self._configKey}.serialPort", "")
@@ -124,9 +130,9 @@ class HardwareCommunicationAdapterFactory:
                 None: The built adapter or None if the type is not recognized.
         """
         match adapterType:
-            case "osc":
+            case "OSC":
                 return OscCommunicationAdapterImpl
-            case "serial":
+            case "SlipSerial":
                 return SlipSerialCommunicationAdapterImpl
 
 

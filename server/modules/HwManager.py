@@ -16,6 +16,7 @@ from pythonosc.udp_client import SimpleUDPClient
 from modules import config
 from modules.GlobalConfig import GlobalConfigSingleton
 from modules.OscMessageTypes import DiscoveryResponseMessage, HeartbeatMessage
+from modules.HardwareDevice import HardwareDevice
 from utils import LoggerClass, threadAsStr
 
 logger = LoggerClass.getSubLogger(__name__)
@@ -30,16 +31,18 @@ class HwManager(QObject):
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
 
+        self.hardwareDevices: dict[int, HardwareDevice]
+
+        # Start osc receiver for discovery and heartbeat
+        self.hwOscRx = HwOscRx()
+        self.hwOscRx.gotDiscoveryReply.connect(
+            self._handleDiscoveryResponseMessage)
+
         # Start osc device discovery
         self.hwOscDiscoveryTx = HwOscDiscoveryTx()
         self.hwOscDiscoveryTx.start()
 
-        # Start osc receiver
-        self.hwOscRx = HwOscRx()
-
-        self.hardwareDevices: dict[int, object]
-
-    def writeSpeed(self, espId: int = 0, channelId: int = 0, value: float | int = 0) -> None:
+    def writeSpeed(self, hwId: int = 0, channelId: int = 0, value: float | int = 0) -> None:
         """Write speed from motor into esp's state buffer
 
         Args:
@@ -47,16 +50,57 @@ class HwManager(QObject):
             channelId (int, optional): The destined esp's channel. Defaults to 0.
             value (float | int, optional): The value to write. Defaults to 0.
         """
-        ...
+        if hwId in self.hardwareDevices:
+            self.hardwareDevices[hwId].pinStates[channelId] = value
+        else:
+            raise RuntimeWarning("Specified HardwareDevice does not exist")
 
-    def sendHwUpdate(self, espId: int = 0) -> None:
+    def sendHwUpdate(self, hwId: int = 0) -> None:
         """Triggers a sendPinValues() on the destined Hardware.
 
         Args:
             espId (int, optional): Id of the destined HardwareDevice.
                 Defaults to 0.
         """
+        if hwId in self.hardwareDevices:
+            self.hardwareDevices[hwId].sendPinValues()
+        else:
+            raise RuntimeWarning("Specified HardwareDevice does not exist")
+
+    def _createDevice(self) -> None:
+        """TODO: Create a new device, connect it, save it"""
         ...
+
+    def _handleDiscoveryResponseMessage(self, msg: DiscoveryResponseMessage) -> None:
+        """Handle discovery response messages.
+
+        If the device already exists, it returns. If not, it creates a new
+        device from scratch.
+
+        Args:
+            msg (DiscoveryResponseMessage): The discovery response message.
+        """
+        # Check if device already exists and return if it does so
+        if self._checkDeviceExistance(msg.mac) is not None:
+            logger.info(f"Device with mac {msg.mac} already exists. Ignoring.")
+            return
+        # If not this means it's a brand new device, create from scratch
+        # Get a new device id
+        newDeviceId = self._getNewHardwareId()
+        newDeviceKey = f"esp{str(newDeviceId)}"
+        # Create config object with initial values (msg.sourceType zb für type)
+        newDeviceData = {
+            "id": newDeviceId,
+            "name": "Unnamed",
+            "connectionType": msg.sourceType,
+            "lastIp": msg.sourceAddr if msg.sourceType == "OSC" else "",
+            "wifiMac": msg.mac,
+            "serialPort": msg.sourceAddr if msg.sourceType == "SlipSerial" else "",
+            "numMotors": msg.numMotors
+        }
+        # Save new device to config
+        config.set(f"esps.{newDeviceKey}", newDeviceData, True)
+        # handle device "re"-creation through existing config change signal
 
     def _checkDeviceExistance(self, mac: str) -> int | None:
         """Checks config if given mac adress already exists.
@@ -70,6 +114,16 @@ class HwManager(QObject):
         hardwareDevices = config.get("esps")
         return next((device["id"] for device in hardwareDevices.values()
                      if device["wifiMac"] == mac), None)
+
+    def _getNewHardwareId(self) -> int:
+        """Calculates an available index for a new device
+
+        Returns:
+            int: The new device index
+        """
+        if hardwareDevices := config.get("esps"):
+            return max([d["id"] for d in hardwareDevices.values()]) + 1
+        return 0
 
     def close(self) -> None:
         """Closes everything hardware related."""
@@ -113,6 +167,7 @@ class HwOscDiscoveryTx(QObject):
                 "255.255.255.255", 8888, allow_broadcast=True, family=socket.AF_INET)
             client._sock.bind((interface[-1][0], 8871))
             self._sockets.append(client)
+        self.timerEvent()
         self._timer.start(self._interval * 1000)
 
     def stop(self) -> None:
@@ -124,6 +179,7 @@ class HwOscDiscoveryTx(QObject):
         self._sockets = []
         self._timer.stop()
 
+    @QSlot()
     def timerEvent(self) -> None:
         """Send out discovery messages when timer fires."""
         # logger.debug("Sending out discovery broadcasts")
@@ -158,7 +214,8 @@ class HwOscRxWorker(QObject):
                                         topic: str, *args) -> None:
         # logger.debug(f"_handleDiscoveryResponseMessage: {str(client)}, {topic}, {str(args)}")
         if DiscoveryResponseMessage.isType(topic, args):
-            msg = DiscoveryResponseMessage(*args, source=client[0])
+            msg = DiscoveryResponseMessage(
+                *args, sourceType="osc", sourceAddr=client[0])
             logger.debug(msg)
             self.gotDiscoveryReply.emit(msg)
 
@@ -166,7 +223,7 @@ class HwOscRxWorker(QObject):
                                 topic: str, *args) -> None:
         # logger.debug(f"_handleHeartbeatMessage: {str(client)}, {topic}, {str(args)}")
         if HeartbeatMessage.isType(topic, args):
-            msg = HeartbeatMessage(*args, source=client[0])
+            msg = HeartbeatMessage(*args, sourceAddr=client[0])
             logger.debug(msg)
             self.gotOscHardwareHeartbeat.emit(msg)
 
@@ -178,7 +235,8 @@ class HwOscRxWorker(QObject):
             f"startOsc pid_self={threadAsStr(self.thread())}")
         logger.info(f"starting osc server on port 8872")
         try:
-            self._oscRx = BlockingOSCUDPServer(("", 8872), self.dispatcher)
+            self._oscRx = BlockingOSCUDPServer(
+                ("", 8872), self.dispatcher)
             self._oscRx.serve_forever()
         except Exception as E:
             logger.exception(E)
