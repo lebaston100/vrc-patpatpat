@@ -23,7 +23,7 @@ class StaticLabel(QLabel):
             prefixText (str): The static prefix text
         """
         super().__init__(*args, **kwargs)
-        self._prefixText = prefixText
+        self.__prefixText = prefixText
         self.setText(text or "")
 
     def setText(self, text: str) -> None:
@@ -35,13 +35,37 @@ class StaticLabel(QLabel):
         Returns:
             None
         """
-        return super().setText(self._prefixText + text)
+        return super().setText(self.__prefixText + text)
 
     def setNum(self, num: int) -> None:
         self.setText(str(num))
 
     def setFloat(self, num: float, dec: int = 2) -> None:
         self.setText(str(round(num, dec)))
+
+
+class StatefulLabel(QLabel):
+    """A label with text based on states"""
+
+    def __init__(self, stateTexts: tuple, *args, **kwargs) -> None:
+        """Initialize the label.
+
+        Args:
+            stateTexts (tuple): The different state texts
+        """
+        super().__init__(*args, **kwargs)
+        self.__states = stateTexts
+
+    def setState(self, state: int | bool) -> None:
+        """Update label text to new state.
+
+        Args:
+            state (int | bool): The new state.
+
+        Returns:
+            None
+        """
+        return super().setText(self.__states[state])
 
 
 if __name__ == "__main__":

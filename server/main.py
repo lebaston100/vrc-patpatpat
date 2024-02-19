@@ -52,10 +52,11 @@ if __name__ == "__main__":
         sys.exit(1)
 
     app = QApplication(sys.argv)
-    server = ServerSingleton()  # construct stuff here
+    server = ServerSingleton()
     window = MainWindow()
     window.show()
 
+    # Run the app
     returnCode = app.exec()
     logger.info(f"Exiting vrc-patpatpat with return code {returnCode}")
     # Do any other deconstructing here if we need to

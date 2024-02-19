@@ -4,6 +4,6 @@ from .EspSettingsDialog import EspSettingsDialog
 from .LogWindow import LogWindow
 from .MainWindow import MainWindow
 from .ProgramSettingsDialog import ProgramSettingsDialog
-from .StaticLabel import StaticLabel
+from .CustomLabel import StaticLabel, StatefulLabel
 from .ToggleButton import ToggleButton
 from .uiHelpers import handleClosePrompt, handleDeletePrompt
