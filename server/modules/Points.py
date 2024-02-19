@@ -14,7 +14,8 @@ class Sphere3D(QVector3D):
         return cls()
 
     def __init__(self, name: str = "", radius: float = 0,
-                 x: float = 0, y: float = 0, z: float = 0, *args, **kwargs) -> None:
+                 x: float = 0, y: float = 0, z: float = 0,
+                 *args, **kwargs) -> None:
         """Creates a new 3D Point.
 
         Args:

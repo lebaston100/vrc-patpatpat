@@ -53,7 +53,7 @@ class ServerSingleton(QObject):
 
     def _vrcOscDataReceived(self, client: tuple, addr: str, params: list) -> None:
         """Handle osc data coming from vrchat.
-        We can distribute the contacts to the right callback here.
+        We can distribute the contacts to the right signal here.
 
         Args:
             client (tuple): Remote ip/port

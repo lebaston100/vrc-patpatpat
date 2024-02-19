@@ -35,7 +35,7 @@ class HwManager(QObject):
 
         # Start osc receiver for discovery and heartbeat
         self.hwOscRx = HwOscRx()
-        self.hwOscRx.gotDiscoveryReply.connect(
+        self.hwOscRx.onDiscoveryResponseMessage.connect(
             self._handleDiscoveryResponseMessage)
 
         # Start osc device discovery
@@ -69,6 +69,7 @@ class HwManager(QObject):
 
     def _createDevice(self) -> None:
         """TODO: Create a new device, connect it, save it"""
+        # self.hwOscRx.onOscHeartbeatMessage.connect(device. device.hardwareCommunicationAdapter.receivedExtHeartbeat)
         ...
 
     def _handleDiscoveryResponseMessage(self, msg: DiscoveryResponseMessage) -> None:
@@ -192,8 +193,8 @@ class HwOscDiscoveryTx(QObject):
 class HwOscRxWorker(QObject):
     """The thread receiving osc messages from hardware devices."""
 
-    gotDiscoveryReply = QSignal(object)
-    gotOscHardwareHeartbeat = QSignal(object)
+    onDiscoveryResponseMessage = QSignal(object)
+    onOscHeartbeatMessage = QSignal(object)
 
     def __init__(self, *args, **kwargs) -> None:
         logger.debug(f"Creating {__class__.__name__}")
@@ -218,7 +219,7 @@ class HwOscRxWorker(QObject):
             msg = DiscoveryResponseMessage(
                 *args, sourceType="OSC", sourceAddr=client[0])
             logger.debug(msg)
-            self.gotDiscoveryReply.emit(msg)
+            self.onDiscoveryResponseMessage.emit(msg)
 
     def _handleHeartbeatMessage(self, client: tuple,
                                 topic: str, *args) -> None:
@@ -226,7 +227,7 @@ class HwOscRxWorker(QObject):
         if HeartbeatMessage.isType(topic, args):
             msg = HeartbeatMessage(*args, sourceAddr=client[0])
             logger.debug(msg)
-            self.gotOscHardwareHeartbeat.emit(msg)
+            self.onOscHeartbeatMessage.emit(msg)
 
     @QSlot()
     def startOscServer(self) -> None:
@@ -261,8 +262,8 @@ class HwOscRxWorker(QObject):
 class HwOscRx(QObject):
     """The Thread Manager for the global Hardware Osc Receiver."""
 
-    gotDiscoveryReply = QSignal(object)
-    gotOscHardwareHeartbeat = QSignal(object)
+    onDiscoveryResponseMessage = QSignal(object)
+    onOscHeartbeatMessage = QSignal(object)
 
     def __init__(self, *args, **kwargs) -> None:
         logger.debug(f"Creating {__class__.__name__}")
@@ -274,9 +275,10 @@ class HwOscRx(QObject):
         self.worker.moveToThread(self.workerThread)
 
         # relay signals
-        self.worker.gotDiscoveryReply.connect(self.gotDiscoveryReply)
-        self.worker.gotOscHardwareHeartbeat.connect(
-            self.gotOscHardwareHeartbeat)
+        self.worker.onDiscoveryResponseMessage.connect(
+            self.onDiscoveryResponseMessage)
+        self.worker.onOscHeartbeatMessage.connect(
+            self.onOscHeartbeatMessage)
 
         logger.debug("Starting heartbeat osc server and client")
         self.workerThread.start()

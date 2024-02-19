@@ -1,7 +1,10 @@
+import socket
 from typing import Type
+
 from PyQt6.QtCore import QObject, QTimer
 from PyQt6.QtCore import pyqtSignal as QSignal
 from PyQt6.QtCore import pyqtSlot as QSlot
+from pythonosc.udp_client import SimpleUDPClient
 
 from modules.GlobalConfig import GlobalConfigSingleton, config
 from modules.OscMessageTypes import DiscoveryResponseMessage, HeartbeatMessage
@@ -20,9 +23,9 @@ class HardwareDevice(QObject):
     def __init__(self, key: str) -> None:
         super().__init__()
         self._configKey = f"esps.{key}"
-        self._isConnected = False
 
         # Heartbeat checker
+        self.connectionStatus: bool = False
         self._lastHeartbeat: None | HeartbeatMessage = None
         self._heartbeatTimer = QTimer()
         self._heartbeatTimer.timeout.connect(self.updateConnectionStatus)
@@ -40,6 +43,9 @@ class HardwareDevice(QObject):
         else:
             raise RuntimeError("Unknown hardware connection type.")
 
+        self.hardwareCommunicationAdapter.heartbeat.connect(
+            self.processHeartbeat)
+
     def loadSettingsFromConfig(self) -> None:
         """Load settings from settings file into object."""
         self._id: int = config.get(f"{self._configKey}.id")
@@ -52,9 +58,11 @@ class HardwareDevice(QObject):
         self._numMotors: int = config.get(f"{self._configKey}.numMotors", 0)
 
     def sendPinValues(self) -> None:
-        """Create and send current self.pinStates to Hw
-        """
-        ...
+        """Create and send current self.pinStates to Hardare."""
+        sortedPinStates = dict(sorted(self.pinStates.items()))
+        pinStateList = list(sortedPinStates.values())
+        self.hardwareCommunicationAdapter.sendPinValues(
+            pinStateList[:self._numMotors])
 
     def processHeartbeat(self, msg: HeartbeatMessage) -> None:
         """Process an incoming heartbeat message from the comms interface.
@@ -62,12 +70,26 @@ class HardwareDevice(QObject):
         Args:
             msg (HeartbeatMessage): The HeartbeatMessage dataclass
         """
-        ...
+        logger.debug("I've had a long journey, but now i'm finally here")
+        # Check if this message belongs to us
+        if not msg.mac == self._wifiMac:
+            return
+        self._lastHeartbeat = msg
+        # Check if the ip addr changed from known config
+        if not msg.sourceAddr == self._lastIp:
+            logger.debug(f"Device {self._name} changed ip from "
+                         f"{self._lastIp} to {msg.sourceAddr}")
+            config.set(f"{self._configKey}.lastIp", msg.sourceAddr, True)
+            return
+        self.updateConnectionStatus()
 
     def updateConnectionStatus(self) -> None:
         """Recalculate the hardware connection status."""
-        ...
-        # self.deviceConnectionChanged.emit(self._isConnected)
+        currentConnectionStatus = False
+        # TODO: Add actual calculations
+        if not self.connectionStatus == currentConnectionStatus:
+            # NOTE: connect straight to StatefulLabel.setState in UI
+            self.deviceConnectionChanged.emit(self.connectionStatus)
 
     def close(self) -> None:
         """Closes everything we own and care for
@@ -75,6 +97,8 @@ class HardwareDevice(QObject):
         logger.debug(f"Stopping {__class__.__name__}")
         if hasattr(self, "_heartbeatTimer") and self._heartbeatTimer.isActive():
             self._heartbeatTimer.stop()
+        if hasattr(self, "hardwareCommunicationAdapter"):
+            self.hardwareCommunicationAdapter.close()
 
 
 class IHardwareCommunicationAdapter():
@@ -86,11 +110,11 @@ class IHardwareCommunicationAdapter():
         """A generic setup method to be reimplemented."""
         raise NotImplementedError
 
-    def sendPinValues(self):
+    def sendPinValues(self, pinValues: list):
         """A generic sendPinValues method to be reimplemented."""
         raise NotImplementedError
 
-    def receivedExtHeartbeat(self):
+    def receivedExtHeartbeat(self, msg: HeartbeatMessage):
         """A generic receivedExtHeartbeat method to be reimplemented."""
         raise NotImplementedError
 
@@ -103,7 +127,36 @@ class OscCommunicationAdapterImpl(IHardwareCommunicationAdapter, QObject):
     """Handle communication with a device over OSC."""
 
     def __init__(self, *args, **kwargs) -> None:
-        ...
+        logger.debug(f"Creating {__class__.__name__}")
+        super().__init__(*args, **kwargs)
+
+        self._oscClient: SimpleUDPClient | None = None
+
+    def setup(self):
+        """Setup everything required for this communication
+        interface to work."""
+        self._oscClient = SimpleUDPClient("ip", 8888)
+
+    def sendPinValues(self, pinValues: list):
+        """Send motor values to device over osc."""
+        if self._oscClient:
+            self._oscClient.send_message("/m", pinValues)
+
+    def receivedExtHeartbeat(self, msg: HeartbeatMessage) -> None:
+        """Re-emit the heartbeat message so the interfacce is consistant.
+
+        Args:
+            msg (HeartbeatMessage): The HeartbeatMessage dataclass instance
+        """
+        self.heartbeat.emit(msg)
+
+    def close(self):
+        """Do everything needed to cleanly close this class."""
+        logger.debug(f"Stopping {__class__.__name__}")
+        if self._oscClient:
+            self._oscClient._sock.shutdown(socket.SHUT_RDWR)
+            self._oscClient._sock.close()
+            self._oscClient = None
 
 
 class SlipSerialCommunicationAdapterImpl(IHardwareCommunicationAdapter, QObject):
@@ -111,6 +164,10 @@ class SlipSerialCommunicationAdapterImpl(IHardwareCommunicationAdapter, QObject)
 
     def __init__(self, *args, **kwargs) -> None:
         ...
+
+    def receivedExtHeartbeat(self, msg: HeartbeatMessage) -> None:
+        """Not required for this connection type."""
+        pass
 
 
 class HardwareCommunicationAdapterFactory:
