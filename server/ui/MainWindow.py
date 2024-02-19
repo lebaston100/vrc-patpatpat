@@ -311,9 +311,9 @@ class HardwareEspRow(BaseRow):
         font11.setPointSize(11)
 
         # The connection status label (symbol)
-        self.lb_espCon = QLabel(self)
+        self.lb_espCon = ui.StatefulLabel(("\u231B", "\u2705"), self)
         self.lb_espCon.setSizePolicy(sizePolicy_FixedMaximum)
-        self.lb_espCon.setText("\u2705")
+        self.lb_espCon.setState()
         self.hl_espTopRow.addWidget(self.lb_espCon)
 
         # The esp name, mac and ip label
@@ -486,8 +486,10 @@ class ContactGroupRow(BaseRow):
         self.hl_groupTopRow.addWidget(self.lb_contactGroupName)
 
         # the vrc data label
-        self.lb_groupHasIncomingData = ui.StaticLabel(
-            "VRC Data: ", "\u2705", self)
+        self.lb_groupHasIncomingData = ui.StatefulLabel(
+            ("VRC Data: \u274C", "VRC Data: \u2705"), self)
+        self.lb_groupHasIncomingData.setState()
+
         self.hl_groupTopRow.addWidget(self.lb_groupHasIncomingData)
 
         # spacer

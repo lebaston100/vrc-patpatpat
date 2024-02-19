@@ -47,7 +47,7 @@ class StaticLabel(QLabel):
 class StatefulLabel(QLabel):
     """A label with text based on states"""
 
-    def __init__(self, stateTexts: tuple, *args, **kwargs) -> None:
+    def __init__(self, stateTexts: tuple[str, ...], *args, **kwargs) -> None:
         """Initialize the label.
 
         Args:
@@ -56,11 +56,11 @@ class StatefulLabel(QLabel):
         super().__init__(*args, **kwargs)
         self.__states = stateTexts
 
-    def setState(self, state: int | bool) -> None:
+    def setState(self, state: int | bool = 0) -> None:
         """Update label text to new state.
 
         Args:
-            state (int | bool): The new state.
+            state (int | bool): The new state. Defaults to 0.
 
         Returns:
             None
