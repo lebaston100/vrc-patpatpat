@@ -88,10 +88,10 @@ class HwManager(QObject):
         # Get a new device id
         newDeviceId = self._getNewHardwareId()
         newDeviceKey = f"esp{str(newDeviceId)}"
-        # Create config object with initial values (msg.sourceType zb für type)
+        # Create config object with initial values
         newDeviceData = {
             "id": newDeviceId,
-            "name": "Unnamed",
+            "name": msg.hostname,
             "connectionType": msg.sourceType,
             "lastIp": msg.sourceAddr if msg.sourceType == "OSC" else "",
             "wifiMac": msg.mac,
@@ -164,11 +164,12 @@ class HwOscDiscoveryTx(QObject):
 
         for interface in self._interfaces:
             client = SimpleUDPClient(
-                "255.255.255.255", 8888, allow_broadcast=True, family=socket.AF_INET)
+                "255.255.255.255", 8888,
+                allow_broadcast=True, family=socket.AF_INET)
             client._sock.bind((interface[-1][0], 8871))
             self._sockets.append(client)
         self.timerEvent()
-        self._timer.start(self._interval * 1000)
+        self._timer.start(self._interval*1000)
 
     def stop(self) -> None:
         """Stops the timer and closes all sockets."""
@@ -215,7 +216,7 @@ class HwOscRxWorker(QObject):
         # logger.debug(f"_handleDiscoveryResponseMessage: {str(client)}, {topic}, {str(args)}")
         if DiscoveryResponseMessage.isType(topic, args):
             msg = DiscoveryResponseMessage(
-                *args, sourceType="osc", sourceAddr=client[0])
+                *args, sourceType="OSC", sourceAddr=client[0])
             logger.debug(msg)
             self.gotDiscoveryReply.emit(msg)
 
@@ -235,8 +236,7 @@ class HwOscRxWorker(QObject):
             f"startOsc pid_self={threadAsStr(self.thread())}")
         logger.info(f"starting osc server on port 8872")
         try:
-            self._oscRx = BlockingOSCUDPServer(
-                ("", 8872), self.dispatcher)
+            self._oscRx = BlockingOSCUDPServer(("", 8872), self.dispatcher)
             self._oscRx.serve_forever()
         except Exception as E:
             logger.exception(E)

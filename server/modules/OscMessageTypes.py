@@ -37,6 +37,7 @@ class DiscoveryResponseMessage:
 
     Attributes:
         mac (str): The (wifi) mac of the sending esp
+        hostname (str): The hardware devices hostname
         numMotors (int): The max amount of output channels
             as configured in the esp
         sourceType (str): The origin of the message, "osc" or "serial"
@@ -45,6 +46,7 @@ class DiscoveryResponseMessage:
     """
 
     mac: str = "00:00:00:00:00:00"
+    hostname: str = ""
     numMotors: int = 0
     sourceType: str = ""
     sourceAddr: str = ""
@@ -52,7 +54,7 @@ class DiscoveryResponseMessage:
 
     @staticmethod
     def isType(topic: str, params: tuple) -> bool:
-        return topic == "/patpatpat/noticeme/senpai" and len(params) == 2
+        return topic == "/patpatpat/noticeme/senpai" and len(params) == 3
 
 
 if __name__ == "__main__":

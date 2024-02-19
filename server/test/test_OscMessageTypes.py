@@ -1,3 +1,4 @@
+from re import A
 import pytest
 
 
@@ -52,7 +53,7 @@ class TestOscMessageTypes:
     @pytest.fixture()
     def DiscoveryResponseMessageData(self):
         return ("/patpatpat/noticeme/senpai",
-                ("AA:AA:AA:AA:AA:AA", 1),
+                ("AA:AA:AA:AA:AA:AA", "hostname", 1),
                 "osc",
                 "10.10.10.10")
 
@@ -76,6 +77,7 @@ class TestOscMessageTypes:
         """Test if data is as expected"""
         m = validDiscoveryResponseMessage
         assert m.mac == "AA:AA:AA:AA:AA:AA" \
+            and m.hostname == "hostname" \
             and m.numMotors == 1 \
             and m.sourceType == "osc" \
             and m.sourceAddr == "10.10.10.10"

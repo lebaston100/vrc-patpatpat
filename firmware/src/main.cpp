@@ -27,6 +27,8 @@ unsigned long lastPacketRecv = millis();
 unsigned long lastHeartbeatSend = 0;
 unsigned int remotePort = 0;
 bool hasConnection = false;
+byte mac [6];
+char hostname[11];
 
 // Only needed if you want to use a static ip
 #if USE_STATIC_IP
@@ -91,8 +93,6 @@ void setup() {
     Serial.print(F("\nIP address: "));
     Serial.println(WiFi.localIP());
 
-    byte mac [6];
-    char hostname[11];
     WiFi.macAddress(mac);
     sprintf(hostname, "ppp-%02x%02x%02x", mac[3], mac[4], mac[5]);
     WiFi.setHostname(hostname);
@@ -122,6 +122,7 @@ void handle_discover(OSCMessage &msg) {
     // Send discovery response
     OSCMessage discoverReply("/patpatpat/noticeme/senpai");
     discoverReply.add(WiFi.macAddress().c_str());
+    discoverReply.add(hostname);
     discoverReply.add(numMotors);
     Udp.beginPacket(Udp.remoteIP(), remotePort);
     discoverReply.send(Udp);
