@@ -1,6 +1,6 @@
 from enum import Enum
 
 
-class HardwareConnectionType(Enum):
+class HardwareConnectionType(str, Enum):
     OSC = "OSC"
     SLIPSERIAL = "SlipSerial"

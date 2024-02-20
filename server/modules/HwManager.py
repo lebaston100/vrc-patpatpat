@@ -101,6 +101,8 @@ class HwManager(QObject):
             msg.sourceType == HardwareConnectionType.SLIPSERIAL else "",
             "numMotors": msg.numMotors
         }
+        logger.debug(f"esps.{newDeviceKey}")
+        logger.debug(newDeviceData)
         # Save new device to config
         config.set(f"esps.{newDeviceKey}", newDeviceData, True)
         # handle device "re"-creation through existing config change signal
