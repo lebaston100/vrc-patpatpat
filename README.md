@@ -35,8 +35,8 @@ Server:
 
 Hardware:
 
-- [ ] Discovery logic
-- [ ] OTA support
+- [x] Discovery logic
+- [x] OTA support
 
 Misc:
 
