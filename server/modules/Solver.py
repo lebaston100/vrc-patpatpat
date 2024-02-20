@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Type, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from PyQt6.QtCore import QObject
 
@@ -43,7 +43,7 @@ class MlatSolver(ISolver, QObject):
 class SolverFactory:
     @staticmethod
     def build_solver(solverType) -> \
-            Type[LinearSolver] | Type[MlatSolver] | None:
+            type[LinearSolver] | type[MlatSolver] | None:
         match solverType:
             case "Linear":
                 return LinearSolver
@@ -60,7 +60,7 @@ class SolverRunner(QObject):
         super().__init__()
         # logger.debug(config)
 
-        self._solvers: list[Type[LinearSolver] | Type[MlatSolver]] = []
+        self._solvers: list[type[LinearSolver] | type[MlatSolver]] = []
 
 
 if __name__ == "__main__":

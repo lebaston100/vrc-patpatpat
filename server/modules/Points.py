@@ -1,4 +1,4 @@
-from typing import Self, Type, TypeVar
+from typing import Self, TypeVar
 
 from PyQt6.QtGui import QVector3D
 
@@ -10,7 +10,7 @@ class Sphere3D(QVector3D):
 
     @classmethod
     # TODO get data from config and pass to constructor
-    def fromConfig(cls: Type[T], config, key: str) -> T:
+    def fromConfig(cls: type[T], config, key: str) -> T:
         return cls()
 
     def __init__(self, name: str = "", radius: float = 0,

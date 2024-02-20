@@ -8,7 +8,7 @@ Typical usage example:
 """
 
 import re
-from typing import Any, Optional, Type, TypeVar
+from typing import Any, Optional, TypeVar
 
 from PyQt6.QtCore import QMutex, QObject
 from PyQt6.QtCore import pyqtSignal as QSignal
@@ -36,7 +36,7 @@ class GlobalConfigSingleton(QObject):
     configPathWasDeleted = QSignal(str)
 
     @classmethod
-    def getInstance(cls: Type[T]) -> Optional[T]:
+    def getInstance(cls: type[T]) -> Optional[T]:
         """Get the singleton instance.
 
         Returns:
@@ -45,7 +45,7 @@ class GlobalConfigSingleton(QObject):
         return cls.__instance
 
     @classmethod
-    def fromFile(cls: Type[T], filename: str) -> T:
+    def fromFile(cls: type[T], filename: str) -> T:
         return cls(FileHelper(filename))
 
     def __init__(self, configHandler: FileHelper, *args, **kwargs) -> None:

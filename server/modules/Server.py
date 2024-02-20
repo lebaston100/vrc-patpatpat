@@ -1,4 +1,4 @@
-from typing import Type, TypeVar
+from typing import TypeVar
 
 from PyQt6.QtCore import QObject, QThread
 
@@ -17,7 +17,7 @@ class ServerSingleton(QObject):
     __instance = None
 
     @classmethod
-    def getInstance(cls: Type[T]) -> T:
+    def getInstance(cls: type[T]) -> T:
         """Get the singleton instance.
 
         Returns:
@@ -37,7 +37,7 @@ class ServerSingleton(QObject):
 
         self.vrcOscConnector = VrcConnectorImpl(config)
         self.vrcOscConnector.connect()
-        self.vrcOscConnector.gotVrcContact.connect(self._vrcOscDataReceived)
+        self.vrcOscConnector.onVrcContact.connect(self._vrcOscDataReceived)
         # self.vrcOscConnector.addToFilter("pat_2")
 
         self.hwManager = HwManager()
