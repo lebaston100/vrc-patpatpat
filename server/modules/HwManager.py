@@ -219,7 +219,7 @@ class HwOscRxWorker(QObject):
         # logger.debug(f"_handleDiscoveryResponseMessage: {str(client)}, {topic}, {str(args)}")
         if DiscoveryResponseMessage.isType(topic, args):
             msg = DiscoveryResponseMessage(
-                *args, sourceType="OSC", sourceAddr=client[0])
+                *args, sourceType=HardwareConnectionType.OSC, sourceAddr=client[0])
             logger.debug(msg)
             self.onDiscoveryResponseMessage.emit(msg)
 

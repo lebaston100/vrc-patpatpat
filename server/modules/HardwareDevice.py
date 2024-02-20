@@ -7,7 +7,7 @@ from pythonosc.udp_client import SimpleUDPClient
 
 from modules.GlobalConfig import GlobalConfigSingleton, config
 from modules.OscMessageTypes import DiscoveryResponseMessage, HeartbeatMessage
-from utils import LoggerClass, threadAsStr
+from utils import LoggerClass, threadAsStr, HardwareConnectionType
 
 logger = LoggerClass.getSubLogger(__name__)
 
@@ -184,9 +184,9 @@ class HardwareCommunicationAdapterFactory:
                 None: The built adapter or None if the type is not recognized.
         """
         match adapterType:
-            case "OSC":
+            case HardwareConnectionType.OSC:
                 return OscCommunicationAdapterImpl
-            case "SlipSerial":
+            case HardwareConnectionType.SLIPSERIAL:
                 return SlipSerialCommunicationAdapterImpl
 
 

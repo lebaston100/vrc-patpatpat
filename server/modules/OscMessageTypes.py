@@ -4,6 +4,7 @@ This module houses all possibel OSC connection messages as dataclasses
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from utils import HardwareConnectionType
 
 
 @dataclass(frozen=True)
@@ -48,7 +49,7 @@ class DiscoveryResponseMessage:
     mac: str = "00:00:00:00:00:00"
     hostname: str = ""
     numMotors: int = 0
-    sourceType: str = ""
+    sourceType: str | HardwareConnectionType = ""
     sourceAddr: str = ""
     ts: datetime = field(default_factory=datetime.now)
 
