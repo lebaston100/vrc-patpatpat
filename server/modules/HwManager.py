@@ -17,7 +17,7 @@ from modules import config
 from modules.GlobalConfig import GlobalConfigSingleton
 from modules.OscMessageTypes import DiscoveryResponseMessage, HeartbeatMessage
 from modules.HardwareDevice import HardwareDevice
-from utils import LoggerClass, threadAsStr
+from utils import LoggerClass, threadAsStr, HardwareConnectionType
 
 logger = LoggerClass.getSubLogger(__name__)
 
@@ -94,9 +94,11 @@ class HwManager(QObject):
             "id": newDeviceId,
             "name": msg.hostname,
             "connectionType": msg.sourceType,
-            "lastIp": msg.sourceAddr if msg.sourceType == "OSC" else "",
+            "lastIp": msg.sourceAddr if
+            msg.sourceType == HardwareConnectionType.OSC else "",
             "wifiMac": msg.mac,
-            "serialPort": msg.sourceAddr if msg.sourceType == "SlipSerial" else "",
+            "serialPort": msg.sourceAddr if
+            msg.sourceType == HardwareConnectionType.SLIPSERIAL else "",
             "numMotors": msg.numMotors
         }
         # Save new device to config
@@ -129,7 +131,6 @@ class HwManager(QObject):
     def close(self) -> None:
         """Closes everything hardware related."""
         logger.debug(f"Stopping {__class__.__name__}")
-        self.hwListUpdated.disconnect()
         if hasattr(self, "hwOscDiscoveryTx"):
             self.hwOscDiscoveryTx.stop()
         if hasattr(self, "hwOscRx"):
@@ -287,8 +288,6 @@ class HwOscRx(QObject):
     def close(self) -> None:
         """Closes everything heartbeat osc related."""
         logger.debug("Closing heartbeat osc")
-        self.onDiscoveryResponseMessage.disconnect()
-        self.onOscHeartbeatMessage.disconnect()
         self.worker.closeOscServer()
         self.workerThread.quit()
         self.workerThread.wait()

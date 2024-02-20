@@ -92,9 +92,6 @@ class HardwareDevice(QObject):
         """Closes everything we own and care for
         """
         logger.debug(f"Stopping {__class__.__name__}")
-        self.frontendDataChanged.disconnect()
-        self.motorDataSent.disconnect()
-        self.deviceConnectionChanged.disconnect()
         if hasattr(self, "_heartbeatTimer") and self._heartbeatTimer.isActive():
             self._heartbeatTimer.stop()
         if hasattr(self, "hardwareCommunicationAdapter"):
@@ -153,7 +150,6 @@ class OscCommunicationAdapterImpl(IHardwareCommunicationAdapter, QObject):
     def close(self):
         """Do everything needed to cleanly close this class."""
         logger.debug(f"Stopping {__class__.__name__}")
-        self.heartbeat.disconnect()
         if self._oscClient:
             self._oscClient._sock.shutdown(socket.SHUT_RDWR)
             self._oscClient._sock.close()

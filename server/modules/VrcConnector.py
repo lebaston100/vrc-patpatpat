@@ -1,8 +1,9 @@
+from datetime import datetime
 from pythonosc.dispatcher import Dispatcher
 from pythonosc import osc_packet
 from PyQt6.QtCore import QThread
 
-from PyQt6.QtCore import QObject, QThread
+from PyQt6.QtCore import QObject, QThread, QTimer
 from PyQt6.QtCore import pyqtSignal as QSignal
 from PyQt6.QtCore import pyqtSlot as QSlot
 from pythonosc.osc_message_builder import ArgValue
@@ -20,7 +21,8 @@ logger = LoggerClass.getSubLogger(__name__)
 class IVrcConnector():
     """The interface for server <-> vrc communication."""
 
-    gotVrcContact = QSignal(tuple, str, list)
+    onVrcContact = QSignal(tuple, str, list)
+    onVrcConnectionStateChanged = QSignal(bool)
 
     def connect(self):
         """A generic connect method to be reimplemented."""
@@ -32,11 +34,6 @@ class IVrcConnector():
 
     def restart(self):
         """A generic restart method to be reimplemented."""
-        raise NotImplementedError
-
-    def isAlive(self):
-        # Not sure about this one yet, maybe signal based instead
-        """A generic isAlive method to be reimplemented."""
         raise NotImplementedError
 
     def send(self):
@@ -113,6 +110,8 @@ class VrcConnectionWorker(QObject):
 class VrcConnectorImpl(IVrcConnector, QObject):
     def __init__(self, config: GlobalConfigSingleton, *args, **kwargs) -> None:
         super().__init__()
+        self._lastVrcMessage: datetime | None = None
+        self.currentDataState = False
         self.config = config
         self.worker = VrcConnectionWorker(self)
         self.worker.loadSettings(self.config)
@@ -120,13 +119,29 @@ class VrcConnectorImpl(IVrcConnector, QObject):
 
         self.workerThread.started.connect(self.worker.startOscServer)
         self.worker.moveToThread(self.workerThread)
-        # self.gotVrcContact.connect(self._receivedOsc)
+
+        self._timer = QTimer(self)
+        self._timer.timeout.connect(self._timerEvent)
+        self._timer.start(1000)
 
         self.config.configRootUpdateDone.connect(self._oscGeneralConfigChanged)
 
     def _receivedOsc(self, client: tuple, addr: str, params: list) -> None:
         """Just a test function that prints if osc event was fired."""
         logger.info(f"osc from {str(client)}: addr={addr} msg={str(params)}")
+
+    @QSlot()
+    def _timerEvent(self) -> None:
+        newDataState = True
+        if self._lastVrcMessage and \
+                (datetime.now() - self._lastVrcMessage).total_seconds() >= 5:
+            newDataState = False
+        # FIXME: Revise all of this to actually work
+        if not self.currentDataState == newDataState:
+            logger.debug(f"vrc connection state changed from "
+                         f"{self.currentDataState} to {newDataState}")
+            self.currentDataState = newDataState
+            self.onVrcConnectionStateChanged.emit(self.currentDataState)
 
     def connect(self) -> None:
         """Start worker thread and osc sender"""
@@ -147,11 +162,6 @@ class VrcConnectorImpl(IVrcConnector, QObject):
         logger.debug("Restarting vrc osc server and client")
         self.close()
         self.connect()
-
-    def isAlive(self) -> None:
-        # Not sure about this one yet, maybe signal based instead
-        """ TODO """
-        raise NotImplementedError
 
     def send(self, path: str, values: ArgValue) -> None:
         """Send an osc message to VRchat via the worker.
@@ -203,7 +213,7 @@ class VrcOscDispatcher(Dispatcher):
         Args:
             connector (OSCWorker): The OSC connector.
         """
-        self._connector = connector
+        self._connector: VrcConnectorImpl = connector
         self.matchTopics = []
 
     def call_handlers_for_packet(self, data: bytes,
@@ -230,11 +240,12 @@ class VrcOscDispatcher(Dispatcher):
                     # f"addr={msg.message.address} "
                     # f"msg={str(msg.message.params)}"
                     # )
-                    self._connector.gotVrcContact.emit(
+                    self._connector.onVrcContact.emit(
                         client_address,
                         msg.message.address,
                         msg.message.params
                     )
+            self._connector._lastVrcMessage = datetime.now()
         except osc_packet.ParseError:
             logger.error("Could not parse osc message")
 
