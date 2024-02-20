@@ -1,85 +1,104 @@
+// Define imports and definitions for different build targets
+
+// D1 Mini
 #ifdef TARGET_D1_MINI
     #include <ESP8266WiFi.h>
+
     #define LEDON LOW
     #define LEDOFF HIGH
 #endif
+
+// S2 Mini
 #ifdef TARGET_S2_MINI
     #include <WiFi.h>
     #include <WiFiClient.h>
+
     #define LEDON HIGH
     #define LEDOFF LOW
-    #define s2batteryPin 1
+    #define S2BATTERYPIN 1
 #endif
+
+// Universl imports
 #include <WiFiUdp.h>
 #include <OSCMessage.h>
 #include <OSCData.h>
+#include <ArduinoOTA.h>
 
-#define INTERNAL_LED LED_BUILTIN    // indicates if connected with server
-#define OSC_IN_PORT 8888            // local osc receive port
-#define VRC_UDP_PORT 9001           // reusing the vrc osc receiver so we need that port
+// User-configurable settings:
+#define DEBUG 1                     // Enable or disable serial debugging output
 #define USE_STATIC_IP 0             // Set to 0 to use dhcp, otherwise set to 1 and define your static ip below
+byte numMotors = 7;                 // The total number of motors attached to this hardware
 
+// Default settings, classes and variables
+#define INTERNAL_LED LED_BUILTIN            // Indicates if connected with server
+#define OSC_IN_PORT 8888                    // Local osc receive port on the esp
+unsigned int remotePort = 0;                // Once available saves the remote server port we reply to
+unsigned long lastPacketRecv = millis();    // The time in millis when the last valid osc packet was received
+unsigned long lastHeartbeatSent = 0;        // The last time in millis when a heartbeat message was sent
+bool hasConnection = false;                 // Keep state if there is an active connection (data coming in)
+bool enableOTA = true;                      // If ota should currently be enabled
+byte mac[6];                                // The wifi mac adress of the devices (used for identification of the device)
+char hostname[11];                          // A human-friendly hotname with the 2nd half of the hardware mac
+
+OSCErrorCode oscError;
 WiFiUDP Udp;
-OSCErrorCode error;
-unsigned int ledState = LOW;
-byte numMotors = 7;
-unsigned long lastPacketRecv = millis();
-unsigned long lastHeartbeatSend = 0;
-unsigned int remotePort = 0;
-bool hasConnection = false;
-byte mac [6];
-char hostname[11];
 
-// Only needed if you want to use a static ip
 #if USE_STATIC_IP
     IPAddress staticIP(10,3,1,5);
     IPAddress gateway(10,1,1,1);
     IPAddress subnet(255,0,0,0);
 #endif
 
+// Pin definitions for each build target
 #ifdef TARGET_D1_MINI
     // TODO: find usable pins on d1 mini
     byte motorPins[] = {D1, D2};
 #endif
 #ifdef TARGET_S2_MINI
-    // These are the pins used on the "official" pcb
+    // These are the pins used on the "official-dev" pcb
     byte motorPins[] = {2, 3, 4, 5, 6, 7, 8};
 #endif
 
-#ifdef ARDUINO_ARCH_ESP8266
-    // Set adc mode to read the internal voltage (esp8266 only)
-    ADC_MODE(ADC_VCC);
-#endif
 
 void setup() {
+    // Wait for serial with timeout
     #ifdef TARGET_S2_MINI
         while (!Serial && millis()<5000) {}
     #endif
-    // Initialize outputs, we assume they are all valid and can drive pwm
+
+    // Initialize output pins, we assume they are all valid and can drive pwm
     numMotors = sizeof(motorPins) / sizeof(motorPins[0]);
     for (byte i=0; i<numMotors; i++) {
         pinMode(motorPins[i], OUTPUT);
     }
+    // Set led output mode
     pinMode(INTERNAL_LED, OUTPUT);
 
+    // Set adc mode for each build target
+    #ifdef ARDUINO_ARCH_ESP8266
+        ADC_MODE(ADC_VCC);
+    #endif
     #ifdef TARGET_S2_MINI
-        pinMode(s2batteryPin, INPUT);
+        pinMode(S2BATTERYPIN, INPUT);
     #endif
 
     // Startup Serial
     Serial.begin(115200);
 
+    // Configure wifi
     WiFi.mode(WIFI_STA);
-    WiFi.setSleep(false); // Not sure if this is needed, testing because mdns discovery issues on esp32
+    WiFi.setSleep(false);
+
     #if USE_STATIC_IP
         WiFi.config(staticIP, gateway, subnet);
     #endif
+
     #if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
         WiFi.begin(WIFI_CREDS_SSID, WIFI_CREDS_PASSWD); //Connect to wifi
     #else
         #error "Missing defines WIFI_CREDS_SSID and WIFI_CREDS_PASSWD"
     #endif
-    
+
     // Wait for wifi connection  
     Serial.print(F("\n\nConnecting to Wifi "));
     while (WiFi.status() != WL_CONNECTED) {   
@@ -90,36 +109,78 @@ void setup() {
         digitalWrite(INTERNAL_LED, LEDOFF);
     }
 
-    Serial.print(F("\nIP address: "));
-    Serial.println(WiFi.localIP());
+    // Once connected, print out some information and create mac and hostname
 
     WiFi.macAddress(mac);
     sprintf(hostname, "ppp-%02x%02x%02x", mac[3], mac[4], mac[5]);
     WiFi.setHostname(hostname);
+    Serial.print(F("\nIP address: "));
+    Serial.println(WiFi.localIP());
     Serial.print(F("Hostname "));
     Serial.println(hostname);
     Serial.println(F("Starting UDP OSC Receiver"));
+
+    // Setup OTA
+    ArduinoOTA.setPassword("taptaptap");
+    ArduinoOTA
+        .onStart([]() {
+            String type;
+            if (ArduinoOTA.getCommand() == U_FLASH)
+                type = "sketch";
+            else // U_SPIFFS
+                type = "filesystem";
+
+            Serial.println("Start OTA updating " + type);
+        })
+        .onEnd([]() {
+            Serial.println("\nEnd");
+        })
+        .onProgress([](unsigned int progress, unsigned int total) {
+            Serial.printf("OTA Progress: %u%%\r", (progress / (total / 100)));
+        })
+        .onError([](ota_error_t error) {
+            Serial.printf("Error[%u]: ", error);
+            if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+            else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+            else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+            else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+            else if (error == OTA_END_ERROR) Serial.println("End Failed");
+        });
+    ArduinoOTA.begin();
+
+    // Start the udp socket
     Udp.begin(OSC_IN_PORT);
 }
 
-void osc_motors(OSCMessage &msg) {
+void handle_osc_motors(OSCMessage &msg) {
     // Get length of osc message
     byte msize = msg.size();
     for (byte i=0; i<msize; i++) {
         // Get value for each pin and write to motors
         byte val = msg.getInt(i);
         analogWrite(motorPins[i], val);
-        Serial.print(val);
-        Serial.print(",");
+        #if DEBUG
+            Serial.print(val);
+            Serial.print(",");
+        #endif
     }
+    // Enable the onbord led
+    digitalWrite(INTERNAL_LED, LEDON);
+    #if DEBUG
     Serial.println();
+    #endif
 }
 
-void handle_discover(OSCMessage &msg) {
-    if (hasConnection) return;
-    Serial.println("Discovery request received");
+void handle_osc_discover(OSCMessage &msg) {
+    // If connection was established once, do not send reply
+    if (remotePort > 0) return;
 
-    // Send discovery response
+    Serial.println(F("Discovery request received while not connected"));
+
+    // Save the remote port for use later
+    remotePort = Udp.remotePort() + 1;
+
+    // Create and send discovery response
     OSCMessage discoverReply("/patpatpat/noticeme/senpai");
     discoverReply.add(WiFi.macAddress().c_str());
     discoverReply.add(hostname);
@@ -128,67 +189,90 @@ void handle_discover(OSCMessage &msg) {
     discoverReply.send(Udp);
     Udp.endPacket();
     discoverReply.empty();
-    Serial.println("Sent discovery reply");
 
+    #if DEBUG
+    Serial.println("Sent discovery reply");
+    #endif
+
+    // Blink LED once
     digitalWrite(INTERNAL_LED, LEDON);
+    delay(200);
+    digitalWrite(INTERNAL_LED, LEDOFF);
+}
+
+void handleOTA() {
+    if (enableOTA) {
+        // Disable PTA after 5 minutes
+        if (millis() > 360000) {
+            enableOTA = false;
+            Serial.println("OTA was disabled by timeout.");
+        }
+        ArduinoOTA.handle();
+    }
 }
 
 void loop() {
-    #ifdef ARDUINO_ARCH_ESP8266
-        MDNS.update();
-    #endif
+    // Handle OTA requests
+    handleOTA();
 
-    unsigned int size = Udp.parsePacket();
+    // Read data from udp socket
+    unsigned int udpPacketSize = Udp.parsePacket();
 
-    if (size > 0) {
+    // Check if there is data to parse
+    if (udpPacketSize > 0) {
+        // Create new osc message from buffer
         OSCMessage msg;
-        while (size--) {
+        while (udpPacketSize--) {
             msg.fill(Udp.read());
         }
-        
-        if (!msg.hasError()) {
-            remotePort = Udp.remotePort() + 1;
-            // Serial.println("osc message is valid");
-            lastPacketRecv = millis();
-            // drive motors
-            msg.dispatch("/m", osc_motors);
-            msg.dispatch("/patpatpat/discover", handle_discover);
-            hasConnection = true;
-        } else {
-            error = msg.getError();
+
+        // Check message state
+        if (msg.hasError()) {
+            oscError = msg.getError();
             Serial.print(F("osc message error: "));
-            Serial.println(error);
+            Serial.println(oscError);
+        } else {
+            // Save timestamp of last valid packet
+            lastPacketRecv = millis();
+            // Handle osc message
+            msg.dispatch("/m", handle_osc_motors);
+            msg.dispatch("/patpatpat/discover", handle_osc_discover);
+            hasConnection = true;
         }
 
     }
 
-    // handle heartbeat sending
-    if (hasConnection && millis() - lastHeartbeatSend >= 5000) {
-        // Send Heartbeat
-        OSCMessage txmsg("/patpatpat/heartbeat");
-        txmsg.add(WiFi.macAddress().c_str());
-        txmsg.add((int)millis()/1000);
+    // Handle heartbeat sending if connection is active and 5 seconds since the last one have passed
+    if (hasConnection && millis()-lastHeartbeatSent >= 5000) {
+        // Create heartbeat message
+        OSCMessage heartbeatMessage("/patpatpat/heartbeat");
+        heartbeatMessage.add(WiFi.macAddress().c_str());
+        heartbeatMessage.add((int)millis()/1000);
+
         // This will be replaced with reading the external battery voltage later
         #ifdef ARDUINO_ARCH_ESP8266
-            txmsg.add(ESP.getVcc());
+            heartbeatMessage.add(ESP.getVcc());
         #else
-            txmsg.add(analogRead(s2batteryPin));
+            heartbeatMessage.add(analogRead(S2BATTERYPIN));
         #endif
-        // Serial.println(Udp.remoteIP());
-        // Serial.println(remotePort);
-        txmsg.add(WiFi.RSSI());
+
+        heartbeatMessage.add(WiFi.RSSI());
         Udp.beginPacket(Udp.remoteIP(), remotePort);
-        txmsg.send(Udp);
+        heartbeatMessage.send(Udp);
         Udp.endPacket();
-        txmsg.empty();
+        heartbeatMessage.empty();
+        lastHeartbeatSent = millis();
+
+        #if DEBUG
         Serial.println("Sent heartbeat");
-        lastHeartbeatSend = millis();
+        #endif
     }
 
-    // Disable led when we got no packets in the last 600ms
-    if (millis()-lastPacketRecv > 600) {
+    // Disable led and save state when we got no packets in the last 1000ms
+    if (millis()-lastPacketRecv > 1000) {
+        hasConnection = false;
         digitalWrite(INTERNAL_LED, LEDOFF);
-        // Make sure the motors don't keep running on connection loss
+        // Set all motors to stop
         for (byte i=0; i<numMotors; i++) {
             analogWrite(motorPins[i], 0);
         }
