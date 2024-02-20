@@ -49,6 +49,8 @@ class ServerSingleton(QObject):
         # self.solverRunner.moveToThread(self._solverRunnerThread)
         # self._solverRunnerThread.start()
 
+        self.hwManager.createAllHardwareDevicesFromConfig()
+
         ServerSingleton.__instance = self
 
     def _vrcOscDataReceived(self, client: tuple, addr: str, params: list) -> None:

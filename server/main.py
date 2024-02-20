@@ -30,6 +30,7 @@ sys.excepthook = handleUncaughtExceptions
 
 def checkConfigVersion() -> bool:
     """Checks the config version and runs upgrades if needed.
+    This can later be moved into it's own module if needed.
 
     Returns:
         bool: True if config (and upgrade) was ok, False otherwise

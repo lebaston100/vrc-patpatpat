@@ -31,7 +31,7 @@ class HwManager(QObject):
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
 
-        self.hardwareDevices: dict[int, HardwareDevice]
+        self.hardwareDevices: dict[int, HardwareDevice] = {}
 
         # Start osc receiver for discovery and heartbeat
         self.hwOscRx = HwOscRx()
@@ -67,10 +67,28 @@ class HwManager(QObject):
         else:
             raise RuntimeWarning("Specified HardwareDevice does not exist")
 
-    def _createDevice(self) -> None:
-        """TODO: Create a new device, connect it, save it"""
-        # self.hwOscRx.onOscHeartbeatMessage.connect(device. device.hardwareCommunicationAdapter.receivedExtHeartbeat)
-        ...
+    def createAllHardwareDevicesFromConfig(self) -> None:
+        """Creates all HardwareDevice objects from the config file."""
+        logger.debug("(Re-)creating all HardwareDevice objects")
+        devices = config.get("esps")
+        for key, device in devices.items():
+            newDevice = self._deviceFactory(key)
+            self.hardwareDevices[device["id"]] = newDevice
+        logger.debug("Done (re-)creating all HardwareDevice objects")
+
+    def _deviceFactory(self, key: str) -> HardwareDevice:
+        """Creates a new device given it's config key.
+
+        Args:
+            key (str): The config key. Eg "esp0"
+
+        Returns:
+            HardwareDevice: The new HardwareDevice instance
+        """
+        device = HardwareDevice(key)
+        self.hwOscRx.onOscHeartbeatMessage.connect(
+            device.hardwareCommunicationAdapter.receivedExtHeartbeat)
+        return device
 
     def _handleDiscoveryResponseMessage(self, msg: DiscoveryResponseMessage) -> None:
         """Handle discovery response messages.

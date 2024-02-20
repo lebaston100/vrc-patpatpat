@@ -67,10 +67,10 @@ class HardwareDevice(QObject):
         Args:
             msg (HeartbeatMessage): The HeartbeatMessage dataclass
         """
-        logger.debug("I've had a long journey, but now i'm finally here")
         # Check if this message belongs to us
         if not msg.mac == self._wifiMac:
             return
+        logger.debug("I've had a long journey, but now i'm finally here")
         self._lastHeartbeat = msg
         # Check if the ip addr changed from known config
         if not msg.sourceAddr == self._lastIp:
@@ -89,8 +89,7 @@ class HardwareDevice(QObject):
             self.deviceConnectionChanged.emit(self.connectionStatus)
 
     def close(self) -> None:
-        """Closes everything we own and care for
-        """
+        """Closes everything we own and care for."""
         logger.debug(f"Stopping {__class__.__name__}")
         if hasattr(self, "_heartbeatTimer") and self._heartbeatTimer.isActive():
             self._heartbeatTimer.stop()

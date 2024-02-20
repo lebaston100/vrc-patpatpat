@@ -41,7 +41,7 @@ class DiscoveryResponseMessage:
         hostname (str): The hardware devices hostname
         numMotors (int): The max amount of output channels
             as configured in the esp
-        sourceType (str): The origin of the message, "osc" or "serial"
+        sourceType (str): The origin of the message, "OSC" or "SlipSerial"
         sourceAddr (str): The osc device ip or serial port name
         ts (int): The time the object was created (aka received)
     """
