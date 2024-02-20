@@ -52,7 +52,7 @@ class ServerSingleton(QObject):
         ServerSingleton.__instance = self
 
     def _vrcOscDataReceived(self, client: tuple, addr: str, params: list) -> None:
-        """Handle osc data coming from vrchat.
+        """Handle osc data coming from VRChat.
         We can distribute the contacts to the right signal here.
 
         Args:

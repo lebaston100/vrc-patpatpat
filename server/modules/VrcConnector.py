@@ -132,15 +132,20 @@ class VrcConnectorImpl(IVrcConnector, QObject):
 
     @QSlot()
     def _timerEvent(self) -> None:
-        newDataState = True
-        if self._lastVrcMessage and \
-                (datetime.now() - self._lastVrcMessage).total_seconds() >= 5:
-            newDataState = False
-        # FIXME: Revise all of this to actually work
-        if not self.currentDataState == newDataState:
-            logger.debug(f"vrc connection state changed from "
-                         f"{self.currentDataState} to {newDataState}")
-            self.currentDataState = newDataState
+        """Handle calculation of the connection to vrc based on if data
+        is beeing received (with a timeout).
+        """
+        if not self.currentDataState and self._lastVrcMessage and \
+                (datetime.now() - self._lastVrcMessage).total_seconds() <= 3:
+            self.currentDataState = True
+            logger.debug("vrc connection state changed to "
+                         f"{self.currentDataState}")
+            self.onVrcConnectionStateChanged.emit(self.currentDataState)
+        elif self.currentDataState and self._lastVrcMessage and \
+                (datetime.now() - self._lastVrcMessage).total_seconds() > 3:
+            self.currentDataState = False
+            logger.debug("vrc connection state changed to "
+                         f"{self.currentDataState}")
             self.onVrcConnectionStateChanged.emit(self.currentDataState)
 
     def connect(self) -> None:
@@ -164,7 +169,7 @@ class VrcConnectorImpl(IVrcConnector, QObject):
         self.connect()
 
     def send(self, path: str, values: ArgValue) -> None:
-        """Send an osc message to VRchat via the worker.
+        """Send an osc message to VRChat via the worker.
 
         Args:
             path (str): The osc path

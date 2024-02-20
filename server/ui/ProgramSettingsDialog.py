@@ -46,7 +46,7 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
 
         self.selfLayout.addRow("MQTT Broker IP:", self.le_mqttBrokerIp)
 
-        # vrchat osc send ip
+        # VRChat osc send ip
         self.le_vrcOscReceiveAddress = QLineEdit(self)
         self.le_vrcOscReceiveAddress.setObjectName("le_vrcOscReceiveAddress")
         self.le_vrcOscReceiveAddress.setInputMask("900.900.900.900")
@@ -55,7 +55,7 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
         self.selfLayout.addRow(
             "VRC OSC Send IP:", self.le_vrcOscReceiveAddress)
 
-        # vrchat osc send port
+        # VRChat osc send port
         self.sb_vrcOscSendPort = QSpinBox(self)
         self.sb_vrcOscSendPort.setObjectName("sb_vrcOscSendPort")
         self.sb_vrcOscSendPort.setMaximum(65535)
@@ -63,7 +63,7 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
 
         self.selfLayout.addRow("VRC OSC Send Port:", self.sb_vrcOscSendPort)
 
-        # vrchat osc receive port
+        # VRChat osc receive port
         self.sb_vrcOscReceivePort = QSpinBox(self)
         self.sb_vrcOscReceivePort.setObjectName("sb_vrcOscReceivePort")
         self.sb_vrcOscReceivePort.setMaximum(65535)
