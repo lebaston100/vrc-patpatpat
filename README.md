@@ -1,24 +1,20 @@
 # vrc-patpatpat
 
 <p align="center">
-    <a href="//github.com/lebaston100/vrc-patpatpat/commits/refactor/" alt="Commits">
-        <img alt="GitHub commit activity (branch)" src="https://img.shields.io/github/commit-activity/m/lebaston100/vrc-patpatpat/refactor">
-    </a><a href="//github.com/lebaston100/vrc-patpatpat/actions/workflows/test.yaml" alt="test">
-        <img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/lebaston100/vrc-patpatpat/test.yaml?branch=refactor">
-    </a><a href="#" alt="issues">
-        <img alt="GitHub issues" src="https://img.shields.io/github/issues/lebaston100/vrc-patpatpat">
-    </a><a href="//github.com/lebaston100/vrc-patpatpat?tab=GPL-3.0-1-ov-file#readme" alt="licence">
-        <img alt="GitHub License" src="https://img.shields.io/github/license/lebaston100/vrc-patpatpat">
-    </a><a href="#" alt="stars">
-        <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/lebaston100/vrc-patpatpat">
-    </a>
+    <a href="//github.com/lebaston100/vrc-patpatpat/commits/refactor/" alt="Commits"><img alt="GitHub commit activity (branch)" src="https://img.shields.io/github/commit-activity/m/lebaston100/vrc-patpatpat/refactor"></a>
+    <a href="//github.com/lebaston100/vrc-patpatpat/actions/workflows/test.yaml" alt="test"><img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/lebaston100/vrc-patpatpat/test.yaml?branch=refactor&label=test"></a>
+    <a href="#" alt="issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/lebaston100/vrc-patpatpat"></a>
+    <a href="//github.com/lebaston100/vrc-patpatpat?tab=GPL-3.0-1-ov-file#readme" alt="licence"><img alt="GitHub License" src="https://img.shields.io/github/license/lebaston100/vrc-patpatpat"></a>
+    <a href="#" alt="stars"><img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/lebaston100/vrc-patpatpat"></a>
 </p>
 
 An open hardware and software project which tries to implement spatial haptic head pat (but also more generic) feedback to the player in VRchat.
 
 ## This project is actively work in progress
  
-The current development is happening in the refactor branch! The "old" basic working server version can still be accessed from the master branch. If nothing is happening in this repo for some time it's probably from me learning more (or struggling with) QT stuff or not having pushed to gh yet.
+The current development is happening in the refactor branch!
+
+The "old" basic working server version can still be accessed from the master branch. If nothing is happening in this repo for some time it's probably from me learning more (or struggling with) QT stuff or not having pushed to gh yet.
 
 ### Rough todo overview :
 
@@ -30,7 +26,7 @@ Server:
 - [x] Log viewer
 - [x] Config file
 - [x] VRC comms
-- [ ] Hardware discovery
+- [x] Hardware discovery
 - [ ] Hardware comms
 - [ ] MLAT solver
 - [ ] Linear solver
@@ -47,7 +43,7 @@ Misc:
 - [x] Simple osc recorder and player (for dev) (server/tools/oscRecReplayer.py)
 - [x] Design dev pcb (v1 dev board manufactured and built, v2 dev board design done)
 - [ ] Rewrite readme
-- [ ] Add CI pytest job for server
+- [ ] Add CI pytest job for server (more tests need to be written)
 - [ ] Add CI build job for server
 
 Other stuff/notes to later add to the readme:
