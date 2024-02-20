@@ -129,6 +129,7 @@ class HwManager(QObject):
     def close(self) -> None:
         """Closes everything hardware related."""
         logger.debug(f"Stopping {__class__.__name__}")
+        self.hwListUpdated.disconnect()
         if hasattr(self, "hwOscDiscoveryTx"):
             self.hwOscDiscoveryTx.stop()
         if hasattr(self, "hwOscRx"):
@@ -286,6 +287,8 @@ class HwOscRx(QObject):
     def close(self) -> None:
         """Closes everything heartbeat osc related."""
         logger.debug("Closing heartbeat osc")
+        self.onDiscoveryResponseMessage.disconnect()
+        self.onOscHeartbeatMessage.disconnect()
         self.worker.closeOscServer()
         self.workerThread.quit()
         self.workerThread.wait()

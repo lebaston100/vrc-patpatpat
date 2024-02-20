@@ -1,5 +1,4 @@
 import socket
-from typing import Type
 
 from PyQt6.QtCore import QObject, QTimer
 from PyQt6.QtCore import pyqtSignal as QSignal
@@ -58,11 +57,9 @@ class HardwareDevice(QObject):
         self._numMotors: int = config.get(f"{self._configKey}.numMotors", 0)
 
     def sendPinValues(self) -> None:
-        """Create and send current self.pinStates to Hardare."""
-        sortedPinStates = dict(sorted(self.pinStates.items()))
-        pinStateList = list(sortedPinStates.values())
+        """Create and send current self.pinStates to hardare."""
         self.hardwareCommunicationAdapter.sendPinValues(
-            pinStateList[:self._numMotors])
+            list(self.pinStates.values())[:self._numMotors-1])
 
     def processHeartbeat(self, msg: HeartbeatMessage) -> None:
         """Process an incoming heartbeat message from the comms interface.
@@ -95,6 +92,9 @@ class HardwareDevice(QObject):
         """Closes everything we own and care for
         """
         logger.debug(f"Stopping {__class__.__name__}")
+        self.frontendDataChanged.disconnect()
+        self.motorDataSent.disconnect()
+        self.deviceConnectionChanged.disconnect()
         if hasattr(self, "_heartbeatTimer") and self._heartbeatTimer.isActive():
             self._heartbeatTimer.stop()
         if hasattr(self, "hardwareCommunicationAdapter"):
@@ -153,6 +153,7 @@ class OscCommunicationAdapterImpl(IHardwareCommunicationAdapter, QObject):
     def close(self):
         """Do everything needed to cleanly close this class."""
         logger.debug(f"Stopping {__class__.__name__}")
+        self.heartbeat.disconnect()
         if self._oscClient:
             self._oscClient._sock.shutdown(socket.SHUT_RDWR)
             self._oscClient._sock.close()
@@ -174,16 +175,16 @@ class HardwareCommunicationAdapterFactory:
     """Factory class to build hardware communication adapters."""
 
     @staticmethod
-    def build_adapter(adapterType) -> Type[OscCommunicationAdapterImpl] | \
-            Type[SlipSerialCommunicationAdapterImpl] | None:
+    def build_adapter(adapterType) -> type[OscCommunicationAdapterImpl] | \
+            type[SlipSerialCommunicationAdapterImpl] | None:
         """Static method to build the appropriate adapter based on the type.
 
         Args:
             adapterType (str): The type of adapter to build.
 
         Returns:
-            Type[OscCommunicationAdapterImpl] | 
-                Type[SlipSerialCommunicationAdapterImpl] |
+            type[OscCommunicationAdapterImpl] | 
+                type[SlipSerialCommunicationAdapterImpl] |
                 None: The built adapter or None if the type is not recognized.
         """
         match adapterType:
