@@ -27,7 +27,6 @@
 // User-configurable settings:
 #define DEBUG 1                     // Enable or disable serial debugging output
 #define USE_STATIC_IP 0             // Set to 0 to use dhcp, otherwise set to 1 and define your static ip below
-byte numMotors = 7;                 // The total number of motors attached to this hardware
 
 // Default settings, classes and variables
 #define INTERNAL_LED LED_BUILTIN            // Indicates if connected with server
@@ -39,6 +38,7 @@ bool hasConnection = false;                 // Keep state if there is an active 
 bool enableOTA = true;                      // If ota should currently be enabled
 byte mac[6];                                // The wifi mac adress of the devices (used for identification of the device)
 char hostname[11];                          // A human-friendly hotname with the 2nd half of the hardware mac
+byte numMotors = 0;                         // The total number of motors attached to this hardware
 
 OSCErrorCode oscError;
 WiFiUDP Udp;
@@ -156,6 +156,8 @@ void handle_osc_motors(OSCMessage &msg) {
     // Get length of osc message
     byte msize = msg.size();
     for (byte i=0; i<msize; i++) {
+        // Safeguard from overwriting into void
+        if (i >= numMotors) break;
         // Get value for each pin and write to motors
         byte val = msg.getInt(i);
         analogWrite(motorPins[i], val);
