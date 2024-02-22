@@ -1,13 +1,14 @@
 import socket
+from datetime import datetime
 
 from PyQt6.QtCore import QObject, QTimer
 from PyQt6.QtCore import pyqtSignal as QSignal
 from PyQt6.QtCore import pyqtSlot as QSlot
 from pythonosc.udp_client import SimpleUDPClient
 
-from modules.GlobalConfig import GlobalConfigSingleton, config
-from modules.OscMessageTypes import DiscoveryResponseMessage, HeartbeatMessage
-from utils import LoggerClass, threadAsStr, HardwareConnectionType
+from modules.GlobalConfig import config
+from modules.OscMessageTypes import HeartbeatMessage
+from utils import HardwareConnectionType, LoggerClass
 
 logger = LoggerClass.getSubLogger(__name__)
 
@@ -24,11 +25,11 @@ class HardwareDevice(QObject):
         self._configKey = f"esps.{key}"
 
         # Heartbeat checker
-        self.connectionStatus: bool = False
-        self._lastHeartbeat: None | HeartbeatMessage = None
+        self.currentConnectionState: bool = False
+        self._lastHeartbeat: HeartbeatMessage | None = None
         self._heartbeatTimer = QTimer()
         self._heartbeatTimer.timeout.connect(self.updateConnectionStatus)
-        self._heartbeatTimer.start(10)
+        self._heartbeatTimer.start(9000)
 
         self.loadSettingsFromConfig()
         self.pinStates: dict[int, int | float] = {
@@ -70,7 +71,6 @@ class HardwareDevice(QObject):
         # Check if this message belongs to us
         if not msg.mac == self._wifiMac:
             return
-        logger.debug("I've had a long journey, but now i'm finally here")
         self._lastHeartbeat = msg
         # Check if the ip addr changed from known config
         if not msg.sourceAddr == self._lastIp:
@@ -78,15 +78,29 @@ class HardwareDevice(QObject):
                          f"{self._lastIp} to {msg.sourceAddr}")
             config.set(f"{self._configKey}.lastIp", msg.sourceAddr, True)
             return
-        self.updateConnectionStatus()
+        # self.updateConnectionStatus()
 
+    @QSlot()
     def updateConnectionStatus(self) -> None:
         """Recalculate the hardware connection status."""
-        currentConnectionStatus = False
-        # TODO: Add actual calculations
-        if not self.connectionStatus == currentConnectionStatus:
-            # NOTE: connect straight to StatefulLabel.setState in UI
-            self.deviceConnectionChanged.emit(self.connectionStatus)
+        if not self._lastHeartbeat:
+            return
+        logger.debug(datetime.now())
+        logger.debug(self._lastHeartbeat.ts.second)
+        logger.debug((datetime.now() - self._lastHeartbeat.ts).total_seconds())
+        # NOTE: connect straight to StatefulLabel.setState in UI
+        if not self.currentConnectionState and \
+                (datetime.now() - self._lastHeartbeat.ts).total_seconds() <= 6:
+            self.currentConnectionState = True
+            logger.debug(f"hw connection state for device {self._id} changed to"
+                         f" {self.currentConnectionState}")
+            self.deviceConnectionChanged.emit(self.currentConnectionState)
+        elif self.currentConnectionState and \
+                (datetime.now() - self._lastHeartbeat.ts).total_seconds() > 6:
+            self.currentConnectionState = False
+            logger.debug(f"hw connection state for device {self._id} changed to"
+                         f" {self.currentConnectionState}")
+            self.deviceConnectionChanged.emit(self.currentConnectionState)
 
     def close(self) -> None:
         """Closes everything we own and care for."""

@@ -214,7 +214,6 @@ void handleOTA() {
 }
 
 void loop() {
-    // Handle OTA requests
     handleOTA();
 
     // Read data from udp socket
@@ -244,8 +243,8 @@ void loop() {
 
     }
 
-    // Handle heartbeat sending if connection is active and 5 seconds since the last one have passed
-    if (hasConnection && millis()-lastHeartbeatSent >= 5000) {
+    // Handle heartbeat sending if connection is active and 4 seconds since the last one have passed
+    if (hasConnection && millis()-lastHeartbeatSent >= 3997) {
         // Create heartbeat message
         OSCMessage heartbeatMessage("/patpatpat/heartbeat");
         heartbeatMessage.add(WiFi.macAddress().c_str());
@@ -263,11 +262,13 @@ void loop() {
         heartbeatMessage.send(Udp);
         Udp.endPacket();
         heartbeatMessage.empty();
-        lastHeartbeatSent = millis();
 
         #if DEBUG
-        Serial.println("Sent heartbeat");
+        Serial.print("Sent heartbeat. Delta @ ");
+        Serial.println(millis() - lastHeartbeatSent);
         #endif
+
+        lastHeartbeatSent = millis();
     }
 
     // Disable led and save state when we got no packets in the last 1000ms
@@ -278,5 +279,5 @@ void loop() {
         for (byte i=0; i<numMotors; i++) {
             analogWrite(motorPins[i], 0);
         }
-    }
+    }    
 }

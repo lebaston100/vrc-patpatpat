@@ -14,7 +14,6 @@ from pythonosc.osc_server import BlockingOSCUDPServer
 from pythonosc.udp_client import SimpleUDPClient
 
 from modules import config
-from modules.GlobalConfig import GlobalConfigSingleton
 from modules.OscMessageTypes import DiscoveryResponseMessage, HeartbeatMessage
 from modules.HardwareDevice import HardwareDevice
 from utils import LoggerClass, threadAsStr, HardwareConnectionType

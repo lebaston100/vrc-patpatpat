@@ -1,19 +1,16 @@
 from datetime import datetime
-from pythonosc.dispatcher import Dispatcher
-from pythonosc import osc_packet
-from PyQt6.QtCore import QThread
 
 from PyQt6.QtCore import QObject, QThread, QTimer
 from PyQt6.QtCore import pyqtSignal as QSignal
 from PyQt6.QtCore import pyqtSlot as QSlot
+from pythonosc import osc_packet
+from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_message_builder import ArgValue
 from pythonosc.osc_server import BlockingOSCUDPServer
 from pythonosc.udp_client import SimpleUDPClient
 
 from modules.GlobalConfig import GlobalConfigSingleton
 from utils import LoggerClass, threadAsStr
-
-# T = TypeVar('T', bound='GlobalConfigSingleton')
 
 logger = LoggerClass.getSubLogger(__name__)
 
@@ -135,6 +132,7 @@ class VrcConnectorImpl(IVrcConnector, QObject):
         """Handle calculation of the connection to vrc based on if data
         is beeing received (with a timeout).
         """
+        # TODO: This could be improved to trigger instantly when data comes in
         if not self.currentDataState and self._lastVrcMessage and \
                 (datetime.now() - self._lastVrcMessage).total_seconds() <= 3:
             self.currentDataState = True
