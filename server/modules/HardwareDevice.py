@@ -42,6 +42,7 @@ class HardwareDevice(QObject):
                 hardwareCommunicationAdapterClass()
         else:
             raise RuntimeError("Unknown hardware connection type.")
+        self.hardwareCommunicationAdapter.setup(config.get(self._configKey))
 
         self.hardwareCommunicationAdapter.heartbeat.connect(
             self.processHeartbeat)
@@ -78,16 +79,16 @@ class HardwareDevice(QObject):
                          f"{self._lastIp} to {msg.sourceAddr}")
             config.set(f"{self._configKey}.lastIp", msg.sourceAddr, True)
             return
-        # self.updateConnectionStatus()
+        self.updateConnectionStatus()
 
     @QSlot()
     def updateConnectionStatus(self) -> None:
         """Recalculate the hardware connection status."""
         if not self._lastHeartbeat:
             return
-        logger.debug(datetime.now())
-        logger.debug(self._lastHeartbeat.ts.second)
-        logger.debug((datetime.now() - self._lastHeartbeat.ts).total_seconds())
+        # logger.debug(datetime.now())
+        # logger.debug(self._lastHeartbeat.ts.second)
+        # logger.debug((datetime.now() - self._lastHeartbeat.ts).total_seconds())
         # NOTE: connect straight to StatefulLabel.setState in UI
         if not self.currentConnectionState and \
                 (datetime.now() - self._lastHeartbeat.ts).total_seconds() <= 6:
@@ -116,19 +117,19 @@ class IHardwareCommunicationAdapter():
 
     heartbeat = QSignal(object)
 
-    def setup(self):
+    def setup(self, settings: dict) -> None:
         """A generic setup method to be reimplemented."""
         raise NotImplementedError
 
-    def sendPinValues(self, pinValues: list):
+    def sendPinValues(self, pinValues: list) -> None:
         """A generic sendPinValues method to be reimplemented."""
         raise NotImplementedError
 
-    def receivedExtHeartbeat(self, msg: HeartbeatMessage):
+    def receivedExtHeartbeat(self, msg: HeartbeatMessage) -> None:
         """A generic receivedExtHeartbeat method to be reimplemented."""
         raise NotImplementedError
 
-    def close(self):
+    def close(self) -> None:
         """A generic close method to be reimplemented."""
         raise NotImplementedError
 
@@ -142,16 +143,26 @@ class OscCommunicationAdapterImpl(IHardwareCommunicationAdapter, QObject):
 
         self._oscClient: SimpleUDPClient | None = None
 
-    def setup(self):
+    def setup(self, settings: dict) -> None:
         """Setup everything required for this communication
-        interface to work."""
-        self._oscClient = SimpleUDPClient("ip", 8888)
+        interface to work.
 
-    def sendPinValues(self, pinValues: list):
+        Args:
+            settings (dict): The settings dict for this esp
+        """
+        try:
+            self.close()
+            self._oscClient = SimpleUDPClient(settings["lastIp"], 8888)
+        except Exception as E:
+            logger.exception(E)
+
+    def sendPinValues(self, pinValues: list) -> None:
         """Send motor values to device over osc."""
+        # TODO: Inspect exception behaviour and add catch if needed
         if self._oscClient:
             self._oscClient.send_message("/m", pinValues)
 
+    @QSlot(object)
     def receivedExtHeartbeat(self, msg: HeartbeatMessage) -> None:
         """Re-emit the heartbeat message so the interfacce is consistant.
 
@@ -160,10 +171,10 @@ class OscCommunicationAdapterImpl(IHardwareCommunicationAdapter, QObject):
         """
         self.heartbeat.emit(msg)
 
-    def close(self):
+    def close(self) -> None:
         """Do everything needed to cleanly close this class."""
-        logger.debug(f"Stopping {__class__.__name__}")
         if self._oscClient:
+            logger.debug(f"Stopping {__class__.__name__}")
             self._oscClient._sock.shutdown(socket.SHUT_RDWR)
             self._oscClient._sock.close()
             self._oscClient = None
