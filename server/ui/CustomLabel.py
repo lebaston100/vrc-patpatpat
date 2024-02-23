@@ -3,7 +3,7 @@
 Typical usage example:
 
     myLabel = StaticLabel("Name: ") -> "Name: "
-    myLabel = StaticLabel("Name: ", "Initial Text") -> "Name: Initial Text"
+    myLabel = StaticLabel("Name: ", "Initial Text", "Suffix") -> "Name: Initial Text Suffix"
     myLabel.setText("patpatpat") -> "Name: patpatpat"
 """
 
@@ -16,7 +16,10 @@ logger = LoggerClass.getSubLogger(__name__)
 class StaticLabel(QLabel):
     """A simple expansion of QLabel with a static prefix text."""
 
-    def __init__(self, prefixText: str, text: str | None = None, *args, **kwargs) -> None:
+    def __init__(self, prefixText: str,
+                 text: str = "",
+                 suffixText: str = "",
+                 *args, **kwargs) -> None:
         """Initialize the label.
 
         Args:
@@ -24,6 +27,7 @@ class StaticLabel(QLabel):
         """
         super().__init__(*args, **kwargs)
         self.__prefixText = prefixText
+        self.__suffixText = suffixText
         self.setText(text or "")
 
     def setText(self, text: str) -> None:
@@ -35,7 +39,7 @@ class StaticLabel(QLabel):
         Returns:
             None
         """
-        return super().setText(self.__prefixText + text)
+        return super().setText(self.__prefixText + text + self.__suffixText)
 
     def setNum(self, num: int) -> None:
         self.setText(str(num))
