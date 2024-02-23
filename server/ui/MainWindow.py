@@ -11,28 +11,31 @@ from PyQt6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMainWindow,
                              QSpacerItem, QSplitter, QVBoxLayout, QWidget)
 
 import ui
-from modules import config, ServerSingleton
+from modules import config, ServerSingleton, HardwareDevice
+from ui import EspSettingsDialog
 from utils import LoggerClass
+from PyQt6.QtCore import pyqtSlot as QSlot
 from PyQt6.QtCore import pyqtSignal as QSignal
+
+from utils.Enums import HardwareConnectionType
 
 logger = LoggerClass.getSubLogger(__name__)
 
 
 class MainWindow(QMainWindow):
-    myConfigChanged = QSignal(str)
 
     def __init__(self, *args, **kwargs) -> None:
+        logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
 
         self._singleWindows: dict[str, QWidget] = {}
+        self._hwRows: dict[int, QWidget] = {}
 
         self.setupUi()
-        # config.registerChangeSignal(
-        # r"program\.mainTps$", self.myConfigChanged)
-        config.registerChangeSignal(
-            r"program\..*", self.myConfigChanged)
-        self.myConfigChanged.connect(self.handleConfigChange)
         self.server = ServerSingleton.getInstance()
+        self.server.hwManager.hwListChanged.connect(
+            self._handleHwListChange)
+        self._pollHwList()
 
     def setupUi(self) -> None:
         """Initialize the main UI."""
@@ -96,8 +99,6 @@ class MainWindow(QMainWindow):
 
         # the hardware scroll area
         self.hardwareScrollArea = self.createScrollArea()
-        self.hardwareScrollArea.setSizePolicy(QSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding))
 
         # the single widget inside the scroll area
         self.hardwareScrollAreaWidgetContent = QWidget(self.hardwareScrollArea)
@@ -109,24 +110,6 @@ class MainWindow(QMainWindow):
             self.hardwareScrollAreaWidgetContent)
         self.hardwareScrollAreaWidgetContentLayout.setContentsMargins(
             0, 0, 0, 0)
-
-        # TODO: a test entry in the hardware row
-        # we need to factory this
-        self.testHwInstance1 = HardwareEspRow(
-            self.hardwareScrollAreaWidgetContent)
-        self.testHwInstance2 = HardwareEspRow(
-            self.hardwareScrollAreaWidgetContent)
-        self.testHwInstance3 = HardwareEspRow(
-            self.hardwareScrollAreaWidgetContent)
-
-        # add a few test entries to the scrollAreasWidgets layout
-        # this will later be done programatically
-        self.hardwareScrollAreaWidgetContentLayout.addWidget(
-            self.testHwInstance1)
-        self.hardwareScrollAreaWidgetContentLayout.addWidget(
-            self.testHwInstance2)
-        self.hardwareScrollAreaWidgetContentLayout.addWidget(
-            self.testHwInstance3)
 
         # set the hardware scroll areas only widget to our scrollarea content widget
         self.hardwareScrollArea.setWidget(self.hardwareScrollAreaWidgetContent)
@@ -213,9 +196,30 @@ class MainWindow(QMainWindow):
             del self._singleWindows[windowReference]
         logger.debug(self._singleWindows)
 
-    def handleConfigChange(self, path: str) -> None:
-        logger.debug(f"config changed for path {path} to new value "
-                     f"{str(config.get(path))}")
+    def _pollHwList(self) -> None:
+        """Trigger initial device row loading after startup"""
+        self._handleHwListChange(self.server.hwManager.hardwareDevices)
+
+    def _handleHwListChange(self, devices: dict[int, HardwareDevice]) -> None:
+        for id, device in devices.items():
+            newRow = HardwareEspRow(device._configKey,
+                                    self.hardwareScrollAreaWidgetContent)
+            device.uiBatteryStateChanged.connect(newRow.lb_espBat.setNum)
+            device.uiRssiStateChanged.connect(newRow.lb_espRssi.setNum)
+            device.deviceConnectionChanged.connect(newRow.lb_espCon.setState)
+            if id in self._hwRows.keys():
+                # Row already exists, re-create
+                oldRow = self._hwRows[id]
+                self.hardwareScrollAreaWidgetContentLayout.replaceWidget(
+                    oldRow, newRow)
+                oldRow.deleteLater()
+            else:
+                # It's a new row, append it
+                self.hardwareScrollAreaWidgetContentLayout.addWidget(newRow)
+            self._hwRows[id] = newRow
+        sizes = [0] * len(self.splitter.children())
+        sizes[1] = self.hardwareScrollArea.sizeHint().height()
+        self.splitter.setSizes(sizes)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Handle window close event cleanly.
@@ -290,9 +294,13 @@ class ExpandedWidgetDataRowBase(QHBoxLayout):
 class HardwareEspRow(BaseRow):
     """A independent hardware row inside the scroll area."""
 
-    def __init__(self, parent: QWidget | None) -> None:
+    def __init__(self, configKey: str, parent: QWidget | None) -> None:
         # logger.debug(f"Creating {__class__.__name__}")
         super().__init__(parent)
+        self._hwSettingsWindow: QWidget | None = None
+        self._configKey = configKey
+
+        self._updateStaticText()
 
     def buildUi(self) -> None:
         self.hl_espTopRow = QHBoxLayout()
@@ -311,26 +319,26 @@ class HardwareEspRow(BaseRow):
         font11.setPointSize(11)
 
         # The connection status label (symbol)
-        self.lb_espCon = ui.StatefulLabel(("\u231B", "\u2705"), self)
+        self.lb_espCon = ui.StatefulLabel(("\u2716", "\u2705", "\u231B"), self)
         self.lb_espCon.setSizePolicy(sizePolicy_FixedMaximum)
-        self.lb_espCon.setState()
+        self.lb_espCon.setState(2)
         self.hl_espTopRow.addWidget(self.lb_espCon)
 
         # The esp name, mac and ip label
         self.lb_espIdMac = ui.StaticLabel(
-            "ESP ", "1 (aa:ff:aa:ff:aa:ff/192.168.1.1)", self)
+            "ESP ", "", "", self)
         self.lb_espIdMac.setSizePolicy(sizePolicy_PreferredMaximum)
         self.lb_espIdMac.setFont(font10)
         self.hl_espTopRow.addWidget(self.lb_espIdMac)
 
         # the esp wifi rssi label
-        self.lb_espRssi = ui.StaticLabel("Wifi: ", "50dbm", self)
+        self.lb_espRssi = ui.StaticLabel("Wifi: ", "", " dbm", self)
         self.lb_espRssi.setSizePolicy(sizePolicy_PreferredMaximum)
         self.lb_espRssi.setFont(font10)
         self.hl_espTopRow.addWidget(self.lb_espRssi)
 
         # the esp battery level label
-        self.lb_espBat = ui.StaticLabel("Battery: ", "3.3V", self)
+        self.lb_espBat = ui.StaticLabel("Battery: ", "", " V", self)
         self.lb_espBat.setSizePolicy(sizePolicy_PreferredMaximum)
         self.lb_espBat.setFont(font10)
         self.hl_espTopRow.addWidget(self.lb_espBat)
@@ -357,9 +365,34 @@ class HardwareEspRow(BaseRow):
         self.bt_openEspSettings.setFont(font11)
         self.bt_openEspSettings.setToolTip("Configure")
         self.bt_openEspSettings.setText("\ud83d\udd27")
+        self.bt_openEspSettings.clicked.connect(self._openHardwareSettings)
         self.hl_espTopRow.addWidget(self.bt_openEspSettings)
 
         self.selfLayout.addLayout(self.hl_espTopRow)
+
+    @QSlot()
+    def _openHardwareSettings(self):
+        if self._hwSettingsWindow:
+            self._hwSettingsWindow.raise_()
+            self._hwSettingsWindow.activateWindow()
+        else:
+            self._hwSettingsWindow = EspSettingsDialog(self._configKey)
+            self._hwSettingsWindow.destroyed.connect(
+                self._closedHardwareSettings)
+            self._hwSettingsWindow.show()
+
+    def _closedHardwareSettings(self):
+        self._hwSettingsWindow = None
+
+    def _updateStaticText(self) -> None:
+        id = config.get(f"{self._configKey}.id")
+        name = config.get(f"{self._configKey}.name")
+        mac = config.get(f"{self._configKey}.wifiMac")
+        connType = config.get(f"{self._configKey}.connectionType")
+        connAddr = config.get(f"{self._configKey}.lastIp") if \
+            connType == HardwareConnectionType.OSC else \
+            config.get(f"{self._configKey}.serialPort")
+        self.lb_espIdMac.setText(f"{id} '{name}' ({mac}/{connAddr})")
 
 
 class EspMoreInfoWidget(QWidget):
@@ -383,7 +416,7 @@ class EspMoreInfoWidget(QWidget):
         self.selfLayout.addWidget(self.line)
 
         # the motors label
-        self.lb_motorsRow = ui.StaticLabel("Motors: ", "", self)
+        self.lb_motorsRow = ui.StaticLabel("Motors: ", "", "", self)
         self.selfLayout.addWidget(self.lb_motorsRow)
 
         # TODO: this will later be dynamic, just for testing now
@@ -481,7 +514,7 @@ class ContactGroupRow(BaseRow):
         font11.setPointSize(11)
 
         # the name label
-        self.lb_contactGroupName = ui.StaticLabel("Name: ", "Head", self)
+        self.lb_contactGroupName = ui.StaticLabel("Name: ", "Head", "", self)
         # self.lb_contactGroupName.setScaledContents(True)
         self.hl_groupTopRow.addWidget(self.lb_contactGroupName)
 
