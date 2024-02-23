@@ -22,7 +22,7 @@ class EspSettingsDialog(QWidget, OptionAdapter):
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
 
-        self._configKey = "esps.esp" + configKey
+        self._configKey = configKey
         self.buildUi()
 
         # after UI is setup load options into ui elements
