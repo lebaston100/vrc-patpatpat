@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, TypeVar
 
 from PyQt6.QtCore import QObject
 
-from utils import LoggerClass
+from utils import LoggerClass, SolverType
 
 if TYPE_CHECKING:
     from modules.GlobalConfig import GlobalConfigSingleton
@@ -45,9 +45,9 @@ class SolverFactory:
     def build_solver(solverType) -> \
             type[LinearSolver] | type[MlatSolver] | None:
         match solverType:
-            case "Linear":
+            case SolverType.LINEAR:
                 return LinearSolver
-            case "Mlat":
+            case SolverType.MLAT:
                 return MlatSolver
 
 
@@ -65,7 +65,7 @@ class SolverRunner(QObject):
 
 if __name__ == "__main__":
     from GlobalConfig import config
-    solverClass = SolverFactory.build_solver("mlat")
+    solverClass = SolverFactory.build_solver(SolverType("MLat"))
     if solverClass is not None:
         solver = solverClass(config)
         solver.solve()
