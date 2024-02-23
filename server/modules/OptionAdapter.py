@@ -78,8 +78,7 @@ class OptionAdapter():
         if method:
             method(value)
 
-    def _getUiOpt(self, element: object,
-                  dataType=str) -> Any:
+    def _getUiOpt(self, element: object, dataType=str) -> Any:
         """Retrieves the value of a UI element based on its type.
 
         This function retrieves the value of a UI element based on
