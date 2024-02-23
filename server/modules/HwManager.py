@@ -24,7 +24,9 @@ logger = LoggerClass.getSubLogger(__name__)
 class HwManager(QObject):
     """Handles all hardware related tasks."""
 
-    hwListUpdated = QSignal(dict)
+    hwListChanged = QSignal(dict)
+    hwConfigChanged = QSignal(str)
+    hwConfigRemoved = QSignal(str)
 
     def __init__(self, *args, **kwargs) -> None:
         logger.debug(f"Creating {__class__.__name__}")
@@ -40,6 +42,13 @@ class HwManager(QObject):
         # Start osc device discovery
         self.hwOscDiscoveryTx = HwOscDiscoveryTx()
         self.hwOscDiscoveryTx.start()
+
+        config.registerChangeSignal(
+            r"esps\..*", self.hwConfigChanged)
+        self.hwConfigChanged.connect(self._handleConfigChange)
+        config.registerRemoveSignal(
+            r"esps\..*", self.hwConfigRemoved)
+        self.hwConfigRemoved.connect(self._handleConfigRemoved)
 
     def writeSpeed(self, hwId: int = 0, channelId: int = 0, value: float | int = 0) -> None:
         """Write speed from motor into esp's state buffer
@@ -73,7 +82,21 @@ class HwManager(QObject):
         for key, device in devices.items():
             newDevice = self._deviceFactory(key)
             self.hardwareDevices[device["id"]] = newDevice
-        logger.debug("Done (re-)creating all HardwareDevice objects")
+        self.hwListChanged.emit(self.hardwareDevices)
+
+    def _handleConfigChange(self, key: str) -> None:
+        if key.startswith("esps.esp"):
+            keys = key.split(".")
+            id = config.get(f"{".".join(keys[:2])}.id")
+            if id in self.hardwareDevices:
+                # The device already exits, close first
+                self.hardwareDevices[id].close()
+            self.hardwareDevices[id] = self._deviceFactory(keys[1])
+            self.hwListChanged.emit(self.hardwareDevices)
+
+    def _handleConfigRemoved(self, key: str) -> None:
+        # You cannot remove HardwareDevices right now
+        logger.debug(key)
 
     def _deviceFactory(self, key: str) -> HardwareDevice:
         """Creates a new device given it's config key.
@@ -99,8 +122,10 @@ class HwManager(QObject):
             msg (DiscoveryResponseMessage): The discovery response message.
         """
         # Check if device already exists and return if it does so
-        if self._checkDeviceExistance(msg.mac) is not None:
-            logger.info(f"Device with mac {msg.mac} already exists. Ignoring.")
+        if (id := self._checkDeviceExistance(msg.mac)) is not None:
+            logger.debug(f"Device with mac {msg.mac} already exists in config "
+                         "as id {id} . Not creating a new one.")
+            self.hardwareDevices[id].wasDiscovered = True
             return
         # If not this means it's a brand new device, create from scratch
         # Get a new device id
@@ -118,8 +143,6 @@ class HwManager(QObject):
             msg.sourceType == HardwareConnectionType.SLIPSERIAL else "",
             "numMotors": msg.numMotors
         }
-        logger.debug(f"esps.{newDeviceKey}")
-        logger.debug(newDeviceData)
         # Save new device to config
         config.set(f"esps.{newDeviceKey}", newDeviceData, True)
         # handle device "re"-creation through existing config change signal
@@ -154,6 +177,9 @@ class HwManager(QObject):
             self.hwOscDiscoveryTx.stop()
         if hasattr(self, "hwOscRx"):
             self.hwOscRx.close()
+
+        for device in self.hardwareDevices.values():
+            device.close()
 
 
 class HwOscDiscoveryTx(QObject):
@@ -252,9 +278,9 @@ class HwOscRxWorker(QObject):
 
     @QSlot()
     def startOscServer(self) -> None:
-        logger.info(
+        logger.debug(
             f"startOsc pid     ={threadAsStr(QThread.currentThread())}")
-        logger.info(
+        logger.debug(
             f"startOsc pid_self={threadAsStr(self.thread())}")
         logger.info(f"starting osc server on port 8872")
         try:
@@ -262,7 +288,7 @@ class HwOscRxWorker(QObject):
             self._oscRx.serve_forever()
         except Exception as E:
             logger.exception(E)
-        logger.info("startOsc done, cleaning up...")
+        logger.debug("startOsc done, cleaning up...")
         self._oscRx.socket.close()
         del self._oscRx  # dereferene so the gc can pick it up
 

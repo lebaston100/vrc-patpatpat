@@ -191,6 +191,7 @@ class GlobalConfigSingleton(QObject):
             signal (pyqtBoundSignal): Signal to emit when a change is detected.
         """
         self._configPathChangedSignals.update({pathPattern: signal})
+        # FIXME: This will not work for multiple subscriptions to the same pattern
         logger.debug(self._configPathChangedSignals)
 
     def deleteChangeSignal(self, pathPattern: str) -> None:
