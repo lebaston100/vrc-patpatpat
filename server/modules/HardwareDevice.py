@@ -16,13 +16,15 @@ logger = LoggerClass.getSubLogger(__name__)
 class HardwareDevice(QObject):
     """Represents a physical Hardware Device/ESP."""
 
-    frontendDataChanged = QSignal()
-    motorDataSent = QSignal()  # Not sure about this yet
+    uiBatteryStateChanged = QSignal(int)
+    uiRssiStateChanged = QSignal(int)
     deviceConnectionChanged = QSignal(bool)
+    # motorDataSent = QSignal()  # Not sure about this yet
 
     def __init__(self, key: str) -> None:
         super().__init__()
         self._configKey = f"esps.{key}"
+        self.wasDiscovered = False
 
         # Heartbeat checker
         self.currentConnectionState: bool = False
@@ -79,6 +81,8 @@ class HardwareDevice(QObject):
                          f"{self._lastIp} to {msg.sourceAddr}")
             config.set(f"{self._configKey}.lastIp", msg.sourceAddr, True)
             return
+        self.uiBatteryStateChanged.emit(msg.vccBat)
+        self.uiRssiStateChanged.emit(msg.rssi)
         self.updateConnectionStatus()
 
     @QSlot()
@@ -105,7 +109,7 @@ class HardwareDevice(QObject):
 
     def close(self) -> None:
         """Closes everything we own and care for."""
-        logger.debug(f"Stopping {__class__.__name__}")
+        logger.debug(f"Stopping {__class__.__name__}({self._id})")
         if hasattr(self, "_heartbeatTimer") and self._heartbeatTimer.isActive():
             self._heartbeatTimer.stop()
         if hasattr(self, "hardwareCommunicationAdapter"):
