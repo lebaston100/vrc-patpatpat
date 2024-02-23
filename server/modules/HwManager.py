@@ -3,20 +3,18 @@ including discovery
 """
 
 import socket
-from typing import TYPE_CHECKING, TypeVar
 
 from PyQt6.QtCore import QObject, QThread, QTimer
 from PyQt6.QtCore import pyqtSignal as QSignal
 from PyQt6.QtCore import pyqtSlot as QSlot
 from pythonosc.dispatcher import Dispatcher
-from pythonosc.osc_message_builder import ArgValue
 from pythonosc.osc_server import BlockingOSCUDPServer
 from pythonosc.udp_client import SimpleUDPClient
 
 from modules import config
-from modules.OscMessageTypes import DiscoveryResponseMessage, HeartbeatMessage
 from modules.HardwareDevice import HardwareDevice
-from utils import LoggerClass, threadAsStr, HardwareConnectionType
+from modules.OscMessageTypes import DiscoveryResponseMessage, HeartbeatMessage
+from utils import HardwareConnectionType, LoggerClass, threadAsStr
 
 logger = LoggerClass.getSubLogger(__name__)
 
@@ -58,7 +56,8 @@ class HwManager(QObject):
             channelId (int, optional): The destined esp's channel. Defaults to 0.
             value (float | int, optional): The value to write. Defaults to 0.
         """
-        if hwId in self.hardwareDevices:
+        if hwId in self.hardwareDevices \
+                and channelId in self.hardwareDevices[hwId].pinStates:
             self.hardwareDevices[hwId].pinStates[channelId] = value
         else:
             raise RuntimeWarning("Specified HardwareDevice does not exist")
@@ -124,7 +123,7 @@ class HwManager(QObject):
         # Check if device already exists and return if it does so
         if (id := self._checkDeviceExistance(msg.mac)) is not None:
             logger.debug(f"Device with mac {msg.mac} already exists in config "
-                         "as id {id} . Not creating a new one.")
+                         f"as id {id} . Not creating a new one.")
             self.hardwareDevices[id].wasDiscovered = True
             return
         # If not this means it's a brand new device, create from scratch

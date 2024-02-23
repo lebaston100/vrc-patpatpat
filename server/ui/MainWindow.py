@@ -4,20 +4,19 @@
 import webbrowser
 from functools import partial
 
-from PyQt6.QtCore import QObject, QSize, Qt
+from PyQt6.QtCore import QSize, Qt
+from PyQt6.QtCore import pyqtSignal as QSignal
+from PyQt6.QtCore import pyqtSlot as QSlot
 from PyQt6.QtGui import QCloseEvent, QFont
 from PyQt6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMainWindow,
                              QPushButton, QScrollArea, QSizePolicy, QSlider,
                              QSpacerItem, QSplitter, QVBoxLayout, QWidget)
 
 import ui
-from modules import config, ServerSingleton, HardwareDevice
+from modules import HardwareDevice, ServerSingleton, config
 from ui import EspSettingsDialog
 from utils import LoggerClass
-from PyQt6.QtCore import pyqtSlot as QSlot
-from PyQt6.QtCore import pyqtSignal as QSignal
-
-from utils.Enums import HardwareConnectionType
+from utils import HardwareConnectionType
 
 logger = LoggerClass.getSubLogger(__name__)
 
@@ -201,12 +200,21 @@ class MainWindow(QMainWindow):
         self._handleHwListChange(self.server.hwManager.hardwareDevices)
 
     def _handleHwListChange(self, devices: dict[int, HardwareDevice]) -> None:
+        """Handle changed to the servers hardware list.
+        This could be a new device beeing added or
+        an existing one re-created.
+
+        Args:
+            devices (dict[int, HardwareDevice]): The hardwareDevices dict.
+        """
         for id, device in devices.items():
             newRow = HardwareEspRow(device._configKey,
+                                    self.server.hwManager.hardwareDevices[id],
                                     self.hardwareScrollAreaWidgetContent)
             device.uiBatteryStateChanged.connect(newRow.lb_espBat.setNum)
             device.uiRssiStateChanged.connect(newRow.lb_espRssi.setNum)
             device.deviceConnectionChanged.connect(newRow.lb_espCon.setState)
+            # newRow.widgetExpanded.connect(self._triggerSplitterResize)
             if id in self._hwRows.keys():
                 # Row already exists, re-create
                 oldRow = self._hwRows[id]
@@ -217,6 +225,10 @@ class MainWindow(QMainWindow):
                 # It's a new row, append it
                 self.hardwareScrollAreaWidgetContentLayout.addWidget(newRow)
             self._hwRows[id] = newRow
+        self._triggerSplitterResize()
+
+    @QSlot()
+    def _triggerSplitterResize(self):
         sizes = [0] * len(self.splitter.children())
         sizes[1] = self.hardwareScrollArea.sizeHint().height()
         self.splitter.setSizes(sizes)
@@ -238,9 +250,9 @@ class MainWindow(QMainWindow):
 
 class BaseRow(QFrame):
     """The base for hardware and group rows with an expandable row."""
+    widgetExpanded = QSignal()
 
     def __init__(self, parent: QWidget | None) -> None:
-        # logger.debug(f"Creating {__class__.__name__}")
         super().__init__(parent)
 
         self.expandingWidget = None
@@ -263,8 +275,9 @@ class BaseRow(QFrame):
     def createExpandingWidget(self, instance) -> None:
         self.expandingWidget = instance
         self.selfLayout.addWidget(instance)
+        self.widgetExpanded.emit()
 
-    def deleteExpandingWidget(self) -> None:
+    def _deleteExpandingWidget(self) -> None:
         if self.expandingWidget:
             self.selfLayout.removeWidget(self.expandingWidget)
             self.expandingWidget.close()
@@ -275,7 +288,6 @@ class ExpandedWidgetDataRowBase(QHBoxLayout):
     """ The base for the expanding widgets """
 
     def __init__(self, *args, **kwargs) -> None:
-        # logger.debug(f"Creating {__class__.__name__}")
         super().__init__()
 
         self.buildCommonUi()
@@ -294,17 +306,17 @@ class ExpandedWidgetDataRowBase(QHBoxLayout):
 class HardwareEspRow(BaseRow):
     """A independent hardware row inside the scroll area."""
 
-    def __init__(self, configKey: str, parent: QWidget | None) -> None:
-        # logger.debug(f"Creating {__class__.__name__}")
+    def __init__(self, configKey: str, deviceRef: HardwareDevice,
+                 parent: QWidget | None) -> None:
         super().__init__(parent)
         self._hwSettingsWindow: QWidget | None = None
         self._configKey = configKey
+        self._deviceRef = deviceRef
 
         self._updateStaticText()
 
     def buildUi(self) -> None:
         self.hl_espTopRow = QHBoxLayout()
-        # self.hl_espTopRow.setSizeConstraint(QLayout.SetMinimumSize)
 
         # all size policys that we need
         sizePolicy_FixedMaximum = QSizePolicy(
@@ -332,13 +344,13 @@ class HardwareEspRow(BaseRow):
         self.hl_espTopRow.addWidget(self.lb_espIdMac)
 
         # the esp wifi rssi label
-        self.lb_espRssi = ui.StaticLabel("Wifi: ", "", " dbm", self)
+        self.lb_espRssi = ui.StaticLabel("Wifi: ", "-", " dbm", self)
         self.lb_espRssi.setSizePolicy(sizePolicy_PreferredMaximum)
         self.lb_espRssi.setFont(font10)
         self.hl_espTopRow.addWidget(self.lb_espRssi)
 
         # the esp battery level label
-        self.lb_espBat = ui.StaticLabel("Battery: ", "", " V", self)
+        self.lb_espBat = ui.StaticLabel("Battery: ", "- ", " V", self)
         self.lb_espBat.setSizePolicy(sizePolicy_PreferredMaximum)
         self.lb_espBat.setFont(font10)
         self.hl_espTopRow.addWidget(self.lb_espBat)
@@ -354,9 +366,8 @@ class HardwareEspRow(BaseRow):
         self.bt_espExpand.setMaximumWidth(40)
         self.bt_espExpand.setFont(font11)
         self.bt_espExpand.setToolTip("Expand")
-        self.bt_espExpand.toggledOn.connect(
-            lambda: self.createExpandingWidget(EspMoreInfoWidget(self)))
-        self.bt_espExpand.toggledOff.connect(self.deleteExpandingWidget)
+        self.bt_espExpand.toggledOn.connect(self._openExpandingWidget)
+        self.bt_espExpand.toggledOff.connect(self._deleteExpandingWidget)
         self.hl_espTopRow.addWidget(self.bt_espExpand)
 
         # button to open the esp settings dialog
@@ -394,13 +405,19 @@ class HardwareEspRow(BaseRow):
             config.get(f"{self._configKey}.serialPort")
         self.lb_espIdMac.setText(f"{id} '{name}' ({mac}/{connAddr})")
 
+    def _openExpandingWidget(self) -> None:
+        """Create the expanding widget and initialize it.
+        """
+        widget = EspMoreInfoWidget(self)
+        widget.connect(self._deviceRef)
+        self.createExpandingWidget(widget)
+
 
 class EspMoreInfoWidget(QWidget):
     def __init__(self, *args, **kwargs) -> None:
         """Initialize EspMoreInfoWidget."""
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
-
         self.buildUi()
 
     def buildUi(self) -> None:
@@ -419,13 +436,6 @@ class EspMoreInfoWidget(QWidget):
         self.lb_motorsRow = ui.StaticLabel("Motors: ", "", "", self)
         self.selfLayout.addWidget(self.lb_motorsRow)
 
-        # TODO: this will later be dynamic, just for testing now
-        self.rows = []
-        for id in range(5):
-            row = HardwareMotorChannelRow(id)
-            self.selfLayout.addLayout(row)
-            self.rows.append(row)
-
         # a horizontal row for the buttons
         self.bottomButtonRow = QHBoxLayout()
         # the stop app button
@@ -436,6 +446,33 @@ class EspMoreInfoWidget(QWidget):
             self.bt_stopAllMotors, 0, Qt.AlignmentFlag.AlignLeft)
 
         self.selfLayout.addLayout(self.bottomButtonRow)
+
+    def connect(self, device: HardwareDevice) -> None:
+        """Connect device with expanded row.
+
+        Args:
+            device (HardwareDevice): The device reference
+        """
+        self.rows: list[HardwareMotorChannelRow] = []
+        for channelId in range(device._numMotors):
+            row = HardwareMotorChannelRow(channelId)
+            row.sliderValueChanged.connect(device.setAndSendPinValues)
+            self.selfLayout.addLayout(row)
+            self.rows.append(row)
+        device.motorDataSent.connect(self._handleMotorData)
+        self.bt_stopAllMotors.clicked.connect(device.resetAllPinStates)
+
+    def _handleMotorData(self, values: list[int]) -> None:
+        """Writes the list of PWM values into the slider rows.
+
+        Args:
+            values (list): The list of PWM values.
+        """
+        try:
+            for i, row in enumerate(self.rows):
+                row.updateValue(values[i])
+        except IndexError:
+            pass
 
     # handle the close event
     def closeEvent(self, event: QCloseEvent) -> None:
@@ -448,9 +485,11 @@ class EspMoreInfoWidget(QWidget):
 
 
 class HardwareMotorChannelRow(ExpandedWidgetDataRowBase):
+    sliderValueChanged = QSignal(int, int)
+
     def __init__(self, rowId: int, *args, **kwargs) -> None:
         """Initialize HardwareMotorChannelRow."""
-        logger.debug(f"Creating {__class__.__name__}")
+        # logger.debug(f"Creating {__class__.__name__}")
         self.rowId = rowId
         self.sliderLocked = False
         super().__init__(*args, **kwargs)
@@ -475,6 +514,8 @@ class HardwareMotorChannelRow(ExpandedWidgetDataRowBase):
         # enable slider locking while mouse has it grabbed
         self.hsld_motorVal.sliderPressed.connect(self._lockSlider)
         self.hsld_motorVal.sliderReleased.connect(self._unlockSlider)
+        # connect slider value event
+        self.hsld_motorVal.valueChanged.connect(self._sliderValueChanged)
 
     # handle the close event
     def closeEvent(self, event: QCloseEvent) -> None:
@@ -493,9 +534,28 @@ class HardwareMotorChannelRow(ExpandedWidgetDataRowBase):
         logger.debug("Slider unlocked")
         self.sliderLocked = False
 
+    @QSlot(int)
+    def _sliderValueChanged(self, value: int) -> None:
+        """Add the channelId to the slider value change event.
+
+        Args:
+            value (int): The sliders PWM value.
+        """
+        if self.sliderLocked:
+            self.sliderValueChanged.emit(self.rowId, value)
+
     def updateValue(self, value: int) -> None:
+        """Sets the slider and it's label to a new value.
+        Slider value is only set when slider is not currently grabbed.
+        Slider range is automatically extended.
+
+        Args:
+            value (int): The new PWM value to set the slider to.
+        """
         self.lb_motorVal.setNum(value)
         if not self.sliderLocked:
+            if value > self.hsld_motorVal.maximum():
+                self.hsld_motorVal.setMaximum(value)
             self.hsld_motorVal.setValue(value)
 
 
@@ -539,7 +599,7 @@ class ContactGroupRow(BaseRow):
         self.bt_groupExpand.toggledOn.connect(
             lambda: self.createExpandingWidget(ContactGroupPointsWidget(self)))
         self.bt_groupExpand.toggledOff.connect(
-            self.deleteExpandingWidget)
+            self._deleteExpandingWidget)
         self.hl_groupTopRow.addWidget(self.bt_groupExpand)
 
         # the open visualizer button

@@ -19,7 +19,7 @@ class HardwareDevice(QObject):
     uiBatteryStateChanged = QSignal(int)
     uiRssiStateChanged = QSignal(int)
     deviceConnectionChanged = QSignal(bool)
-    # motorDataSent = QSignal()  # Not sure about this yet
+    motorDataSent = QSignal(list)
 
     def __init__(self, key: str) -> None:
         super().__init__()
@@ -60,10 +60,28 @@ class HardwareDevice(QObject):
         self._serialPort: str = config.get(f"{self._configKey}.serialPort", "")
         self._numMotors: int = config.get(f"{self._configKey}.numMotors", 0)
 
+    @QSlot()
+    def resetAllPinStates(self) -> None:
+        """Set all channels to 0 and send update to hardware."""
+        self.pinStates = {i: 0 for i in range(self._numMotors)}
+        self.sendPinValues()
+
+    @QSlot(int, int)
+    def setAndSendPinValues(self, channelId: int, value: int) -> None:
+        """Set a channel to a value and send update to hardware.
+
+        Args:
+            channelId (int): The channel to set the value for
+            value (int): The new PWM value
+        """
+        self.pinStates[channelId] = value
+        self.sendPinValues()
+
     def sendPinValues(self) -> None:
-        """Create and send current self.pinStates to hardare."""
-        self.hardwareCommunicationAdapter.sendPinValues(
-            list(self.pinStates.values())[:self._numMotors-1])
+        """Create and send current self.pinStates to hardware."""
+        motorData = list(self.pinStates.values())[:self._numMotors]
+        self.hardwareCommunicationAdapter.sendPinValues(motorData)
+        self.motorDataSent.emit(motorData)
 
     def processHeartbeat(self, msg: HeartbeatMessage) -> None:
         """Process an incoming heartbeat message from the comms interface.
@@ -88,12 +106,12 @@ class HardwareDevice(QObject):
     @QSlot()
     def updateConnectionStatus(self) -> None:
         """Recalculate the hardware connection status."""
+        # NOTE: This might need some rework some time
         if not self._lastHeartbeat:
             return
         # logger.debug(datetime.now())
         # logger.debug(self._lastHeartbeat.ts.second)
         # logger.debug((datetime.now() - self._lastHeartbeat.ts).total_seconds())
-        # NOTE: connect straight to StatefulLabel.setState in UI
         if not self.currentConnectionState and \
                 (datetime.now() - self._lastHeartbeat.ts).total_seconds() <= 6:
             self.currentConnectionState = True
@@ -114,6 +132,12 @@ class HardwareDevice(QObject):
             self._heartbeatTimer.stop()
         if hasattr(self, "hardwareCommunicationAdapter"):
             self.hardwareCommunicationAdapter.close()
+
+    def __repr__(self) -> str:
+        return f"{__class__.__name__}(id={self._id}, name='{self._name}', " \
+            f"connectionType='{self._connectionType}', " \
+            f"ip='{self._lastIp}', mac='{self._wifiMac}' "\
+            f"serialPort='{self._serialPort}', numMotors={self._numMotors})"
 
 
 class IHardwareCommunicationAdapter():
