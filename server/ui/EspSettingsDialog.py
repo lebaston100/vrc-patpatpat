@@ -41,6 +41,7 @@ class EspSettingsDialog(QWidget, OptionAdapter):
         # ID
         self.sb_espId = QSpinBox(self)
         self.sb_espId.setObjectName("sb_espId")
+        self.sb_espId.setEnabled(False)
         self.addOpt("id", self.sb_espId, int)
 
         self.selfLayout.addRow("ID:", self.sb_espId)
