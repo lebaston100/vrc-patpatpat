@@ -60,18 +60,18 @@ class VrcConnectionWorker(QObject):
 
     @QSlot()
     def startOscServer(self) -> None:
-        logger.info(
+        logger.debug(
             f"startOsc pid     ={threadAsStr(QThread.currentThread())}")
-        logger.info(
+        logger.debug(
             f"startOsc pid_self={threadAsStr(self.thread())}")
-        logger.info(f"starting osc server on port {str(self._oscRxPort)}")
+        logger.debug(f"starting osc server on port {str(self._oscRxPort)}")
         try:
             self._oscRx = BlockingOSCUDPServer(
                 ("", self._oscRxPort), self.dispatcher)
             self._oscRx.serve_forever()
         except Exception as E:
             logger.exception(E)
-        logger.info("startOsc done, cleaning up...")
+        logger.debug("startOsc done, cleaning up...")
         self._oscRx.socket.close()
         del self._oscRx  # dereferene so the gc can pick it up
 
@@ -183,9 +183,10 @@ class VrcConnectorImpl(IVrcConnector, QObject):
         if relativePath in self.worker.dispatcher.matchTopics:
             self.worker.dispatcher.matchTopics.remove(relativePath)
 
-    def _oscGeneralConfigChanged(self, root) -> None:
-        self.worker.loadSettings(self.config)
-        self.restart()
+    def _oscGeneralConfigChanged(self, root: str) -> None:
+        if root.startswith("program."):
+            self.worker.loadSettings(self.config)
+            self.restart()
 
 
 """
