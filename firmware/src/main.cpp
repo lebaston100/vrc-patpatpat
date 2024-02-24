@@ -193,6 +193,7 @@ void handle_osc_motors(OSCMessage &msg) {
             Serial.print(",");
         #endif
     }
+    hasConnection = true;
     // Enable the onbord led
     digitalWrite(INTERNAL_LED, LEDON);
     #if DEBUG
@@ -269,7 +270,6 @@ void loop() {
             // Handle osc message
             msg.dispatch("/m", handle_osc_motors);
             msg.dispatch("/patpatpat/discover", handle_osc_discover);
-            hasConnection = true;
         }
 
     }
