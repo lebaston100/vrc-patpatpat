@@ -22,7 +22,7 @@ class HeartbeatMessage:
 
     mac: str = "00:00:00:00:00:00"
     uptime: int = 0
-    vccBat: int = 0
+    vccBat: float = 0
     rssi: int = 0
     sourceAddr: str = ""
     ts: datetime = field(default_factory=datetime.now)

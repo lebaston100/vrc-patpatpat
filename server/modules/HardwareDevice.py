@@ -16,7 +16,7 @@ logger = LoggerClass.getSubLogger(__name__)
 class HardwareDevice(QObject):
     """Represents a physical Hardware Device/ESP."""
 
-    uiBatteryStateChanged = QSignal(int)
+    uiBatteryStateChanged = QSignal(float)
     uiRssiStateChanged = QSignal(int)
     deviceConnectionChanged = QSignal(bool)
     motorDataSent = QSignal(list)
@@ -33,7 +33,7 @@ class HardwareDevice(QObject):
         self._heartbeatTimer.timeout.connect(self.updateConnectionStatus)
         self._heartbeatTimer.start(9000)
 
-        self.loadSettingsFromConfig()
+        self._loadSettingsFromConfig()
         self.pinStates: dict[int, int | float] = {
             i: 0 for i in range(self._numMotors)}
         hardwareCommunicationAdapterClass = \
@@ -49,7 +49,7 @@ class HardwareDevice(QObject):
         self.hardwareCommunicationAdapter.heartbeat.connect(
             self.processHeartbeat)
 
-    def loadSettingsFromConfig(self) -> None:
+    def _loadSettingsFromConfig(self) -> None:
         """Load settings from settings file into object."""
         self._id: int = config.get(f"{self._configKey}.id")
         self._name: str = config.get(f"{self._configKey}.name", "")

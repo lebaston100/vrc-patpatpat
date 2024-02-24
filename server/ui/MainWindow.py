@@ -94,8 +94,6 @@ class MainWindow(QMainWindow):
 
         self.selfLayout.addLayout(self.hl_topBar)
 
-        # the esp row
-
         # the hardware scroll area
         self.hardwareScrollArea = self.createScrollArea()
 
@@ -211,7 +209,7 @@ class MainWindow(QMainWindow):
             newRow = HardwareEspRow(device._configKey,
                                     self.server.hwManager.hardwareDevices[id],
                                     self.hardwareScrollAreaWidgetContent)
-            device.uiBatteryStateChanged.connect(newRow.lb_espBat.setNum)
+            device.uiBatteryStateChanged.connect(newRow.lb_espBat.setFloat)
             device.uiRssiStateChanged.connect(newRow.lb_espRssi.setNum)
             device.deviceConnectionChanged.connect(newRow.lb_espCon.setState)
             # newRow.widgetExpanded.connect(self._triggerSplitterResize)
