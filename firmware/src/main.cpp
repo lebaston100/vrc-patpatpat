@@ -8,6 +8,10 @@
     #define LEDOFF HIGH
 #endif
 
+#ifdef ARDUINO_ARCH_ESP8266
+    ADC_MODE(ADC_VCC);
+#endif
+
 // S2 Mini
 #ifdef TARGET_S2_MINI
     #include <WiFi.h>
@@ -75,9 +79,6 @@ void setup() {
     pinMode(INTERNAL_LED, OUTPUT);
 
     // Set adc mode for each build target
-    #ifdef ARDUINO_ARCH_ESP8266
-        ADC_MODE(ADC_VCC);
-    #endif
     #ifdef TARGET_S2_MINI
         pinMode(S2BATTERYPIN, INPUT);
     #endif
@@ -122,23 +123,22 @@ void setup() {
 
     // Setup OTA
     ArduinoOTA.setPassword("taptaptap");
-    ArduinoOTA
-        .onStart([]() {
+    ArduinoOTA.onStart([]() {
             String type;
             if (ArduinoOTA.getCommand() == U_FLASH)
                 type = "sketch";
             else // U_SPIFFS
                 type = "filesystem";
 
-            Serial.println("Start OTA updating " + type);
-        })
-        .onEnd([]() {
+            Serial.println("Start OTA updating" + type);
+        });
+    ArduinoOTA.onEnd([]() {
             Serial.println("\nEnd");
-        })
-        .onProgress([](unsigned int progress, unsigned int total) {
+        });
+    ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
             Serial.printf("OTA Progress: %u%%\r", (progress / (total / 100)));
-        })
-        .onError([](ota_error_t error) {
+        });
+    ArduinoOTA.onError([](ota_error_t error) {
             Serial.printf("Error[%u]: ", error);
             if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
             else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
@@ -150,6 +150,33 @@ void setup() {
 
     // Start the udp socket
     Udp.begin(OSC_IN_PORT);
+}
+
+void sendHeartbeat() {
+    // Create heartbeat message
+    OSCMessage heartbeatMessage("/patpatpat/heartbeat");
+    heartbeatMessage.add(WiFi.macAddress().c_str());
+    heartbeatMessage.add((int)millis()/1000);
+
+    // This will be replaced with reading the external battery voltage later
+    #ifdef ARDUINO_ARCH_ESP8266
+        heartbeatMessage.add((float)ESP.getVcc()/1000);
+    #else
+        heartbeatMessage.add((float)analogReadMilliVolts(S2BATTERYPIN)/1000);
+    #endif
+
+    heartbeatMessage.add(WiFi.RSSI());
+    Udp.beginPacket(Udp.remoteIP(), remotePort);
+    heartbeatMessage.send(Udp);
+    Udp.endPacket();
+    heartbeatMessage.empty();
+
+    #if DEBUG
+    Serial.print("Sent heartbeat. Delta @ ");
+    Serial.println(millis() - lastHeartbeatSent);
+    #endif
+
+    lastHeartbeatSent = millis();
 }
 
 void handle_osc_motors(OSCMessage &msg) {
@@ -175,9 +202,11 @@ void handle_osc_motors(OSCMessage &msg) {
 
 void handle_osc_discover(OSCMessage &msg) {
     // If connection was established once, do not send reply
-    if (remotePort > 0) return;
+    if (hasConnection) return;
 
     Serial.println(F("Discovery request received while not connected"));
+    Serial.println(Udp.remoteIP());
+    Serial.println(Udp.remotePort());
 
     // Save the remote port for use later
     remotePort = Udp.remotePort() + 1;
@@ -198,8 +227,10 @@ void handle_osc_discover(OSCMessage &msg) {
 
     // Blink LED once
     digitalWrite(INTERNAL_LED, LEDON);
-    delay(200);
+    delay(300);
     digitalWrite(INTERNAL_LED, LEDOFF);
+
+    sendHeartbeat();
 }
 
 void handleOTA() {
@@ -245,30 +276,7 @@ void loop() {
 
     // Handle heartbeat sending if connection is active and 4 seconds since the last one have passed
     if (hasConnection && millis()-lastHeartbeatSent >= 3997) {
-        // Create heartbeat message
-        OSCMessage heartbeatMessage("/patpatpat/heartbeat");
-        heartbeatMessage.add(WiFi.macAddress().c_str());
-        heartbeatMessage.add((int)millis()/1000);
-
-        // This will be replaced with reading the external battery voltage later
-        #ifdef ARDUINO_ARCH_ESP8266
-            heartbeatMessage.add(ESP.getVcc());
-        #else
-            heartbeatMessage.add(analogRead(S2BATTERYPIN));
-        #endif
-
-        heartbeatMessage.add(WiFi.RSSI());
-        Udp.beginPacket(Udp.remoteIP(), remotePort);
-        heartbeatMessage.send(Udp);
-        Udp.endPacket();
-        heartbeatMessage.empty();
-
-        #if DEBUG
-        Serial.print("Sent heartbeat. Delta @ ");
-        Serial.println(millis() - lastHeartbeatSent);
-        #endif
-
-        lastHeartbeatSent = millis();
+        sendHeartbeat();
     }
 
     // Disable led and save state when we got no packets in the last 1000ms
