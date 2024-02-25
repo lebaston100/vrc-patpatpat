@@ -27,11 +27,11 @@ Server:
 - [x] Config file
 - [x] VRC comms
 - [x] Hardware discovery
-- [ ] Hardware comms
+- [x] Hardware comms
 - [ ] MLAT solver
 - [ ] Linear solver
+- [ ] Slipserial support (base is there, but no priority)
 - [ ] MQTT control support (maybe)
-- [ ] Slipserial support (maybe)
 
 Hardware:
 
