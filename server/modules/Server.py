@@ -37,6 +37,7 @@ class ServerSingleton(QObject):
 
         self.vrcOscConnector = VrcConnectorImpl(config)
         self.vrcOscConnector.connect()
+        # TODO: Connect this to ContactGroups instead
         self.vrcOscConnector.onVrcContact.connect(self._vrcOscDataReceived)
         # self.vrcOscConnector.addToFilter("pat_2")
 
@@ -53,7 +54,7 @@ class ServerSingleton(QObject):
 
         ServerSingleton.__instance = self
 
-    def _vrcOscDataReceived(self, client: tuple, addr: str, params: list) -> None:
+    def _vrcOscDataReceived(self, ts: float, addr: str, params: list) -> None:
         """Handle osc data coming from VRChat.
         We can distribute the contacts to the right signal here.
 
@@ -62,7 +63,7 @@ class ServerSingleton(QObject):
             addr (str): The osc path
             params (list): The parameter list depnding on the addr
         """
-        logger.info(f"osc from {str(client)}: addr={addr} msg={str(params)}")
+        logger.info(f"osc @ {ts}: addr={addr} msg={str(params)}")
 
     def stop(self) -> None:
         """Do everything needed to stop the server."""

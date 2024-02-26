@@ -1,4 +1,5 @@
 from datetime import datetime
+from time import time
 
 from PyQt6.QtCore import QObject, QThread, QTimer
 from PyQt6.QtCore import pyqtSignal as QSignal
@@ -18,7 +19,7 @@ logger = LoggerClass.getSubLogger(__name__)
 class IVrcConnector():
     """The interface for server <-> vrc communication."""
 
-    onVrcContact = QSignal(tuple, str, list)
+    onVrcContact = QSignal(float, str, list)
     onVrcConnectionStateChanged = QSignal(bool)
 
     def connect(self):
@@ -131,6 +132,7 @@ class VrcConnectorImpl(IVrcConnector, QObject):
     def _timerEvent(self) -> None:
         """Handle calculation of the connection to vrc based on if data
         is beeing received (with a timeout).
+        This is not used for the Contact Groups.
         """
         # TODO: This could be improved to trigger instantly when data comes in
         if not self.currentDataState and self._lastVrcMessage and \
@@ -231,21 +233,20 @@ class VrcOscDispatcher(Dispatcher):
 
         Args:
             data (bytes): The incoming OSC packet data.
-            client_address (tuple[str, int]): The client address.
         """
         try:
             packet = osc_packet.OscPacket(data)
             for msg in packet.messages:
-                if msg.message.address.startswith("/avatar/parameters/") \
+                if msg.message.address.startswith("/avatar/parameters/pat") \
                         and msg.message.address[19:] in self.matchTopics:
-                    pid = threadAsStr(QThread.currentThread())
+                    # pid = threadAsStr(QThread.currentThread())
                     # logger.debug(
-                    # f"pid={pid} incoming osc from {client_address}: "
+                    # f"pid={pid} incoming osc: "
                     # f"addr={msg.message.address} "
                     # f"msg={str(msg.message.params)}"
                     # )
                     self._connector.onVrcContact.emit(
-                        client_address,
+                        time(),
                         msg.message.address,
                         msg.message.params
                     )

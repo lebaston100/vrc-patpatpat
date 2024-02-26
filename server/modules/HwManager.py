@@ -83,7 +83,14 @@ class HwManager(QObject):
             self.hardwareDevices[device["id"]] = newDevice
         self.hwListChanged.emit(self.hardwareDevices)
 
+    @QSlot(str)
     def _handleConfigChange(self, key: str) -> None:
+        """Handle config change events.
+        (Re-)creates the HardwareDevice objects as needed
+
+        Args:
+            key (str): The key of the config parameter that was changed.
+        """
         if key.startswith("esps.esp"):
             keys = key.split(".")
             id = config.get(f"{".".join(keys[:2])}.id")
@@ -155,7 +162,7 @@ class HwManager(QObject):
         Returns:
             int | None: If mac is found in config, it's id, otherwise None
         """
-        hardwareDevices = config.get("esps")
+        hardwareDevices: dict = config.get("esps")
         return next((device["id"] for device in hardwareDevices.values()
                      if device["wifiMac"] == mac), None)
 
@@ -204,11 +211,11 @@ class HwOscDiscoveryTx(QObject):
         Args:
             interval: The interval in seconds. Default is 3.
         """
-        if interval:
-            self._interval = interval
+        self._interval = interval
         if self._timer.isActive():
             self.stop()
 
+        # We have no idea about the actual netmask, so 255... it is
         for interface in self._interfaces:
             client = SimpleUDPClient(
                 "255.255.255.255", 8888,
@@ -233,7 +240,6 @@ class HwOscDiscoveryTx(QObject):
         # logger.debug("Sending out discovery broadcasts")
         for client in self._sockets:
             client.send_message("/patpatpat/discover", [])
-        # logger.debug("Done sending out discovery broadcasts")
 
 
 class HwOscRxWorker(QObject):

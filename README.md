@@ -3,12 +3,11 @@
 <p align="center">
     <a href="//github.com/lebaston100/vrc-patpatpat/commits/refactor/" alt="Commits"><img alt="GitHub commit activity (branch)" src="https://img.shields.io/github/commit-activity/m/lebaston100/vrc-patpatpat/refactor"></a>
     <a href="//github.com/lebaston100/vrc-patpatpat/actions/workflows/test.yaml" alt="test"><img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/lebaston100/vrc-patpatpat/test.yaml?branch=refactor&label=test"></a>
-    <a href="#" alt="issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/lebaston100/vrc-patpatpat"></a>
     <a href="//github.com/lebaston100/vrc-patpatpat?tab=GPL-3.0-1-ov-file#readme" alt="licence"><img alt="GitHub License" src="https://img.shields.io/github/license/lebaston100/vrc-patpatpat"></a>
     <a href="#" alt="stars"><img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/lebaston100/vrc-patpatpat"></a>
 </p>
 
-An open hardware and software project which tries to implement spatial haptic head pat (but also more generic) feedback to the player in VRchat.
+An open hardware and software project which tries to implement spatial haptic head pat (but also more generic) feedback to the player in VRchat (Yes this works both in VR and on Desktop).
 
 ## This project is actively work in progress
  
