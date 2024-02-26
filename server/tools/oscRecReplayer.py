@@ -4,17 +4,73 @@
 # timing is not 100% accurate but good enough(TM) for testing purposes
 # recorded data is limited to 1 parameter per address
 
+import json
 import logging
-import time
 import threading
-from utils.FileHelper import FileHelper
-from pythonosc.osc_server import BlockingOSCUDPServer
-from pythonosc.dispatcher import Dispatcher
-from pythonosc.udp_client import SimpleUDPClient
+import time
 from argparse import ArgumentParser
-import sys
-import pathlib
-sys.path.append(pathlib.Path("../").resolve().as_posix())
+from pathlib import Path
+from typing import Any
+
+from pythonosc.dispatcher import Dispatcher
+from pythonosc.osc_server import BlockingOSCUDPServer
+from pythonosc.udp_client import SimpleUDPClient
+
+
+class FileHelper:
+    """A simple helper class to read and save json from files."""
+
+    def __init__(self, file: str, *args, **kwargs) -> None:
+        """Initialize the file helper class.
+
+        Args:
+            file (Path): A pathlib.Path object to the config file.
+        """
+        self._file = Path(file)
+
+    def write(self, data: dict) -> bool:
+        """Write all data into the configuration file.
+
+        Args:
+            data (dict): The data to write to the file.
+
+        Raises:
+            E (Exception): If there was an error writing the file.
+
+        Returns:
+            bool: True if the write was sucessful.
+        """
+        try:
+            with open(self._file, mode="w") as f:
+                json.dump(data, f, indent=4)
+            return True
+        except Exception as E:
+            raise E
+
+    def read(self) -> dict[str, Any]:
+        """Read all configration options from file.
+
+        Raises:
+            E (Exception): If there was an error while reading the file.
+
+        Returns:
+            dict: The data that was read from the file.
+        """
+        try:
+            with open(self._file, mode="r") as f:
+                return json.load(f)
+        except Exception as E:
+            raise E
+
+    def hasData(self) -> bool:
+        """Check if the file exists and can be read.
+
+        Returns:
+            bool: True if the file exists and can be read,
+                False otherwise.
+        """
+        return self._file.is_file() and bool(self.read())
+
 
 # Import and configure logging
 logging.basicConfig(level=logging.DEBUG)
