@@ -134,10 +134,8 @@ class HardwareDevice(QObject):
             self.hardwareCommunicationAdapter.close()
 
     def __repr__(self) -> str:
-        return f"{__class__.__name__}(id={self._id}, name='{self._name}', " \
-            f"connectionType='{self._connectionType}', " \
-            f"ip='{self._lastIp}', mac='{self._wifiMac}' "\
-            f"serialPort='{self._serialPort}', numMotors={self._numMotors})"
+        return __class__.__name__ + ";"\
+            .join([f"{key}={str(val)}" for key, val in self.__dict__.items()])
 
 
 class IHardwareCommunicationAdapter():
@@ -160,6 +158,10 @@ class IHardwareCommunicationAdapter():
     def close(self) -> None:
         """A generic close method to be reimplemented."""
         raise NotImplementedError
+
+    def __repr__(self) -> str:
+        return __class__.__name__ + ";"\
+            .join([f"{key}={str(val)}" for key, val in self.__dict__.items()])
 
 
 class OscCommunicationAdapterImpl(IHardwareCommunicationAdapter, QObject):

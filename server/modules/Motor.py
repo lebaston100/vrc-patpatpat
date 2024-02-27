@@ -18,7 +18,7 @@ class Motor(QObject):
         self._minPwm: int = settings["minPwm"]
         self._maxPwm: int = settings["maxPwm"]
         self._point = Sphere3D(self._name)
-        self._point.setXYZ(settings["xyz"])
+        self._point.xyz = settings["xyz"]
 
         self.currentPWM: int = 0
 
@@ -46,3 +46,7 @@ class Motor(QObject):
                                            and motorPwm > 0) else motorPwm
         self.speedChanged.emit(self._espAddr, self.currentPWM)
         return self.currentPWM
+
+    def __repr__(self) -> str:
+        return __class__.__name__ + ";"\
+            .join([f"{key}={str(val)}" for key, val in self.__dict__.items()])
