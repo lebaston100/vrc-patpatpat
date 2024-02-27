@@ -1,5 +1,6 @@
 from typing import Self, TypeVar
 
+from multilateration import Point
 from PyQt6.QtGui import QVector3D
 
 T = TypeVar('T', bound='Sphere3D')
@@ -29,12 +30,32 @@ class Sphere3D(QVector3D):
         self._radius = radius
         self._name = name
 
-    def setXYZ(self, xyz: list) -> Self:
+    @property
+    def point(self) -> Point:
+        """Returns a multilateration-compatible point.
+        Not sure if this of any use, but we can always remove it.
+
+        Returns:
+            Point: The multilateration.Point instance
+        """
+        return Point((self.x(), self.y(), self.z()))
+
+    @property
+    def xyz(self) -> tuple[float, ...]:
+        return (self.x(), self.y(), self.z())
+
+    @xyz.setter
+    def xyz(self, xyz: list) -> Self:
         self.setX(xyz[0])
         self.setY(xyz[1])
         self.setZ(xyz[2])
         return self
 
-    def setRadius(self, radius: float = 0.0) -> Self:
+    @property
+    def radius(self):
+        self._radius
+
+    @radius.setter
+    def radius(self, radius: float = 0.0) -> Self:
         self._radius = radius
         return self
