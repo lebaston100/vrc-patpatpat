@@ -22,7 +22,7 @@ class Motor(QObject):
 
         self.currentPWM: int = 0
 
-    def setSpeed(self, newSpeed: float) -> int:
+    def setSpeed(self, newSpeed: float) -> None:
         """Takes a normalized speed from 0-1 and converts it to the
         required pwm value.
 
@@ -33,9 +33,6 @@ class Motor(QObject):
 
         Args:
             newSpeed (float): The speed to set
-
-        Return:
-            int: The calculated PWM value
         """
         # little deadband in the middle, maybe not needed, not sure yet
         # distance = max(distance, 0.1)
@@ -44,8 +41,7 @@ class Motor(QObject):
         motorPwm = min(ceil(self._maxPwm * newSpeed), self._maxPwm)
         self.currentPWM = self._minPwm if (motorPwm < self._minPwm
                                            and motorPwm > 0) else motorPwm
-        self.speedChanged.emit(self._espAddr, self.currentPWM)
-        return self.currentPWM
+        self.speedChanged.emit(*self._espAddr, self.currentPWM)
 
     def __repr__(self) -> str:
         return __class__.__name__ + ";"\
