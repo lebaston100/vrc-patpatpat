@@ -52,7 +52,7 @@ class HwManager(QObject):
         """Write speed from motor into esp's state buffer
 
         Args:
-            espId (int, optional): The destined esp. Defaults to 0.
+            hwId (int, optional): The destined esp. Defaults to 0.
             channelId (int, optional): The destined esp's channel. Defaults to 0.
             value (float | int, optional): The value to write. Defaults to 0.
         """
@@ -60,19 +60,24 @@ class HwManager(QObject):
                 and channelId in self.hardwareDevices[hwId].pinStates:
             self.hardwareDevices[hwId].pinStates[channelId] = value
         else:
-            raise RuntimeWarning("Specified HardwareDevice does not exist")
+            logger.debug("Specified HardwareDevice does not exist")
 
-    def sendHwUpdate(self, hwId: int = 0) -> None:
+    def sendHwUpdateForId(self, hwId: int = 0) -> None:
         """Triggers a sendPinValues() on the destined Hardware.
 
         Args:
-            espId (int, optional): Id of the destined HardwareDevice.
+            hwId (int): Id of the destined HardwareDevice.
                 Defaults to 0.
         """
         if hwId in self.hardwareDevices:
             self.hardwareDevices[hwId].sendPinValues()
         else:
-            raise RuntimeWarning("Specified HardwareDevice does not exist")
+            logger.debug("Specified HardwareDevice does not exist")
+
+    def sendHwUpdate(self) -> None:
+        """Triggers a sendPinValues() on all hardware."""
+        for device in self.hardwareDevices.values():
+            device.sendPinValues()
 
     def createAllHardwareDevicesFromConfig(self) -> None:
         """Creates all HardwareDevice objects from the config file."""
