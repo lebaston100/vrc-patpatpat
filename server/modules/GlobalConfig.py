@@ -254,7 +254,7 @@ class GlobalConfigSingleton(QObject):
 
 # any work to find out what the config would need to be done here
 # this is a globally available class INSTANCE, not the class itself
-config = GlobalConfigSingleton.fromFile("prototype-config.conf")
+config = GlobalConfigSingleton.fromFile("config.conf")
 
 if __name__ == "__main__":
     print("There is no point running this file directly")
