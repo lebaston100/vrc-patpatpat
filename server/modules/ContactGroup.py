@@ -65,11 +65,9 @@ class ContactGroup(QObject):
             newAvatarPoint = AvatarPointSphere(avatarPoint)
             self.avatarPoints.append(newAvatarPoint)
             self.avatarPointAdded.emit(newAvatarPoint)
-    
+
     def _setupSolver(self) -> None:
         pass
-
-    def _
 
     def close(self) -> None:
         """Closes everything we own and care for."""
