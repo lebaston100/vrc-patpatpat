@@ -79,6 +79,7 @@ class HardwareDevice(QObject):
 
     def sendPinValues(self) -> None:
         """Create and send current self.pinStates to hardware."""
+        # logger.debug(f"Sending all pin values for {self._name}")
         motorData = list(self.pinStates.values())[:self._numMotors]
         self.hardwareCommunicationAdapter.sendPinValues(motorData)
         self.motorDataSent.emit(motorData)
@@ -134,7 +135,7 @@ class HardwareDevice(QObject):
             self.hardwareCommunicationAdapter.close()
 
     def __repr__(self) -> str:
-        return __class__.__name__ + ";"\
+        return __class__.__name__ + ":" + ";"\
             .join([f"{key}={str(val)}" for key, val in self.__dict__.items()])
 
 
@@ -160,7 +161,7 @@ class IHardwareCommunicationAdapter():
         raise NotImplementedError
 
     def __repr__(self) -> str:
-        return __class__.__name__ + ";"\
+        return __class__.__name__ + ":" + ";"\
             .join([f"{key}={str(val)}" for key, val in self.__dict__.items()])
 
 

@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMainWindow,
                              QSpacerItem, QSplitter, QVBoxLayout, QWidget)
 
 import ui
-from modules import HardwareDevice, ServerSingleton, config
+from modules import HardwareDevice, ContactGroup, ServerSingleton, config
 from ui import EspSettingsDialog, ContactGroupSettings
 from utils import LoggerClass
 from utils import HardwareConnectionType
@@ -28,12 +28,17 @@ class MainWindow(QMainWindow):
 
         self._singleWindows: dict[str, QWidget] = {}
         self._hwRows: dict[int, QWidget] = {}
+        self._cgRows: dict[int, QWidget] = {}
 
         self.setupUi()
         self.server = ServerSingleton.getInstance()
         self.server.hwManager.hwListChanged.connect(
             self._handleHwListChange)
+        self.server.contactGroupManager.contactGroupListChanged.connect(
+            self._handleCgListChange
+        )
         self._pollHwList()
+        self._pollCgList()
 
     def setupUi(self) -> None:
         """Initialize the main UI."""
@@ -134,16 +139,6 @@ class MainWindow(QMainWindow):
         self.contactGroupScrollAreaWidgetContentLayout.setContentsMargins(
             0, 0, 0, 0)
 
-        # TODO: dynamically add rows
-        self.testContactGroupInstance1 = ContactGroupRow("0",
-                                                         self.contactGroupScrollAreaWidgetContent)
-        self.testContactGroupInstance2 = ContactGroupRow("0",
-                                                         self.contactGroupScrollAreaWidgetContent)
-        self.contactGroupScrollAreaWidgetContentLayout.addWidget(
-            self.testContactGroupInstance1)
-        self.contactGroupScrollAreaWidgetContentLayout.addWidget(
-            self.testContactGroupInstance2)
-
         # set hardware scroll areas only widget to our scrollarea content widget
         self.contactGroupScrollArea.setWidget(
             self.contactGroupScrollAreaWidgetContent)
@@ -193,11 +188,11 @@ class MainWindow(QMainWindow):
         logger.debug(self._singleWindows)
 
     def _pollHwList(self) -> None:
-        """Trigger initial device row loading after startup"""
+        """Trigger initial HardwareDevice row loading after startup"""
         self._handleHwListChange(self.server.hwManager.hardwareDevices)
 
     def _handleHwListChange(self, devices: dict[int, HardwareDevice]) -> None:
-        """Handle changed to the servers hardware list.
+        """Handle changes to the servers hardware list.
         This could be a new device beeing added or
         an existing one re-created.
 
@@ -224,6 +219,38 @@ class MainWindow(QMainWindow):
             self._hwRows[id] = newRow
         self._triggerSplitterResize()
 
+    def _pollCgList(self) -> None:
+        """Trigger initial ContactGroup row loading after startup"""
+        self._handleCgListChange(self.server.contactGroupManager.contactGroups)
+
+    def _handleCgListChange(self, groups: dict[int, ContactGroup]) -> None:
+        """Handle changes to the ContactGroup list
+
+        Args:
+            groups (list[ContactGroup]): The list of ContactGroups
+        """
+        for id, group in groups.items():
+            newRow = ContactGroupRow(group._configKey,
+                                     self.server.contactGroupManager.contactGroups[id],
+                                     self.contactGroupScrollAreaWidgetContent)
+            group.dataRxStateChanged.connect(
+                newRow.lb_groupHasIncomingData.setState)
+            newRow.hsld_strength.valueChanged.connect(
+                group.strengthSliderValueChanged)
+            # newRow.widgetExpanded.connect(self._triggerSplitterResize)
+            if id in self._cgRows.keys():
+                # Row already exists, re-create
+                oldRow = self._cgRows[id]
+                self.contactGroupScrollAreaWidgetContentLayout.replaceWidget(
+                    oldRow, newRow)
+                oldRow.deleteLater()
+            else:
+                # It's a new row, append it
+                self.contactGroupScrollAreaWidgetContentLayout.addWidget(
+                    newRow)
+            self._cgRows[id] = newRow
+        self._triggerSplitterResize()
+
     @QSlot()
     def _triggerSplitterResize(self):
         sizes = [0] * len(self.splitter.children())
@@ -236,6 +263,7 @@ class MainWindow(QMainWindow):
         Args:
             event (QCloseEvent  |  None]): The qt event.
         """
+        logger.debug("-----EXIT STARTED-----")
         logger.debug(f"closeEvent in {__class__.__name__}")
 
         logger.debug("Stopping server...")
@@ -292,6 +320,8 @@ class BaseRow(QFrame):
             self._settingsWindow = win(configKey)
             self._settingsWindow.destroyed.connect(
                 self._closedSettingsWindow)
+            self._settingsWindow.setWindowModality(
+                Qt.WindowModality.ApplicationModal)
             self._settingsWindow.show()
 
     def _closedSettingsWindow(self):
@@ -340,7 +370,6 @@ class HardwareEspRow(BaseRow):
                  parent: QWidget | None) -> None:
         self._configKey = configKey
         super().__init__(parent)
-        self._hwSettingsWindow: QWidget | None = None
         self._deviceRef = deviceRef
 
         self._updateStaticText()
@@ -573,10 +602,14 @@ class ContactGroupRow(BaseRow):
     """A independent contact group row inside the scroll area."""
     strengthSliderValueChanged = QSignal(int, int)
 
-    def __init__(self, configKey: str, parent: QWidget | None) -> None:
+    def __init__(self, configKey: str, contactGroupRef: ContactGroup,
+                 parent: QWidget | None) -> None:
         # logger.debug(f"Creating {__class__.__name__}")
         self._configKey = configKey
         super().__init__(parent)
+        self._contactGroupRef = contactGroupRef
+
+        self._updateStaticText()
 
     def buildUi(self) -> None:
         self.hl_groupTopRow = QHBoxLayout()
@@ -586,14 +619,14 @@ class ContactGroupRow(BaseRow):
         font11.setPointSize(11)
 
         # the name label
-        self.lb_contactGroupName = ui.StaticLabel("Name: ", "Head", "", self)
+        self.lb_contactGroupName = ui.StaticLabel("Name: ", "", "", self)
         # self.lb_contactGroupName.setScaledContents(True)
         self.hl_groupTopRow.addWidget(self.lb_contactGroupName)
 
         # the vrc data label
         self.lb_groupHasIncomingData = ui.StatefulLabel(
-            ("VRC Data: \u274C", "VRC Data: \u2705"), self)
-        self.lb_groupHasIncomingData.setState()
+            ("VRC Data: \u274C", "VRC Data: \u2705", "VRC Data: \u231B"), self)
+        self.lb_groupHasIncomingData.setState(2)
 
         self.hl_groupTopRow.addWidget(self.lb_groupHasIncomingData)
 
@@ -603,13 +636,12 @@ class ContactGroupRow(BaseRow):
         self.hsld_strength.setMinimum(0)
         self.hsld_strength.setMaximum(100)
         self.hsld_strength.setTracking(True)
-        self.hsld_strength.valueChanged.connect(self._sliderValueChanged)
         self.hl_groupTopRow.addWidget(self.hsld_strength)
 
         # the strength number
         self.lb_strength = ui.StaticLabel("Strength: ", "-", "%")
+        self.hsld_strength.valueChanged.connect(self.lb_strength.setNum)
         self.hl_groupTopRow.addWidget(self.lb_strength)
-        # TODO: This label needs updating
 
         # spacer
         self.spc_groupRow_1 = QSpacerItem(
@@ -622,8 +654,7 @@ class ContactGroupRow(BaseRow):
         self.bt_groupExpand.setMaximumWidth(40)
         self.bt_groupExpand.setFont(font11)
         self.bt_groupExpand.setToolTip("Expand")
-        self.bt_groupExpand.toggledOn.connect(
-            lambda: self.createExpandingWidget(ContactGroupPointsWidget(self)))
+        self.bt_groupExpand.toggledOn.connect(self._openExpandingWidget)
         self.bt_groupExpand.toggledOff.connect(
             self._deleteExpandingWidget)
         self.hl_groupTopRow.addWidget(self.bt_groupExpand)
@@ -635,6 +666,7 @@ class ContactGroupRow(BaseRow):
         self.bt_openVisualizer.setToolTip("Open visualizer")
         self.bt_openVisualizer.setText("\ud83d\udcc8")
         self.hl_groupTopRow.addWidget(self.bt_openVisualizer)
+        # TODO
 
         # button to open the group settings dialog
         self.bt_openGroupSettings = QPushButton(self)
@@ -649,16 +681,19 @@ class ContactGroupRow(BaseRow):
 
         self.selfLayout.addLayout(self.hl_groupTopRow)
 
-    @QSlot(int)
-    def _sliderValueChanged(self, value: int) -> None:
-        """Add the group id to the slider value change event.
+    def _updateStaticText(self) -> None:
+        name = config.get(f"{self._configKey}.name", "")
+        self.lb_contactGroupName.setText(name)
+        strength = config.get(f"{self._configKey}.solver.strength", 69)
+        self.hsld_strength.setValue(strength)
+        self.lb_strength.setNum(strength)
 
-        Args:
-            value (int): The sliders percentage value.
+    def _openExpandingWidget(self) -> None:
+        """Create the expanding widget and initialize it.
         """
-        # TODO: Add group id
-        # TODO: WE MIGHT NOT EVEN NEED THIS!!
-        self.strengthSliderValueChanged.emit("group id", value)
+        widget = ContactGroupPointsWidget(self)
+        widget.connect(self._contactGroupRef)
+        self.createExpandingWidget(widget)
 
 
 class ContactGroupPointsWidget(QWidget):
@@ -686,10 +721,16 @@ class ContactGroupPointsWidget(QWidget):
         self.lb_pointsRow.setText("Points:")
         self.selfLayout.addWidget(self.lb_pointsRow)
 
-        # TODO: this will later be dynamic, just for testing now
-        self.rows = []
-        for id in range(5):
-            row = PointDetailsRow(id)
+    def connect(self, contactGroup: ContactGroup) -> None:
+        """Connect contact group row with expanded row.
+
+        Args:
+            contactGroup (ContactGroup): The contact group reference
+        """
+        self.rows: list[PointDetailsRow] = []
+        for motor in contactGroup.motors:
+            row = PointDetailsRow(motor._name)
+            motor.speedChanged.connect(row.updateValue)
             self.selfLayout.addLayout(row)
             self.rows.append(row)
 
@@ -704,22 +745,22 @@ class ContactGroupPointsWidget(QWidget):
 
 
 class PointDetailsRow(ExpandedWidgetDataRowBase):
-    def __init__(self, rowId: int, *args, **kwargs) -> None:
+    def __init__(self, name: str, *args, **kwargs) -> None:
         """Initialize PointDetailsRow."""
         logger.debug(f"Creating {__class__.__name__}")
-        self.rowId = rowId
+        self._name = name
         super().__init__(*args, **kwargs)
 
     def buildUi(self) -> None:
         self.lb_groupPointName = ui.StaticLabel(
-            "Name: ", str(self.rowId), parent=self.parent())
+            "Name: ", self._name, parent=self.parent())
         self.addWidget(self.lb_groupPointName, 0, Qt.AlignmentFlag.AlignLeft)
         self.lb_groupPointValue = ui.StaticLabel(
-            "Value: ", "0.2", parent=self.parent())
+            "Value: ", "-", parent=self.parent())
         self.addWidget(self.lb_groupPointValue, 0, Qt.AlignmentFlag.AlignLeft)
         self.addStretch(1)
 
-    def updateValue(self, value: float) -> None:
+    def updateValue(self, a1: int, a2: int, value: float) -> None:
         self.lb_groupPointValue.setFloat(value)
 
 

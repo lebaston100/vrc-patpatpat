@@ -4,8 +4,8 @@ from PyQt6.QtCore import QObject, QThread
 
 from modules import config
 from modules.HwManager import HwManager
-from modules.Solver import SolverRunner
 from modules.VrcConnector import VrcConnectorImpl
+from modules.ContactGroup import ContactGroupManager
 from utils import LoggerClass, threadAsStr
 
 logger = LoggerClass.getSubLogger(__name__)
@@ -37,32 +37,33 @@ class ServerSingleton(QObject):
 
         self.vrcOscConnector = VrcConnectorImpl(config)
         self.vrcOscConnector.connect()
-        # TODO: Connect this to ContactGroups instead
-        self.vrcOscConnector.onVrcContact.connect(self._vrcOscDataReceived)
-        # self.vrcOscConnector.addToFilter("pat_2") # This will be signal triggered
+        # This will be signal triggered
+        # self.vrcOscConnector.addToFilter("pat_2")
 
         self.hwManager = HwManager()
 
-        # ContactGroupManager here
+        self.contactGroupManager = ContactGroupManager()
+
+        self.vrcOscConnector.onVrcContact.connect(
+            self.contactGroupManager.onVrcContact)
+        self.contactGroupManager.registerAvatarPoint.connect(
+            self.vrcOscConnector.addToFilter)
+        self.contactGroupManager.unregisterAvatarPoint.connect(
+            self.vrcOscConnector.removeFromFilter)
+        self.contactGroupManager.solverDone.connect(
+            self.hwManager.sendHwUpdate)
 
         self.hwManager.createAllHardwareDevicesFromConfig()
+        self.contactGroupManager.createAllContactGroupsFromConfig()
 
         ServerSingleton.__instance = self
-
-    def _vrcOscDataReceived(self, ts: float, addr: str, params: list) -> None:
-        """Handle osc data coming from VRChat.
-        We can distribute the contacts to the right signal here.
-
-        Args:
-            client (tuple): Remote ip/port
-            addr (str): The osc path
-            params (list): The parameter list depnding on the addr
-        """
-        logger.info(f"osc @ {ts}: addr={addr} msg={str(params)}")
 
     def stop(self) -> None:
         """Do everything needed to stop the server."""
         logger.debug(f"Stopping {__class__.__name__}")
+
+        if hasattr(self, "contactGroupManager"):
+            self.contactGroupManager.close()
 
         if hasattr(self, "vrcOscConnector"):
             self.vrcOscConnector.close()

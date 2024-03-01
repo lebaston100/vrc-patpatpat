@@ -9,11 +9,6 @@ T = TypeVar('T', bound='Sphere3D')
 class Sphere3D(QVector3D):
     """A 3D Point with a name and radius."""
 
-    @classmethod
-    # TODO get data from config and pass to constructor
-    def fromConfig(cls: type[T], config, key: str) -> T:
-        return cls()
-
     def __init__(self, name: str = "", radius: float = 0,
                  x: float = 0, y: float = 0, z: float = 0,
                  *args, **kwargs) -> None:
@@ -26,7 +21,7 @@ class Sphere3D(QVector3D):
             z (float, optional): Z. Defaults to 0.
             radius (float, optional): Radius. Defaults to 0.
         """
-        super().__init__(x, y, z, *args, **kwargs)
+        super().__init__(x, y, z)
         self._radius = radius
         self._name = name
 

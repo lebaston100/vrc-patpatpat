@@ -29,6 +29,7 @@ class HwManager(QObject):
     def __init__(self, *args, **kwargs) -> None:
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
+        self._configKey = "esps"
 
         self.hardwareDevices: dict[int, HardwareDevice] = {}
 
@@ -82,7 +83,7 @@ class HwManager(QObject):
     def createAllHardwareDevicesFromConfig(self) -> None:
         """Creates all HardwareDevice objects from the config file."""
         logger.debug("(Re-)creating all HardwareDevice objects")
-        devices = config.get("esps")
+        devices = config.get(self._configKey)
         for key, device in devices.items():
             newDevice = self._deviceFactory(key)
             self.hardwareDevices[device["id"]] = newDevice
@@ -96,7 +97,7 @@ class HwManager(QObject):
         Args:
             key (str): The key of the config parameter that was changed.
         """
-        if key.startswith("esps.esp"):
+        if key.startswith(f"{self._configKey}.esp"):
             keys = key.split(".")
             id = config.get(f"{".".join(keys[:2])}.id")
             if id in self.hardwareDevices:
@@ -106,7 +107,7 @@ class HwManager(QObject):
             self.hwListChanged.emit(self.hardwareDevices)
 
     def _handleConfigRemoved(self, key: str) -> None:
-        # You cannot remove HardwareDevices right now
+        # You cannot remove HardwareDevices (at runtime) right now
         logger.debug(key)
 
     def _deviceFactory(self, key: str) -> HardwareDevice:

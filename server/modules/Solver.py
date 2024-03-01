@@ -1,48 +1,95 @@
-from typing import TYPE_CHECKING, TypeVar
+import time
 
+from multilateration import Engine
 from PyQt6.QtCore import QObject
+from PyQt6.QtCore import pyqtSlot as QSlot
 
+from modules import config
+from modules.AvatarPoint import AvatarPointSphere
+from modules.Motor import Motor
 from utils import LoggerClass, SolverType
-
-if TYPE_CHECKING:
-    from modules.GlobalConfig import GlobalConfigSingleton
 
 logger = LoggerClass.getSubLogger(__name__)
 
-"""
-Using the factory pattern without ABC because it's
-a mess when combining with QObject
-"""
 
-T = TypeVar('T', bound='GlobalConfigSingleton')
+class ISolver(QObject):
+    """The interface/base class."""
 
+    def __init__(self, avatarPoints: AvatarPointSphere,
+                 motors: Motor,
+                 configKey: str) -> None:
+        super().__init__()
+        self._avatarPoints = avatarPoints
+        self._motors = motors
+        self._configKey = configKey
+        self._loadConfig()
+        # logger.debug(self)
 
-class ISolver():
-    """The interface."""
+    def _loadConfig(self) -> None:
+        self._config = config.get(f"{self._configKey}.solver")
+        if not self._config:
+            logger.error("Failed to load config for solver")
 
-    def solve(self):
+    def setup(self) -> None:
+        """A generic setup method to be reimplemented."""
+        raise NotImplementedError
+
+    def setStrength(self, strength: int) -> None:
+        """A generic setStrength method to be reimplemented."""
+        raise NotImplementedError
+
+    def solve(self) -> None:
         """A generic solve method to be reimplemented."""
         raise NotImplementedError
 
+    def __repr__(self) -> str:
+        return __class__.__name__ + ":" + ";"\
+            .join([f"{key}={str(val)}" for key, val in self.__dict__.items()])
 
-class LinearSolver(ISolver, QObject):
-    def __init__(self, config) -> None:
-        logger.debug(config)
-        super().__init__()
 
-    def solve(self):
+class LinearSolver(ISolver):
+    def __init__(self, *args) -> None:
+        logger.debug(f"Creating {__class__.__name__}")
+        super().__init__(*args)
+
+    def setup(self) -> None:
+        pass
+
+    @QSlot(int)
+    def setStrength(self, strength: int) -> None:
+        logger.debug(f"strength was changed to {strength}")
+        config.set(f"{self._configKey}.solver.strength", strength)
+        self._loadConfig()
+
+    def solve(self) -> None:
         logger.debug(f"Hello from solve() in {self.__class__.__name__}")
+        # TODO: Linear solver implementation
 
 
-class MlatSolver(ISolver, QObject):
-    def __init__(self, config) -> None:
-        logger.debug(config)
-        super().__init__()
+class MlatSolver(ISolver):
+    def __init__(self, *args) -> None:
+        logger.debug(f"Creating {__class__.__name__}")
+        super().__init__(*args)
+
+    def setup(self) -> None:
+        self.mlatEngine = Engine()
+
+    @QSlot(int)
+    def setStrength(self, strength: int) -> None:
+        logger.debug(f"strength was changed to {strength}")
+        config.set(f"{self._configKey}.solver.strength", strength)
+        self._loadConfig()
+
+    def solve(self) -> None:
+        # logger.debug(f"Hello from solve() in {self.__class__.__name__}")
+        # time.sleep(0.05)  # simulate very heavy calculation
+        # TODO: MLAT implementation
+        pass
 
 
 class SolverFactory:
     @staticmethod
-    def build_solver(solverType) -> \
+    def fromType(solverType: SolverType) -> \
             type[LinearSolver] | type[MlatSolver] | None:
         match solverType:
             case SolverType.LINEAR:
@@ -51,21 +98,5 @@ class SolverFactory:
                 return MlatSolver
 
 
-class SolverRunner(QObject):
-    def __init__(self, config) -> None:
-        """This object is running inside the thread and manages
-        all the solvers.
-        """
-        logger.debug(f"Creating {__class__.__name__}")
-        super().__init__()
-        # logger.debug(config)
-
-        self._solvers: list[type[LinearSolver] | type[MlatSolver]] = []
-
-
 if __name__ == "__main__":
-    from GlobalConfig import config
-    solverClass = SolverFactory.build_solver(SolverType("MLat"))
-    if solverClass is not None:
-        solver = solverClass(config)
-        solver.solve()
+    print("There is no point running this file directly")

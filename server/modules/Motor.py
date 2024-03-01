@@ -4,11 +4,14 @@ from PyQt6.QtCore import QObject
 from PyQt6.QtCore import pyqtSignal as QSignal
 
 from modules.Points import Sphere3D
+from utils import LoggerClass
+
+logger = LoggerClass.getSubLogger(__name__)
 
 
 class Motor(QObject):
     """Represents a motor attached to an ESP Pin (Channel)"""
-    speedChanged = QSignal(list, float)
+    speedChanged = QSignal(int, int, float)
 
     def __init__(self, settings: dict, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -42,5 +45,5 @@ class Motor(QObject):
         self.speedChanged.emit(*self._espAddr, self.currentPWM)
 
     def __repr__(self) -> str:
-        return __class__.__name__ + ";"\
+        return __class__.__name__ + ":" + ";"\
             .join([f"{key}={str(val)}" for key, val in self.__dict__.items()])

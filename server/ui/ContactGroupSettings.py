@@ -17,6 +17,7 @@ from modules import OptionAdapter, config
 from ui.Delegates import FloatSpinBoxDelegate, IntSpinBoxDelegate
 from ui.uiHelpers import handleClosePrompt, handleDeletePrompt
 from utils import LoggerClass, PathReader
+from utils.Enums import SolverType
 
 logger = LoggerClass.getSubLogger(__name__)
 
@@ -28,7 +29,7 @@ class ContactGroupSettings(QWidget, OptionAdapter):
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
 
-        self._configKey = "groups.group" + configKey
+        self._configKey = configKey
 
         self.buildUi()
 
@@ -253,6 +254,8 @@ class TabMotors(QWidget):
     def saveOptions(self) -> None:
         """Save the options from this tab."""
         config.set(self._configKey, self._data)
+        if self.motorsTableModel.settingsWereChanged:
+            config.configRootUpdateDone.emit(self._configKey)
         self.motorsTableModel.settingsWereChanged = False
 
 
@@ -357,6 +360,8 @@ class TabColliderPoints(QWidget):
     def saveOptions(self) -> None:
         """Save the options from this tab."""
         config.set(self._configKey, self._data)
+        if self.colliderPointsTableModel.settingsWereChanged:
+            config.configRootUpdateDone.emit(self._configKey)
         self.colliderPointsTableModel.settingsWereChanged = False
 
 
@@ -384,10 +389,9 @@ class TabSolver(QWidget, OptionAdapter):
 
         # the solver name
         self.cb_solverType = QComboBox(self)
-        self.cb_solverType.addItem("Mlat")
-        self.cb_solverType.addItem("SimpleDistance")
+        for type in SolverType:
+            self.cb_solverType.addItem(type)
         self.cb_solverType.setObjectName("cb_solverType")
-        self.cb_solverType.setCurrentText("Mlat")
         self.cb_solverType.currentTextChanged.connect(self.changeSolver)
         self.addOpt("solverType", self.cb_solverType)
         self.selfLayout.addRow("Solver Type:", self.cb_solverType)
@@ -427,6 +431,7 @@ class TabSolver(QWidget, OptionAdapter):
         self.selfLayout.addItem(self.spacer1)
 
     def changeSolver(self, selected: str) -> None:
+        # TODO: Refactor out and also use Enum
         self._currentSolver = selected
         for solver, uiElement in self._solverOptionMapping:
             if solver == self._currentSolver:

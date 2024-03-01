@@ -93,7 +93,6 @@ class VrcConnectionWorker(QObject):
 
     def startOscSender(self) -> None:
         self._oscTx = SimpleUDPClient(self._oscTxIp, self._oscTxPort)
-        # self.sendOsc("/chatbox/input", ["test message"])
 
     def closeOscSender(self) -> None:
         if hasattr(self, "_oscTx"):
@@ -180,10 +179,12 @@ class VrcConnectorImpl(IVrcConnector, QObject):
     def addToFilter(self, relativePath: str) -> None:
         if relativePath not in self.worker.dispatcher.matchTopics:
             self.worker.dispatcher.matchTopics.append(relativePath)
+            logger.debug(f"Added {relativePath} to vrc osc filter")
 
     def removeFromFilter(self, relativePath: str) -> None:
         if relativePath in self.worker.dispatcher.matchTopics:
             self.worker.dispatcher.matchTopics.remove(relativePath)
+            logger.debug(f"Removed {relativePath} from vrc osc filter")
 
     def _oscGeneralConfigChanged(self, root: str) -> None:
         if root.startswith("program."):
@@ -237,7 +238,7 @@ class VrcOscDispatcher(Dispatcher):
         try:
             packet = osc_packet.OscPacket(data)
             for msg in packet.messages:
-                if msg.message.address.startswith("/avatar/parameters/pat") \
+                if msg.message.address.startswith("/avatar/parameters/") \
                         and msg.message.address[19:] in self.matchTopics:
                     # pid = threadAsStr(QThread.currentThread())
                     # logger.debug(

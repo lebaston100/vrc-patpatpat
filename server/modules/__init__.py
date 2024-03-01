@@ -5,9 +5,10 @@ Exposes:
     config
     OptionAdapter
 """
-
-from .AvatarPoint import AvatarPoint
 from .GlobalConfig import config
+
+from .AvatarPoint import AvatarPointSphere
+from .ContactGroup import ContactGroup, ContactGroupManager
 from .HardwareDevice import HardwareDevice
 from .HwManager import HwManager
 from .Motor import Motor
@@ -15,5 +16,5 @@ from .OptionAdapter import OptionAdapter
 from .OscMessageTypes import *
 from .Points import Sphere3D
 from .Server import ServerSingleton
-from .Solver import LinearSolver, MlatSolver, SolverRunner
+from .Solver import LinearSolver, MlatSolver, SolverFactory
 from .VrcConnector import VrcConnectorImpl
