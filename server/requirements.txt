@@ -3,5 +3,6 @@ PyQt6==6.6.1
 PyQt6-DataVisualization==6.6.0
 python-osc==1.8.3
 numpy==1.26.4
+scipy==1.12.0
 pytest==8.0.2
 multilateration @ git+https://github.com/valentinbarral/Multilateration@master
