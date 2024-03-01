@@ -8,7 +8,6 @@ from modules.Points import Sphere3D
 
 class Motor(QObject):
     """Represents a motor attached to an ESP Pin (Channel)"""
-
     speedChanged = QSignal(list, float)
 
     def __init__(self, settings: dict, parent: QObject | None = None) -> None:
@@ -19,7 +18,6 @@ class Motor(QObject):
         self._maxPwm: int = settings["maxPwm"]
         self._point = Sphere3D(self._name)
         self._point.xyz = settings["xyz"]
-
         self.currentPWM: int = 0
 
     def setSpeed(self, newSpeed: float) -> None:

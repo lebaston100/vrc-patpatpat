@@ -1,5 +1,4 @@
-"""The main application window
-"""
+"""The main application window."""
 
 import webbrowser
 from functools import partial
@@ -14,7 +13,7 @@ from PyQt6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMainWindow,
 
 import ui
 from modules import HardwareDevice, ServerSingleton, config
-from ui import EspSettingsDialog
+from ui import EspSettingsDialog, ContactGroupSettings
 from utils import LoggerClass
 from utils import HardwareConnectionType
 
@@ -135,11 +134,11 @@ class MainWindow(QMainWindow):
         self.contactGroupScrollAreaWidgetContentLayout.setContentsMargins(
             0, 0, 0, 0)
 
-        # TODO: add rows here
-        self.testContactGroupInstance1 = ContactGroupRow(
-            self.contactGroupScrollAreaWidgetContent)
-        self.testContactGroupInstance2 = ContactGroupRow(
-            self.contactGroupScrollAreaWidgetContent)
+        # TODO: dynamically add rows
+        self.testContactGroupInstance1 = ContactGroupRow("0",
+                                                         self.contactGroupScrollAreaWidgetContent)
+        self.testContactGroupInstance2 = ContactGroupRow("0",
+                                                         self.contactGroupScrollAreaWidgetContent)
         self.contactGroupScrollAreaWidgetContentLayout.addWidget(
             self.testContactGroupInstance1)
         self.contactGroupScrollAreaWidgetContentLayout.addWidget(
@@ -254,6 +253,7 @@ class BaseRow(QFrame):
         super().__init__(parent)
 
         self.expandingWidget = None
+        self._settingsWindow: QWidget | None = None
         self.buildCommonUi()
         self.buildUi()
 
@@ -281,6 +281,30 @@ class BaseRow(QFrame):
             self.expandingWidget.close()
             self.expandingWidget = None
 
+    @QSlot()
+    def _openSettingsWindow(self,
+                            win: type[ContactGroupSettings] |
+                            type[EspSettingsDialog], configKey: str):
+        if self._settingsWindow:
+            self._settingsWindow.raise_()
+            self._settingsWindow.activateWindow()
+        else:
+            self._settingsWindow = win(configKey)
+            self._settingsWindow.destroyed.connect(
+                self._closedSettingsWindow)
+            self._settingsWindow.show()
+
+    def _closedSettingsWindow(self):
+        self._settingsWindow = None
+
+    def _lockSlider(self) -> None:
+        logger.debug("Slider locked")
+        self.sliderLocked = True
+
+    def _unlockSlider(self) -> None:
+        logger.debug("Slider unlocked")
+        self.sliderLocked = False
+
 
 class ExpandedWidgetDataRowBase(QHBoxLayout):
     """ The base for the expanding widgets """
@@ -300,15 +324,23 @@ class ExpandedWidgetDataRowBase(QHBoxLayout):
     def updateValue(self) -> None:
         raise NotImplementedError
 
+    def _lockSlider(self) -> None:
+        logger.debug("Slider locked")
+        self.sliderLocked = True
+
+    def _unlockSlider(self) -> None:
+        logger.debug("Slider unlocked")
+        self.sliderLocked = False
+
 
 class HardwareEspRow(BaseRow):
     """A independent hardware row inside the scroll area."""
 
     def __init__(self, configKey: str, deviceRef: HardwareDevice,
                  parent: QWidget | None) -> None:
+        self._configKey = configKey
         super().__init__(parent)
         self._hwSettingsWindow: QWidget | None = None
-        self._configKey = configKey
         self._deviceRef = deviceRef
 
         self._updateStaticText()
@@ -374,24 +406,12 @@ class HardwareEspRow(BaseRow):
         self.bt_openEspSettings.setFont(font11)
         self.bt_openEspSettings.setToolTip("Configure")
         self.bt_openEspSettings.setText("\ud83d\udd27")
-        self.bt_openEspSettings.clicked.connect(self._openHardwareSettings)
+        self.bt_openEspSettings.clicked.connect(
+            partial(self._openSettingsWindow,
+                    EspSettingsDialog, self._configKey))
         self.hl_espTopRow.addWidget(self.bt_openEspSettings)
 
         self.selfLayout.addLayout(self.hl_espTopRow)
-
-    @QSlot()
-    def _openHardwareSettings(self):
-        if self._hwSettingsWindow:
-            self._hwSettingsWindow.raise_()
-            self._hwSettingsWindow.activateWindow()
-        else:
-            self._hwSettingsWindow = EspSettingsDialog(self._configKey)
-            self._hwSettingsWindow.destroyed.connect(
-                self._closedHardwareSettings)
-            self._hwSettingsWindow.show()
-
-    def _closedHardwareSettings(self):
-        self._hwSettingsWindow = None
 
     def _updateStaticText(self) -> None:
         id = config.get(f"{self._configKey}.id")
@@ -524,14 +544,6 @@ class HardwareMotorChannelRow(ExpandedWidgetDataRowBase):
         """
         logger.debug(f"closeEvent in {__class__.__name__}")
 
-    def _lockSlider(self) -> None:
-        logger.debug("Slider locked")
-        self.sliderLocked = True
-
-    def _unlockSlider(self) -> None:
-        logger.debug("Slider unlocked")
-        self.sliderLocked = False
-
     @QSlot(int)
     def _sliderValueChanged(self, value: int) -> None:
         """Add the channelId to the slider value change event.
@@ -559,9 +571,11 @@ class HardwareMotorChannelRow(ExpandedWidgetDataRowBase):
 
 class ContactGroupRow(BaseRow):
     """A independent contact group row inside the scroll area."""
+    strengthSliderValueChanged = QSignal(int, int)
 
-    def __init__(self, parent: QWidget | None) -> None:
+    def __init__(self, configKey: str, parent: QWidget | None) -> None:
         # logger.debug(f"Creating {__class__.__name__}")
+        self._configKey = configKey
         super().__init__(parent)
 
     def buildUi(self) -> None:
@@ -582,6 +596,20 @@ class ContactGroupRow(BaseRow):
         self.lb_groupHasIncomingData.setState()
 
         self.hl_groupTopRow.addWidget(self.lb_groupHasIncomingData)
+
+        # the strength slider
+        self.hsld_strength = QSlider(Qt.Orientation.Horizontal)
+        self.hsld_strength.setMinimumSize(QSize(100, 0))
+        self.hsld_strength.setMinimum(0)
+        self.hsld_strength.setMaximum(100)
+        self.hsld_strength.setTracking(True)
+        self.hsld_strength.valueChanged.connect(self._sliderValueChanged)
+        self.hl_groupTopRow.addWidget(self.hsld_strength)
+
+        # the strength number
+        self.lb_strength = ui.StaticLabel("Strength: ", "-", "%")
+        self.hl_groupTopRow.addWidget(self.lb_strength)
+        # TODO: This label needs updating
 
         # spacer
         self.spc_groupRow_1 = QSpacerItem(
@@ -614,9 +642,23 @@ class ContactGroupRow(BaseRow):
         self.bt_openGroupSettings.setFont(font11)
         self.bt_openGroupSettings.setToolTip("Configure")
         self.bt_openGroupSettings.setText("\ud83d\udd27")
+        self.bt_openGroupSettings.clicked.connect(
+            partial(self._openSettingsWindow,
+                    ContactGroupSettings, self._configKey))
         self.hl_groupTopRow.addWidget(self.bt_openGroupSettings)
 
         self.selfLayout.addLayout(self.hl_groupTopRow)
+
+    @QSlot(int)
+    def _sliderValueChanged(self, value: int) -> None:
+        """Add the group id to the slider value change event.
+
+        Args:
+            value (int): The sliders percentage value.
+        """
+        # TODO: Add group id
+        # TODO: WE MIGHT NOT EVEN NEED THIS!!
+        self.strengthSliderValueChanged.emit("group id", value)
 
 
 class ContactGroupPointsWidget(QWidget):

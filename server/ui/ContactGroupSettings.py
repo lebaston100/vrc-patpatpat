@@ -10,8 +10,8 @@ from PyQt6.QtGui import QCloseEvent
 from PyQt6.QtWidgets import (QAbstractItemView, QAbstractScrollArea, QCheckBox,
                              QComboBox, QDialogButtonBox, QFormLayout,
                              QHBoxLayout, QHeaderView, QLineEdit, QPushButton,
-                             QSizePolicy, QSpacerItem, QTableView, QTabWidget,
-                             QVBoxLayout, QWidget)
+                             QSizePolicy, QSlider, QSpacerItem, QTableView,
+                             QTabWidget, QVBoxLayout, QWidget)
 
 from modules import OptionAdapter, config
 from ui.Delegates import FloatSpinBoxDelegate, IntSpinBoxDelegate
@@ -78,7 +78,6 @@ class ContactGroupSettings(QWidget, OptionAdapter):
     def handleSaveButton(self) -> None:
         """Save all options when save button was pressed."""
         logger.debug(f"handleSaveButton in {__class__.__name__}")
-        # TODO: Save other tabs too
         self.tab_general.saveOptions()
         self.tab_motors.saveOptions()
         self.tab_colliderPoints.saveOptions()
@@ -96,7 +95,6 @@ class ContactGroupSettings(QWidget, OptionAdapter):
 
         # this might be removed later if it blocks processing data
         # check and warn for unsaved changes
-        # TODO: Check other tabs too
         if (self.tab_general.hasUnsavedOptions()
                 or self.tab_motors.hasUnsavedOptions()
                 or self.tab_colliderPoints.hasUnsavedOptions()
@@ -392,8 +390,14 @@ class TabSolver(QWidget, OptionAdapter):
         self.cb_solverType.setCurrentText("Mlat")
         self.cb_solverType.currentTextChanged.connect(self.changeSolver)
         self.addOpt("solverType", self.cb_solverType)
-
         self.selfLayout.addRow("Solver Type:", self.cb_solverType)
+
+        # the strength slider
+        self.hsld_strength = QSlider(Qt.Orientation.Horizontal)
+        self.hsld_strength.setMinimum(0)
+        self.hsld_strength.setMaximum(100)
+        self.addOpt("strength", self.hsld_strength, int)
+        self.selfLayout.addRow("Strength", self.hsld_strength)
 
         # TODO: Refactor so each solver's setting is in their own class
         # that is swapped out
@@ -408,7 +412,6 @@ class TabSolver(QWidget, OptionAdapter):
                     self.cb_allowOnlyUpperSphereHalf, bool)
         self._solverOptionMapping.append(
             ("Mlat", self.cb_allowOnlyUpperSphereHalf))
-
         self.selfLayout.addRow("", self.cb_allowOnlyUpperSphereHalf)
 
         # contact only (on/off instead of pwm, might be better in the contact point?)
@@ -416,7 +419,6 @@ class TabSolver(QWidget, OptionAdapter):
         self.cb_contactOnly.setObjectName("cb_contactOnly")
         self.cb_contactOnly.setText("Contact only")
         self.addOpt("contactOnly", self.cb_contactOnly, bool)
-
         self.selfLayout.addRow("", self.cb_contactOnly)
 
         # spacer

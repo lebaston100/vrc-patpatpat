@@ -39,16 +39,11 @@ class ServerSingleton(QObject):
         self.vrcOscConnector.connect()
         # TODO: Connect this to ContactGroups instead
         self.vrcOscConnector.onVrcContact.connect(self._vrcOscDataReceived)
-        # self.vrcOscConnector.addToFilter("pat_2")
+        # self.vrcOscConnector.addToFilter("pat_2") # This will be signal triggered
 
         self.hwManager = HwManager()
 
-        self._solverRunnerThread = QThread()
-        self.solverRunner = SolverRunner(config)
-
-        # self._solverRunnerThread.started.connect(self.solverRunner.runSolvers)
-        # self.solverRunner.moveToThread(self._solverRunnerThread)
-        # self._solverRunnerThread.start()
+        # ContactGroupManager here
 
         self.hwManager.createAllHardwareDevicesFromConfig()
 
