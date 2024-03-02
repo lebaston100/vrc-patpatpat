@@ -21,6 +21,7 @@ class ContactGroup(QObject):
     avatarPointRemoved = QSignal(object)
     motorSpeedChanged = QSignal(int, int, int)
     strengthSliderValueChanged = QSignal(int)
+    openSettings = QSignal()
 
     def __init__(self, configKey) -> None:
         logger.debug(f"Creating {__class__.__name__}({configKey})")
@@ -99,6 +100,7 @@ class ContactGroupManager(QObject):
 
         config.configPathHasChanged.connect(self._handleConfigPathChange)
         config.configRootUpdateDone.connect(self._handleConfigRootChange)
+        config.configPathWasDeleted.connect(self._handleConfigPathDeleted)
 
     def createAllContactGroupsFromConfig(self) -> None:
         """Create all ContactGroup objects from config file"""
@@ -175,8 +177,6 @@ class ContactGroupManager(QObject):
         Args:
             path (str): The config key of the group that has been edited.
         """
-        logger.debug(f"root: {path}")
-
         if path.startswith("groups.group"):
             group = config.get(path)
             if not group:
@@ -190,6 +190,55 @@ class ContactGroupManager(QObject):
             newGroup = self._contactGroupFactory(path)
             self.contactGroups[group["id"]] = newGroup
             self.contactGroupListChanged.emit(self.contactGroups)
+            newGroup.openSettings.emit()
+
+    @QSlot(str)
+    def _handleConfigPathDeleted(self, path: str) -> None:
+        if path.startswith("groups.group"):
+            groupId = int(path.removeprefix("groups.group"))
+            self.contactGroups[groupId].close()
+            del self.contactGroups[groupId]
+            self.contactGroupListChanged.emit(self.contactGroups)
+
+    @QSlot()
+    def createEmptyGroup(self) -> None:
+        newContactGroupId = self._getNewContactGroupId()
+        newContactGroupKey = f"group{newContactGroupId}"
+        newContactFullGroupKey = f"groups.{newContactGroupKey}"
+        # TODO: Move the data to somewhere else and just update what we need
+        newContactGroupData = {
+            "id": newContactGroupId,
+            "name": f"New Group {newContactGroupId}",
+            "motors": [{
+                "name": "Motor 1",
+                "espAddr": [0, 1],
+                "minPwm": 70,
+                "maxPwm": 255,
+                "xyz": [1.0, 2.0, 3.0],
+                "r": 0.5
+            }], "avatarPoints": [{
+                "name": "Point 1",
+                "receiverId": "pat_1",
+                "xyz": [1.0, 2.0, 3.0],
+                "r": 0.5
+            }], "solver": {
+                "solverType": "MLat",
+                "strength": 100,
+                "enableHalfSphereCheck": True,
+                "contactOnly": True
+            }}
+        config.set(newContactFullGroupKey, newContactGroupData)
+        self._handleConfigRootChange(newContactFullGroupKey)
+
+    def _getNewContactGroupId(self) -> int:
+        """Calculates an available index for a new device
+
+        Returns:
+            int: The new device index
+        """
+        if contactGroups := config.get("groups"):
+            return max([d["id"] for d in contactGroups.values()]) + 1
+        return 0
 
     def close(self) -> None:
         """Closes everything we own and care for."""
