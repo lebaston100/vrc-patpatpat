@@ -1,5 +1,5 @@
 import json
-import logging
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
@@ -9,7 +9,34 @@ logger = LoggerClass.getSubLogger(__name__)
 logger.setLevel(logger.INFO)  # type: ignore
 
 
-class FileHelper:
+# For now the interface for configHandlers lives in here until others are added
+class IConfigHandler(ABC):
+    @abstractmethod
+    def __init__(self, file: str, *args, **kwargs) -> None:
+        pass
+
+    @abstractmethod
+    def write(self, data: dict) -> bool:
+        pass
+
+    @abstractmethod
+    def read(self) -> dict[str, Any]:
+        pass
+
+    @abstractmethod
+    def hasData(self) -> bool:
+        pass
+
+    @abstractmethod
+    def initializeConfig(self) -> None:
+        pass
+
+    @abstractmethod
+    def createBackup(self) -> None:
+        pass
+
+
+class FileHelper(IConfigHandler):
     """A simple helper class to read and save json from files."""
 
     def __init__(self, file: str, *args, **kwargs) -> None:
