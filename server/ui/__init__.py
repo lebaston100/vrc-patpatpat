@@ -6,4 +6,4 @@ from .MainWindow import MainWindow
 from .ProgramSettingsDialog import ProgramSettingsDialog
 from .CustomLabel import StaticLabel, StatefulLabel
 from .ToggleButton import ToggleButton
-from .uiHelpers import handleClosePrompt, handleDeletePrompt
+from .UiHelpers import handleClosePrompt, handleDeletePrompt

@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (QComboBox, QDialogButtonBox, QFormLayout,
                              QWidget)
 
 from modules import OptionAdapter, config
-from ui.uiHelpers import handleClosePrompt
+from ui.UiHelpers import handleClosePrompt
 from utils import LoggerClass
 
 logger = LoggerClass.getSubLogger(__name__)

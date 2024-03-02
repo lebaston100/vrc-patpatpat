@@ -15,7 +15,7 @@ from PyQt6.QtWidgets import (QAbstractItemView, QAbstractScrollArea, QCheckBox,
 
 from modules import OptionAdapter, config
 from ui.Delegates import FloatSpinBoxDelegate, IntSpinBoxDelegate
-from ui.uiHelpers import handleClosePrompt, handleDeletePrompt
+from ui.UiHelpers import handleClosePrompt, handleDeletePrompt
 from utils import LoggerClass, PathReader
 from utils.Enums import SolverType
 

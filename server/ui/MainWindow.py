@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMainWindow,
 import ui
 from modules import HardwareDevice, ContactGroup, ServerSingleton, config
 from ui import EspSettingsDialog, ContactGroupSettings
-from ui.uiHelpers import handleDeletePrompt
+from ui.UiHelpers import handleDeletePrompt
 from utils import LoggerClass
 from utils import HardwareConnectionType
 
