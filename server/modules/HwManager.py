@@ -23,8 +23,8 @@ class HwManager(QObject):
     """Handles all hardware related tasks."""
 
     hwListChanged = QSignal(dict)
-    hwConfigChanged = QSignal(str)
-    hwConfigRemoved = QSignal(str)
+    _hwConfigChanged = QSignal(str)
+    _hwConfigRemoved = QSignal(str)
 
     def __init__(self, *args, **kwargs) -> None:
         logger.debug(f"Creating {__class__.__name__}")
@@ -43,11 +43,11 @@ class HwManager(QObject):
         self.hwOscDiscoveryTx.start()
 
         config.registerChangeSignal(
-            r"esps\..*", self.hwConfigChanged)
-        self.hwConfigChanged.connect(self._handleConfigChange)
+            r"esps\..*", self._hwConfigChanged)
+        self._hwConfigChanged.connect(self._handleConfigChange)
         config.registerRemoveSignal(
-            r"esps\..*", self.hwConfigRemoved)
-        self.hwConfigRemoved.connect(self._handleConfigRemoved)
+            r"esps\..*", self._hwConfigRemoved)
+        self._hwConfigRemoved.connect(self._handleConfigRemoved)
 
     def writeSpeed(self, hwId: int = 0, channelId: int = 0, value: float | int = 0) -> None:
         """Write speed from motor into esp's state buffer
@@ -106,9 +106,12 @@ class HwManager(QObject):
             self.hardwareDevices[id] = self._deviceFactory(keys[1])
             self.hwListChanged.emit(self.hardwareDevices)
 
-    def _handleConfigRemoved(self, key: str) -> None:
-        # You cannot remove HardwareDevices (at runtime) right now
-        logger.debug(key)
+    def _handleConfigRemoved(self, path: str) -> None:
+        if path.startswith("esps.esp"):
+            deviceId = int(path.removeprefix("esps.esp"))
+            self.hardwareDevices[deviceId].close()
+            del self.hardwareDevices[deviceId]
+            self.hwListChanged.emit(self.hardwareDevices)
 
     def _deviceFactory(self, key: str) -> HardwareDevice:
         """Creates a new device given it's config key.
@@ -142,7 +145,7 @@ class HwManager(QObject):
         # If not this means it's a brand new device, create from scratch
         # Get a new device id
         newDeviceId = self._getNewHardwareId()
-        newDeviceKey = f"esp{str(newDeviceId)}"
+        newDeviceKey = f"esp{newDeviceId}"
         # Create config object with initial values
         newDeviceData = {
             "id": newDeviceId,
@@ -156,7 +159,24 @@ class HwManager(QObject):
             "numMotors": msg.numMotors
         }
         # Save new device to config
-        config.set(f"esps.{newDeviceKey}", newDeviceData, True)
+        config.set(f"esps.{newDeviceKey}", newDeviceData, wasChanged=True)
+        # handle device "re"-creation through existing config change signal
+
+    def createEmptyDevice(self) -> None:
+        newDeviceId = self._getNewHardwareId()
+        newDeviceKey = f"esp{newDeviceId}"
+        # Create config object with initial values
+        newDeviceData = {
+            "id": newDeviceId,
+            "name": f"Unnamed Hardware {newDeviceId}",
+            "connectionType": HardwareConnectionType.OSC,
+            "lastIp": "169.254.1.50",
+            "wifiMac": "FF:FF:FF:FF:FF:FF",
+            "serialPort": "",
+            "numMotors": 1
+        }
+        # Save new device to config
+        config.set(f"esps.{newDeviceKey}", newDeviceData, wasChanged=True)
         # handle device "re"-creation through existing config change signal
 
     def _checkDeviceExistance(self, mac: str) -> int | None:
