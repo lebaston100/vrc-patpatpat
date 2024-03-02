@@ -11,14 +11,12 @@ class AvatarPointSphere(Sphere3D):
         self.name: str = settings["name"]
         self.radius: float = settings["r"]
 
-        # Handle multi-inheritance with different signatures
-        Sphere3D.__init__(self, self.name, self.radius)
-        # QObject.__init__(self)
+        super().__init__(self.name, self.radius)
 
         self.xyz: tuple[float, ...] = settings["xyz"]
         self.receiverId: str = settings["receiverId"]
         self.lastValue = 0.0
-        self.lastValueTs: float | None = None
+        self.lastValueTs: float = 0.0
 
     def vrcContact(self, time: float, params: list):
         """The callback send by the ContactGroupManager when new data
