@@ -304,7 +304,7 @@ class HwOscRxWorker(QObject):
         # logger.debug(f"_handleHeartbeatMessage: {str(client)}, {topic}, {str(args)}")
         if HeartbeatMessage.isType(topic, args):
             msg = HeartbeatMessage(*args, sourceAddr=client[0])
-            logger.debug(msg)
+            # logger.debug(msg)
             self.onOscHeartbeatMessage.emit(msg)
 
     @QSlot()

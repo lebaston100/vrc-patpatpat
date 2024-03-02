@@ -21,6 +21,7 @@ class ContactGroup(QObject):
     avatarPointRemoved = QSignal(object)
     motorSpeedChanged = QSignal(int, int, int)
     strengthSliderValueChanged = QSignal(int)
+    newPointSolved = QSignal(object)
     openSettings = QSignal()
 
     def __init__(self, configKey) -> None:
@@ -52,6 +53,7 @@ class ContactGroup(QObject):
                     self.motors, self.avatarPoints, self._configKey)
                 self.strengthSliderValueChanged.connect(
                     self.solver.setStrength)
+                self.solver.newPointSolved.connect(self.newPointSolved)
                 self.solver.setup()
             else:
                 logger.error("Unknown solver type specified")
@@ -311,7 +313,7 @@ class ContactGroupSolverWorker(QObject):
             logger.warn("Skipping next tick!")
             self._skipflag = True
             self._manager.tickSkipped.emit()
-        # logger.debug(f"tick time: {tickTime/1e6} ms")
+        # logger.debug(f"Tick time: {tickTime/1e6} ms")
 
 
 if __name__ == "__main__":
