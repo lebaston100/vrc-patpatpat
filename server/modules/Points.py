@@ -48,9 +48,8 @@ class Sphere3D(QVector3D):
 
     @property
     def radius(self):
-        self._radius
+        return self._radius
 
     @radius.setter
-    def radius(self, radius: float = 0.0) -> Self:
+    def radius(self, radius: float = 0.0) -> None:
         self._radius = radius
-        return self
