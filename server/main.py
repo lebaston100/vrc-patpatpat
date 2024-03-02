@@ -7,7 +7,7 @@ from modules import config, ServerSingleton
 from ui import MainWindow
 from utils import LoggerClass
 
-logger = LoggerClass.getRootLogger()
+logger = LoggerClass.getRootLogger(filename="patpatpat.log")
 
 # set initial logging level for root and child loggers from config
 logLevel = config.get("program.logLevel", "INFO")
