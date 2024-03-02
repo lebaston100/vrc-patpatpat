@@ -38,14 +38,6 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
         self.selfLayout = QFormLayout(self)
         self.selfLayout.setObjectName("selfLayout")
 
-        # mqtt broker ip
-        self.le_mqttBrokerIp = QLineEdit(self)
-        self.le_mqttBrokerIp.setObjectName("le_mqttBrokerIp")
-        self.le_mqttBrokerIp.setInputMask("900.900.900.900")
-        self.addOpt("mqttBrokerIp", self.le_mqttBrokerIp)
-
-        self.selfLayout.addRow("MQTT Broker IP:", self.le_mqttBrokerIp)
-
         # VRChat osc send ip
         self.le_vrcOscReceiveAddress = QLineEdit(self)
         self.le_vrcOscReceiveAddress.setObjectName("le_vrcOscReceiveAddress")

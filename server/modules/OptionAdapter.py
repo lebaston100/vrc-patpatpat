@@ -7,7 +7,7 @@ from utils import LoggerClass
 
 logger = LoggerClass.getSubLogger(__name__)
 
-# TODO: Some day once i understand typing figure this all out
+# Some day once i understand typing figure this all out
 # type allowedWidgetTypes = QLineEdit | QSpinBox | QComboBox
 type validValueTypes = type[str] | type[int] | type[float] \
     | type[bool] | type[list] | type[dict]
