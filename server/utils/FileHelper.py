@@ -73,6 +73,12 @@ class FileHelper:
     def initializeConfig(self) -> None:
         pass
 
+    def createBackup(self) -> None:
+        """Create a duplicate of the file."""
+        backupFile = self._file.with_suffix(self._file.suffix + ".backup")
+        backupFile.write_bytes(self._file.read_bytes())
+        logger.info(f"Backup of {self._file} created at {backupFile}")
+
 
 if __name__ == "__main__":
     print("There is no point running this file directly")
