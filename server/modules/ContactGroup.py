@@ -10,7 +10,7 @@ from modules import config
 from modules.AvatarPoint import AvatarPointSphere
 from modules.Motor import Motor
 from modules.Solver import SolverFactory
-from utils import LoggerClass, threadAsStr
+from utils import ConfigTemplate, LoggerClass, threadAsStr
 
 logger = LoggerClass.getSubLogger(__name__)
 
@@ -205,28 +205,9 @@ class ContactGroupManager(QObject):
         newContactGroupId = self._getNewContactGroupId()
         newContactGroupKey = f"group{newContactGroupId}"
         newContactFullGroupKey = f"groups.{newContactGroupKey}"
-        # TODO: Move the data to somewhere else and just update what we need
-        newContactGroupData = {
-            "id": newContactGroupId,
-            "name": f"New Group {newContactGroupId}",
-            "motors": [{
-                "name": "Motor 1",
-                "espAddr": [0, 1],
-                "minPwm": 70,
-                "maxPwm": 255,
-                "xyz": [1.0, 2.0, 3.0],
-                "r": 0.5
-            }], "avatarPoints": [{
-                "name": "Point 1",
-                "receiverId": "pat_1",
-                "xyz": [1.0, 2.0, 3.0],
-                "r": 0.5
-            }], "solver": {
-                "solverType": "MLat",
-                "strength": 100,
-                "enableHalfSphereCheck": True,
-                "contactOnly": True
-            }}
+        newContactGroupData = ConfigTemplate.TEMPLATE["groups"]["group0"]
+        newContactGroupData["id"] = newContactGroupId
+        newContactGroupData["name"] = f"New Group {newContactGroupId}"
         config.set(newContactFullGroupKey, newContactGroupData)
         self._handleConfigRootChange(newContactFullGroupKey)
 
