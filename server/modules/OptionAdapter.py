@@ -140,8 +140,8 @@ class OptionAdapter():
             else:
                 self._setUiOpt(uiElem, newValue)
 
-    def saveOptsFromGui(self, config, configKey: str,
-                        diff: bool = False) -> list[str | None]:
+    def saveOptsFromGui(self, config, configKey: str, onlyDiff: bool = False,
+                        blockSignal: bool = False) -> list[str | None]:
         """Retrieves values from UI elements and updates the options dict.
 
         This function iterates over all UI elements, retrieves their
@@ -152,11 +152,13 @@ class OptionAdapter():
             config (GlobalConfigSingleton): The GlobalConfigSingleton
                 instance to update.
             configKey (str): The base config key path.
-            diff (bool): Only return the difference without saving.
+            onlyDiff (bool): Only return the difference without saving.
+            blockSignal (bool): Blocks the emit of the
+                configRootUpdateDone signal.
 
         Returns:
-            list[str | None]: A tuple containing the updated options dictionary and
-            a list of keys that have changed.
+            list[str | None]: A tuple containing the updated options
+            dictionary and a list of keys that have changed.
         """
         changedKeys = []
         for path, (uiElem, dataType) in self._uiElems.items():
@@ -165,9 +167,9 @@ class OptionAdapter():
             keyChanged = newValue != dataType(config.get(path))
             if keyChanged:
                 changedKeys.append(path)
-            if not diff:
+            if not onlyDiff:
                 config.set(path, newValue, keyChanged)
-        if changedKeys:
+        if changedKeys and not onlyDiff and not blockSignal:
             # This can only be ran from here
             config.configRootUpdateDone.emit(configKey)
         return changedKeys

@@ -79,10 +79,21 @@ class ContactGroupSettings(QWidget, OptionAdapter):
     def handleSaveButton(self) -> None:
         """Save all options when save button was pressed."""
         logger.debug(f"handleSaveButton in {__class__.__name__}")
+
+        fireUpdate = False
+        if (self.tab_general.hasUnsavedOptions()
+                or self.tab_motors.hasUnsavedOptions()
+                or self.tab_colliderPoints.hasUnsavedOptions()
+                or self.tab_solver.hasUnsavedOptions()):
+            fireUpdate = True
+
         self.tab_general.saveOptions()
         self.tab_motors.saveOptions()
         self.tab_colliderPoints.saveOptions()
         self.tab_solver.saveOptions()
+
+        if fireUpdate:
+            config.configRootUpdateDone.emit(self._configKey)
         self.close()
 
     # handle the close event for the log window
@@ -135,13 +146,14 @@ class TabGeneral(QWidget, OptionAdapter):
             bool: True if there are modified options otherwise False.
         """
 
-        changedPaths = self.saveOptsFromGui(config, self._configKey, True)
+        changedPaths = self.saveOptsFromGui(
+            config, self._configKey, onlyDiff=True)
         return bool(changedPaths)
 
     def saveOptions(self) -> None:
         """Save the options from this tab."""
 
-        self.saveOptsFromGui(config, self._configKey)
+        self.saveOptsFromGui(config, self._configKey, blockSignal=True)
 
 
 class TabMotors(QWidget):
@@ -254,8 +266,6 @@ class TabMotors(QWidget):
     def saveOptions(self) -> None:
         """Save the options from this tab."""
         config.set(self._configKey, self._data)
-        if self.motorsTableModel.settingsWereChanged:
-            config.configRootUpdateDone.emit(self._configKey)
         self.motorsTableModel.settingsWereChanged = False
 
 
@@ -360,8 +370,6 @@ class TabColliderPoints(QWidget):
     def saveOptions(self) -> None:
         """Save the options from this tab."""
         config.set(self._configKey, self._data)
-        if self.colliderPointsTableModel.settingsWereChanged:
-            config.configRootUpdateDone.emit(self._configKey)
         self.colliderPointsTableModel.settingsWereChanged = False
 
 
@@ -445,14 +453,15 @@ class TabSolver(QWidget, OptionAdapter):
         Returns:
             bool: True if there are modified options otherwise False.
         """
-        changedPaths = self.saveOptsFromGui(config, self._configKey, True)
+        changedPaths = self.saveOptsFromGui(
+            config, self._configKey, onlyDiff=True)
         return bool(changedPaths)
 
     def saveOptions(self) -> None:
         """Save the options from this tab.
         """
 
-        self.saveOptsFromGui(config, self._configKey)
+        self.saveOptsFromGui(config, self._configKey, blockSignal=True)
 
 
 type validValueTypes = type[str] | type[int] | type[float] \

@@ -26,18 +26,25 @@ class ContactGroup(QObject):
         logger.debug(f"Creating {__class__.__name__}({configKey})")
         super().__init__()
         self._configKey = configKey
-        self._config = config.get(self._configKey)
 
         self.motors: list[Motor] = []
         self.avatarPoints: list[AvatarPointSphere] = []
 
+        self.setup()
+
     def setup(self) -> None:
         try:
+            self._config = config.get(self._configKey)
             self._id = self._config["id"]
             self._name = self._config["name"]
 
-            self._setupMotors()
-            self._setupAvatarPoints()
+            for motor in self._config["motors"]:
+                self.motors.append(Motor(motor))
+
+            for avatarPoint in self._config["avatarPoints"]:
+                newAvatarPoint = AvatarPointSphere(avatarPoint)
+                self.avatarPoints.append(newAvatarPoint)
+                self.avatarPointAdded.emit(newAvatarPoint)
 
             solverType = self._config["solver"]["solverType"]
             solverClass = SolverFactory.fromType(solverType)
@@ -52,26 +59,9 @@ class ContactGroup(QObject):
         except Exception as E:
             logger.exception(E)
 
-    def _setupMotors(self) -> None:
-        if self.motors:
-            # we are already setup, destory everything
-            pass
-
-        for motor in self._config["motors"]:
-            self.motors.append(Motor(motor))
-
-    def _setupAvatarPoints(self) -> None:
-        for avatarPoint in self._config["avatarPoints"]:
-            newAvatarPoint = AvatarPointSphere(avatarPoint)
-            self.avatarPoints.append(newAvatarPoint)
-            self.avatarPointAdded.emit(newAvatarPoint)
-
-    def _setupSolver(self) -> None:
-        pass
-
     def close(self) -> None:
         """Closes everything we own and care for."""
-        logger.debug(f"Stopping {__class__.__name__}")
+        logger.debug(f"Stopping {__class__.__name__}({self._configKey})")
         for avatarPoint in self.avatarPoints:
             self.avatarPointRemoved.emit(avatarPoint)
         self.avatarPoints = []
@@ -114,16 +104,15 @@ class ContactGroupManager(QObject):
         """Create all ContactGroup objects from config file"""
         groups = config.get(self._configKey)
         for key, group in groups.items():
-            newGroup = self._contactGroupFactory(key)
+            newGroup = self._contactGroupFactory(f"{self._configKey}.{key}")
             self.contactGroups[group["id"]] = newGroup
         self.contactGroupListChanged.emit(self.contactGroups)
 
     def _contactGroupFactory(self, key: str) -> ContactGroup:
-        group = ContactGroup(f"{self._configKey}.{key}")
+        group = ContactGroup(key)
         group.motorSpeedChanged.connect(self.motorSpeedChanged)
         group.avatarPointAdded.connect(self.avatarPointAdded)
         group.avatarPointRemoved.connect(self.avatarPointRemoved)
-        group.setup()
         return group
 
     def avatarPointAdded(self, avatarPoint: AvatarPointSphere) -> None:
@@ -173,7 +162,6 @@ class ContactGroupManager(QObject):
 
     @QSlot(str)
     def _handleConfigPathChange(self, path: str) -> None:
-        logger.debug(path)
         if path == "program.mainTps":
             if self.workerThread:
                 self.workerThread.quit()
@@ -182,13 +170,26 @@ class ContactGroupManager(QObject):
 
     @QSlot(str)
     def _handleConfigRootChange(self, path: str) -> None:
-        ...
-        # TODO: recreate
-        # motors
-        # contactPoints
-        # solver
-        # how do we handle this? it could be re-created a lot when multiple things change
-        # maybe just emit one signal on save and then go from there
+        """Handles changes to the config related to ContactGroups.
+
+        Args:
+            path (str): The config key of the group that has been edited.
+        """
+        logger.debug(f"root: {path}")
+
+        if path.startswith("groups.group"):
+            group = config.get(path)
+            if not group:
+                return
+
+            groupId = group["id"]
+            if groupId in self.contactGroups:
+                # Existing group, close
+                self.contactGroups[groupId].close()
+
+            newGroup = self._contactGroupFactory(path)
+            self.contactGroups[group["id"]] = newGroup
+            self.contactGroupListChanged.emit(self.contactGroups)
 
     def close(self) -> None:
         """Closes everything we own and care for."""
