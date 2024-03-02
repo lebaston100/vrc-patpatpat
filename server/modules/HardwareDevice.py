@@ -190,8 +190,16 @@ class OscCommunicationAdapterImpl(IHardwareCommunicationAdapter, QObject):
     def sendPinValues(self, pinValues: list) -> None:
         """Send motor values to device over osc."""
         # TODO: Inspect exception behaviour and add catch if needed
-        if self._oscClient:
-            self._oscClient.send_message("/m", pinValues)
+        try:
+            if self._oscClient:
+                self._oscClient.send_message("/m", pinValues)
+        except OSError as E:
+            if E.errno == 10051:
+                pass
+            else:
+                logger.exception(E)
+        except Exception as E:
+            logger.exception(E)
 
     @QSlot(object)
     def receivedExtHeartbeat(self, msg: HeartbeatMessage) -> None:
