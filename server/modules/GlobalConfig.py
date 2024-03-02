@@ -66,9 +66,10 @@ class GlobalConfigSingleton(QObject):
 
         self._mutex = QMutex()
         self._configHandler = configHandler
+        self._configHandler.createBackup()
         self._configOptions: dict[str, Any] = {}
-        self._configPathChangedSignals: dict[str, pyqtBoundSignal] = {}
-        self._configPathDeletedSignals: dict[str, pyqtBoundSignal] = {}
+        self._configPathChangedSignals: dict[str, list[pyqtBoundSignal]] = {}
+        self._configPathDeletedSignals: dict[str, list[pyqtBoundSignal]] = {}
 
         try:
             self.parse()
@@ -159,7 +160,7 @@ class GlobalConfigSingleton(QObject):
         else:
             return True
 
-    def delete(self, path: str) -> None:
+    def delete(self, path: str) -> bool:
         """Deletes something from inside a (nested) dict.
 
         This is an in-place operation just like del a["b"]!
@@ -171,8 +172,17 @@ class GlobalConfigSingleton(QObject):
         Returns:
             None
         """
-        PathReader.delOption(self._configOptions, path)
-        self.configPathWasDeleted.emit(path)
+        try:
+            self._mutex.lock()
+            PathReader.delOption(self._configOptions, path)
+        except Exception as E:
+            logger.exception(E)
+            return False
+        else:
+            self.configPathWasDeleted.emit(path)
+            return self._writeOptions()
+        finally:
+            self._mutex.unlock()
 
     def _writeOptions(self) -> bool:
         """Write config options from memory to file.
@@ -182,6 +192,43 @@ class GlobalConfigSingleton(QObject):
         """
         return self._configHandler.write(self._configOptions)
 
+    def _registerSignalForSignals(self, signalList: dict, pathPattern: str,
+                                  signal: pyqtBoundSignal) -> None:
+        """A helper function to avoid code duplication"""
+        if not pathPattern in signalList:
+            signalList.update({pathPattern: []})
+        if not signal in signalList[pathPattern]:
+            signalList[pathPattern].append(signal)
+        # logger.debug(f"Signals after register: {str(signalList)}")
+
+    def _removeSignalForSignals(self, signalList: dict,
+                                signal: pyqtBoundSignal) -> None:
+        """A helper function to avoid code duplication"""
+        try:
+            keys_to_remove = []
+            for key, signals in signalList.items():
+                if signal in signals:
+                    signals.remove(signal)
+                    if not signals:
+                        keys_to_remove.append(key)
+            for key in keys_to_remove:
+                del signalList[key]
+        except:
+            pass
+        # logger.debug(f"Remaining signals after delete: {str(signalList)}")
+
+    def _emitSignalsForPath(self, signalList: dict,
+                            changedPath: str) -> None:
+        """A helper function to avoid code duplication"""
+        # logger.debug(f"Signals before emit of "
+        #  f"{changedPath}: {str(signalList)}")
+        for pathPattern, signals in signalList.items():
+            if re.match(pathPattern + "$", changedPath):
+                logger.debug(f"Matching signals for {pathPattern}:"
+                             f"{str(signals)}")
+                for signal in signals:
+                    signal.emit(changedPath)
+
     def registerChangeSignal(self, pathPattern: str,
                              signal: pyqtBoundSignal) -> None:
         """Register a signal to be emitted for a configuration change.
@@ -190,22 +237,16 @@ class GlobalConfigSingleton(QObject):
             pathPattern (str): Regex pattern of the path to watch for changes.
             signal (pyqtBoundSignal): Signal to emit when a change is detected.
         """
-        self._configPathChangedSignals.update({pathPattern: signal})
-        # FIXME: This will not work for multiple subscriptions to the same pattern
-        logger.debug(self._configPathChangedSignals)
+        self._registerSignalForSignals(
+            self._configPathChangedSignals, pathPattern, signal)
 
-    def deleteChangeSignal(self, pathPattern: str) -> None:
-        """Remove a registered signal.
+    def deleteChangeSignal(self, signal: pyqtBoundSignal) -> None:
+        """Remove a registered signal for all pathPatterns.
 
         Args:
-            pathPattern (str): Regex pattern of the path of the signal
-                to remove.
+            signal (pyqtBoundSignal): The signal to remove.
         """
-        try:
-            self._configPathChangedSignals.pop(pathPattern)
-        except:
-            logger.error(f"Path {pathPattern} has no registered signals")
-        logger.debug(self._configPathChangedSignals)
+        self._removeSignalForSignals(self._configPathChangedSignals, signal)
 
     def _runChangeSignals(self, changedPath: str) -> None:
         """Emit signals for a given changed path.
@@ -213,9 +254,7 @@ class GlobalConfigSingleton(QObject):
         Args:
             changedPath (str): The path that has changed.
         """
-        for pathPattern, signal in self._configPathChangedSignals.items():
-            if re.match(pathPattern + "$", changedPath):
-                signal.emit(changedPath)
+        self._emitSignalsForPath(self._configPathChangedSignals, changedPath)
 
     def registerRemoveSignal(self, pathPattern: str,
                              signal: pyqtBoundSignal) -> None:
@@ -225,21 +264,17 @@ class GlobalConfigSingleton(QObject):
             pathPattern (str): Regex pattern of the path to watch for changes.
             signal (pyqtBoundSignal): Signal to emit when a change is detected.
         """
-        self._configPathDeletedSignals.update({pathPattern: signal})
-        logger.debug(self._configPathDeletedSignals)
+        self._registerSignalForSignals(
+            self._configPathDeletedSignals, pathPattern, signal)
 
-    def deleteRemoveSignal(self, pathPattern: str) -> None:
+    def deleteRemoveSignal(self, signal: pyqtBoundSignal) -> None:
         """Remove a registered signal.
 
         Args:
             pathPattern (str): Regex pattern of the path of the signal
                 to remove.
         """
-        try:
-            self._configPathDeletedSignals.pop(pathPattern)
-        except:
-            logger.error(f"Path {pathPattern} has no registered signals")
-        logger.debug(self._configPathDeletedSignals)
+        self._removeSignalForSignals(self._configPathDeletedSignals, signal)
 
     def _runRemoveSignals(self, removedPath: str) -> None:
         """Emit signals for a given removed path.
@@ -247,9 +282,7 @@ class GlobalConfigSingleton(QObject):
         Args:
             removedPath (str): The path that has changed.
         """
-        for pathPattern, signal in self._configPathDeletedSignals.items():
-            if re.match(pathPattern + "$", removedPath):
-                signal.emit(removedPath)
+        self._emitSignalsForPath(self._configPathDeletedSignals, removedPath)
 
 
 # any work to find out what the config would need to be done here
