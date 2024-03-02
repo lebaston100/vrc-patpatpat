@@ -115,8 +115,8 @@ class PathReader:
             keys = map(lambda k: int(k) if k.isdigit() else k, path.split("."))
             # run recursive function over dict
             _recurseDelete(inputDict, list(keys))
-        except:
-            pass
+        except Exception as E:
+            logger.exception(E)
         return
 
 
