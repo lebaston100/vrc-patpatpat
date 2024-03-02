@@ -2,11 +2,11 @@ name: build
 
 on:
   workflow_dispatch:
-  #push:
-  #  branches:
-  #    - '**'
-  #  paths:
-  #    - '**.py'
+  push:
+   branches:
+     - '**'
+   paths:
+     - '**.py'
 
 # this does nothing as expected
 defaults:
