@@ -116,14 +116,14 @@ class HardwareDevice(QObject):
         if not self.currentConnectionState and \
                 (datetime.now() - self._lastHeartbeat.ts).total_seconds() <= 6:
             self.currentConnectionState = True
-            logger.debug(f"hw connection state for device {self._id} changed to"
-                         f" {self.currentConnectionState}")
+            logger.debug(f"Connection state for HardwareDevice {self._id} "
+                         f"changed to {self.currentConnectionState}")
             self.deviceConnectionChanged.emit(self.currentConnectionState)
         elif self.currentConnectionState and \
                 (datetime.now() - self._lastHeartbeat.ts).total_seconds() > 6:
             self.currentConnectionState = False
-            logger.debug(f"hw connection state for device {self._id} changed to"
-                         f" {self.currentConnectionState}")
+            logger.debug(f"Connection state for HardwareDevice {self._id} "
+                         f"changed to {self.currentConnectionState}")
             self.deviceConnectionChanged.emit(self.currentConnectionState)
 
     def close(self) -> None:
@@ -135,7 +135,7 @@ class HardwareDevice(QObject):
             self.hardwareCommunicationAdapter.close()
 
     def __repr__(self) -> str:
-        return __class__.__name__ + ":" + ";"\
+        return self.__class__.__name__ + ":" + ";"\
             .join([f"{key}={str(val)}" for key, val in self.__dict__.items()])
 
 
@@ -161,7 +161,7 @@ class IHardwareCommunicationAdapter():
         raise NotImplementedError
 
     def __repr__(self) -> str:
-        return __class__.__name__ + ":" + ";"\
+        return self.__class__.__name__ + ":" + ";"\
             .join([f"{key}={str(val)}" for key, val in self.__dict__.items()])
 
 

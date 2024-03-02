@@ -45,5 +45,5 @@ class Motor(QObject):
         self.speedChanged.emit(*self._espAddr, self.currentPWM)
 
     def __repr__(self) -> str:
-        return __class__.__name__ + ":" + ";"\
+        return self.__class__.__name__ + ":" + ";"\
             .join([f"{key}={str(val)}" for key, val in self.__dict__.items()])

@@ -313,7 +313,7 @@ class HwOscRxWorker(QObject):
             f"startOsc pid     ={threadAsStr(QThread.currentThread())}")
         logger.debug(
             f"startOsc pid_self={threadAsStr(self.thread())}")
-        logger.info(f"starting osc server on port 8872")
+        logger.info(f"Starting osc server on port 8872")
         try:
             self._oscRx = BlockingOSCUDPServer(("", 8872), self.dispatcher)
             self._oscRx.serve_forever()

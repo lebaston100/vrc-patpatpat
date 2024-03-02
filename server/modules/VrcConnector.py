@@ -65,7 +65,7 @@ class VrcConnectionWorker(QObject):
             f"startOsc pid     ={threadAsStr(QThread.currentThread())}")
         logger.debug(
             f"startOsc pid_self={threadAsStr(self.thread())}")
-        logger.debug(f"starting osc server on port {str(self._oscRxPort)}")
+        logger.debug(f"Starting osc server on port {str(self._oscRxPort)}")
         try:
             self._oscRx = BlockingOSCUDPServer(
                 ("", self._oscRxPort), self.dispatcher)

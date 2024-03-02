@@ -695,7 +695,7 @@ class ContactGroupRow(BaseRow):
         self.hl_groupTopRow.addWidget(self.bt_groupExpand)
 
         # the open visualizer button
-        # TODO
+        # TODO: Create window and add handling
         self.bt_openVisualizer = QPushButton(self)
         self.bt_openVisualizer.setMaximumWidth(40)
         self.bt_openVisualizer.setFont(font11)

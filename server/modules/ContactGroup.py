@@ -31,8 +31,6 @@ class ContactGroup(QObject):
         self.motors: list[Motor] = []
         self.avatarPoints: list[AvatarPointSphere] = []
 
-        self.setup()
-
     def setup(self) -> None:
         try:
             self._config = config.get(self._configKey)
@@ -68,7 +66,7 @@ class ContactGroup(QObject):
         self.avatarPoints = []
 
     def __repr__(self) -> str:
-        return __class__.__name__ + ":" + ";"\
+        return self.__class__.__name__ + ":" + ";"\
             .join([f"{key}={str(val)}" for key, val in self.__dict__.items()])
 
 
@@ -115,6 +113,7 @@ class ContactGroupManager(QObject):
         group.motorSpeedChanged.connect(self.motorSpeedChanged)
         group.avatarPointAdded.connect(self.avatarPointAdded)
         group.avatarPointRemoved.connect(self.avatarPointRemoved)
+        group.setup()
         return group
 
     def avatarPointAdded(self, avatarPoint: AvatarPointSphere) -> None:
@@ -127,7 +126,7 @@ class ContactGroupManager(QObject):
             self.registerAvatarPoint.emit(avatarPoint.receiverId)
             self._avatarPoints[avatarPoint.receiverId] = []
         self._avatarPoints[avatarPoint.receiverId].append(avatarPoint)
-        logger.debug(self._avatarPoints)
+        # logger.debug(self._avatarPoints)
 
     def avatarPointRemoved(self, avatarPoint: AvatarPointSphere) -> None:
         """Removes a receiver id from the LUT and unregisters it from
@@ -143,7 +142,7 @@ class ContactGroupManager(QObject):
             if not len(self._avatarPoints[avatarPoint.receiverId]):
                 self.unregisterAvatarPoint.emit(avatarPoint.receiverId)
                 self._avatarPoints.pop(avatarPoint.receiverId)
-        logger.debug(self._avatarPoints)
+        # logger.debug(self._avatarPoints)
 
     @QSlot(float, str, list)
     def onVrcContact(self, ts: float, addr: str, params: list) -> None:
@@ -155,9 +154,9 @@ class ContactGroupManager(QObject):
             params (list): The osc message parameter list
         """
         contactName = addr[19:]
-        logger.debug(
-            f"osc @ {ts}: addr={addr} msg={str(params)} "
-            f"contactName = {contactName}")
+        # logger.debug(
+        # f"osc @ {ts}: addr={addr} msg={str(params)} "
+        # f"contactName = {contactName}")
         if contactName in self._avatarPoints:
             for point in self._avatarPoints[contactName]:
                 point.vrcContact(ts, params)
@@ -231,7 +230,7 @@ class ContactGroupManager(QObject):
             contactGroup.close()
 
     def __repr__(self) -> str:
-        return __class__.__name__ + ":" + ";"\
+        return self.__class__.__name__ + ":" + ";"\
             .join([f"{key}={str(val)}" for key, val in self.__dict__.items()])
 
 

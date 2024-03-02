@@ -31,11 +31,11 @@ class AvatarPointSphere(Sphere3D):
         try:
             self.lastValue = params[0]
             self.lastValueTs = time
-            logger.debug(f"received new value for {self.receiverId}: "
-                         f"{self.lastValue}")
+            # logger.debug(f"received new value for {self.receiverId}: "
+            #  f"{self.lastValue}")
         except Exception as E:
             logger.exception(E)
 
     def __repr__(self) -> str:
-        return __class__.__name__ + ":" + ";"\
+        return self.__class__.__name__ + ":" + ";"\
             .join([f"{key}={str(val)}" for key, val in self.__dict__.items()])

@@ -37,8 +37,6 @@ class ServerSingleton(QObject):
 
         self.vrcOscConnector = VrcConnectorImpl(config)
         self.vrcOscConnector.connect()
-        # This will be signal triggered
-        # self.vrcOscConnector.addToFilter("pat_2")
 
         self.hwManager = HwManager()
 
