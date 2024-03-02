@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMainWindow,
 
 import ui
 from modules import HardwareDevice, ContactGroup, ServerSingleton, config
-from ui import EspSettingsDialog, ContactGroupSettings
+from ui import EspSettingsDialog, ContactGroupSettings, VisualizerWindow
 from ui.UiHelpers import handleDeletePrompt
 from utils import LoggerClass
 from utils import HardwareConnectionType
@@ -641,6 +641,7 @@ class ContactGroupRow(BaseRow):
                  parent: QWidget | None) -> None:
         # logger.debug(f"Creating {__class__.__name__}")
         self._configKey = configKey
+        self._visualizerWindow: VisualizerWindow | None = None
         super().__init__(parent)
         self._contactGroupRef = contactGroupRef
 
@@ -695,12 +696,12 @@ class ContactGroupRow(BaseRow):
         self.hl_groupTopRow.addWidget(self.bt_groupExpand)
 
         # the open visualizer button
-        # TODO: Create window and add handling
         self.bt_openVisualizer = QPushButton(self)
         self.bt_openVisualizer.setMaximumWidth(40)
         self.bt_openVisualizer.setFont(font11)
         self.bt_openVisualizer.setToolTip("Open visualizer")
         self.bt_openVisualizer.setText("\ud83d\udcc8")
+        self.bt_openVisualizer.clicked.connect(self._openVisualizerWindow)
         self.hl_groupTopRow.addWidget(self.bt_openVisualizer)
 
         # button to delete ContactGroup
@@ -732,6 +733,21 @@ class ContactGroupRow(BaseRow):
 
     def openSettingsWindow(self) -> None:
         self._openSettingsWindow(ContactGroupSettings, self._configKey)
+
+    def _openVisualizerWindow(self) -> None:
+        if self._visualizerWindow:
+            self._visualizerWindow.raise_()
+            self._visualizerWindow.activateWindow()
+        else:
+            self._visualizerWindow = ui.VisualizerWindow()
+            self._visualizerWindow.destroyed.connect(
+                self._closedVisualizerWindow)
+            self._contactGroupRef.newPointSolved.connect(
+                self._visualizerWindow.handlePoint)
+            self._visualizerWindow.show()
+
+    def _closedVisualizerWindow(self):
+        self._visualizerWindow = None
 
     def _openExpandingWidget(self) -> None:
         """Create the expanding widget and initialize it.

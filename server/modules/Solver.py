@@ -139,6 +139,7 @@ class MlatSolver(ISolver):
         logger.debug(point.y())
         logger.debug(center.y())
         logger.debug(center.radius*0.5)
+        logger.debug(center.y()-center.radius*0.5)
         return center.distanceToPoint(point) <= center.radius*1.2 \
             and point.y() >= center.y()-center.radius*0.5
 

@@ -104,7 +104,6 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
         self.saveOptsFromGui(config, self._configKey)
         self.close()
 
-    # handle the close event for the log window
     def closeEvent(self, event: QCloseEvent) -> None:
         """Handle window close event cleanly.
 
