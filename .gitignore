@@ -3,6 +3,7 @@
 
 # purposefully hidden files and folders
 ._*
+*.backup
 
 # useless macos files
 .DS_Store
