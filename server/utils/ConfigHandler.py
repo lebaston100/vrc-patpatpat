@@ -9,7 +9,6 @@ logger = LoggerClass.getSubLogger(__name__)
 logger.setLevel(logger.INFO)  # type: ignore
 
 
-# For now the interface for configHandlers lives in here until others are added
 class IConfigHandler(ABC):
     @abstractmethod
     def __init__(self, file: str, *args, **kwargs) -> None:

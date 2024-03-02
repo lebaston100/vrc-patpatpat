@@ -14,6 +14,7 @@ from PyQt6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMainWindow,
 import ui
 from modules import HardwareDevice, ContactGroup, ServerSingleton, config
 from ui import EspSettingsDialog, ContactGroupSettings
+from ui.uiHelpers import handleDeletePrompt
 from utils import LoggerClass
 from utils import HardwareConnectionType
 
@@ -31,12 +32,22 @@ class MainWindow(QMainWindow):
         self._cgRows: dict[int, QWidget] = {}
 
         self.setupUi()
+
+        # Connect handlers for backend changes
         self.server = ServerSingleton.getInstance()
         self.server.hwManager.hwListChanged.connect(
             self._handleHwListChange)
         self.server.contactGroupManager.contactGroupListChanged.connect(
             self._handleCgListChange
         )
+
+        # Handle add new * buttons
+        self.bt_addContactGroup.clicked.connect(
+            self.server.contactGroupManager.createEmptyGroup)
+        self.bt_addHardwareDevice.clicked.connect(
+            self.server.hwManager.createEmptyDevice)
+
+        # Populate the HardwareDevice and ContactGroup lists
         self._pollHwList()
         self._pollCgList()
 
@@ -66,6 +77,21 @@ class MainWindow(QMainWindow):
         self.lb_espRowHeader = QLabel(self)
         self.lb_espRowHeader.setText("Hardware:")
         self.hl_topBar.addWidget(self.lb_espRowHeader)
+
+        # add HardwareDevice button
+        self.bt_addHardwareDevice = QPushButton(self)
+        self.bt_addHardwareDevice.setMaximumWidth(130)
+        self.bt_addHardwareDevice.setToolTip("Create new Hardware Device")
+        self.bt_addHardwareDevice.setText("+ Hardware Device")
+        # self.bt_addHardwareDevice.setEnabled(False)
+        self.hl_topBar.addWidget(self.bt_addHardwareDevice)
+
+        # add ContactGroup button
+        self.bt_addContactGroup = QPushButton(self)
+        self.bt_addContactGroup.setMaximumWidth(130)
+        self.bt_addContactGroup.setToolTip("Create new Contact Group")
+        self.bt_addContactGroup.setText("+ Contact Group")
+        self.hl_topBar.addWidget(self.bt_addContactGroup)
 
         # help button
         self.bt_openGithub = QPushButton(self)
@@ -124,7 +150,6 @@ class MainWindow(QMainWindow):
         self.splitter.addWidget(self.lb_groupRowHeader)
 
         # contact group row
-
         # the contact group scroll area
         self.contactGroupScrollArea = self.createScrollArea()
         # the single widget inside the scroll area
@@ -179,13 +204,13 @@ class MainWindow(QMainWindow):
                     partial(self.closedSingleWindow, windowReference))
                 window.show()
                 self._singleWindows[windowReference] = window
-        logger.debug(self._singleWindows)
+        logger.debug(f"Current windows: {str(self._singleWindows)}")
 
     def closedSingleWindow(self, windowReference) -> None:
-        logger.debug(f"closed window {windowReference}")
+        logger.debug(f"Closed window {windowReference}")
         if windowReference in self._singleWindows:
             del self._singleWindows[windowReference]
-        logger.debug(self._singleWindows)
+        logger.debug(f"Current windows: {str(self._singleWindows)}")
 
     def _pollHwList(self) -> None:
         """Trigger initial HardwareDevice row loading after startup"""
@@ -199,6 +224,9 @@ class MainWindow(QMainWindow):
         Args:
             devices (dict[int, HardwareDevice]): The hardwareDevices dict.
         """
+        for id, row in self._hwRows.items():
+            row.deleteLater()
+        self._hwRows = {}
         for id, device in devices.items():
             newRow = HardwareEspRow(device._configKey,
                                     self.server.hwManager.hardwareDevices[id],
@@ -207,15 +235,7 @@ class MainWindow(QMainWindow):
             device.uiRssiStateChanged.connect(newRow.lb_espRssi.setNum)
             device.deviceConnectionChanged.connect(newRow.lb_espCon.setState)
             # newRow.widgetExpanded.connect(self._triggerSplitterResize)
-            if id in self._hwRows.keys():
-                # Row already exists, re-create
-                oldRow = self._hwRows[id]
-                self.hardwareScrollAreaWidgetContentLayout.replaceWidget(
-                    oldRow, newRow)
-                oldRow.deleteLater()
-            else:
-                # It's a new row, append it
-                self.hardwareScrollAreaWidgetContentLayout.addWidget(newRow)
+            self.hardwareScrollAreaWidgetContentLayout.addWidget(newRow)
             self._hwRows[id] = newRow
         self._triggerSplitterResize()
 
@@ -224,11 +244,14 @@ class MainWindow(QMainWindow):
         self._handleCgListChange(self.server.contactGroupManager.contactGroups)
 
     def _handleCgListChange(self, groups: dict[int, ContactGroup]) -> None:
-        """Handle changes to the ContactGroup list
+        """Handle changes to the ContactGroup list.
 
         Args:
             groups (list[ContactGroup]): The list of ContactGroups
         """
+        for id, row in self._cgRows.items():
+            row.deleteLater()
+        self._cgRows = {}
         for id, group in groups.items():
             newRow = ContactGroupRow(group._configKey,
                                      self.server.contactGroupManager.contactGroups[id],
@@ -237,17 +260,10 @@ class MainWindow(QMainWindow):
                 newRow.lb_groupHasIncomingData.setState)
             newRow.hsld_strength.valueChanged.connect(
                 group.strengthSliderValueChanged)
+            group.openSettings.connect(newRow.openSettingsWindow)
             # newRow.widgetExpanded.connect(self._triggerSplitterResize)
-            if id in self._cgRows.keys():
-                # Row already exists, re-create
-                oldRow = self._cgRows[id]
-                self.contactGroupScrollAreaWidgetContentLayout.replaceWidget(
-                    oldRow, newRow)
-                oldRow.deleteLater()
-            else:
-                # It's a new row, append it
-                self.contactGroupScrollAreaWidgetContentLayout.addWidget(
-                    newRow)
+            self.contactGroupScrollAreaWidgetContentLayout.addWidget(
+                newRow)
             self._cgRows[id] = newRow
         self._triggerSplitterResize()
 
@@ -429,6 +445,15 @@ class HardwareEspRow(BaseRow):
         self.bt_espExpand.toggledOff.connect(self._deleteExpandingWidget)
         self.hl_espTopRow.addWidget(self.bt_espExpand)
 
+        # button to delete HardwareDevice
+        self.bt_deleteDevice = QPushButton(self)
+        self.bt_deleteDevice.setMaximumWidth(40)
+        self.bt_deleteDevice.setFont(font11)
+        self.bt_deleteDevice.setToolTip("Delete Hardware Device")
+        self.bt_deleteDevice.setText("\u274C")
+        self.bt_deleteDevice.clicked.connect(self._handleDeviceDelete)
+        self.hl_espTopRow.addWidget(self.bt_deleteDevice)
+
         # button to open the esp settings dialog
         self.bt_openEspSettings = QPushButton(self)
         self.bt_openEspSettings.setMaximumWidth(40)
@@ -458,6 +483,16 @@ class HardwareEspRow(BaseRow):
         widget = EspMoreInfoWidget(self)
         widget.connect(self._deviceRef)
         self.createExpandingWidget(widget)
+
+    def _handleDeviceDelete(self) -> None:
+        group = config.get(self._configKey)
+        if group:
+            delete = handleDeletePrompt(self,
+                                        f"Hardware Device ID: {group["id"]}"
+                                        f" Name: {group["name"]}")
+            if delete:
+                logger.debug(f"Deleting {self._configKey}")
+                config.delete(self._configKey)
 
 
 class EspMoreInfoWidget(QWidget):
@@ -660,13 +695,22 @@ class ContactGroupRow(BaseRow):
         self.hl_groupTopRow.addWidget(self.bt_groupExpand)
 
         # the open visualizer button
+        # TODO
         self.bt_openVisualizer = QPushButton(self)
         self.bt_openVisualizer.setMaximumWidth(40)
         self.bt_openVisualizer.setFont(font11)
         self.bt_openVisualizer.setToolTip("Open visualizer")
         self.bt_openVisualizer.setText("\ud83d\udcc8")
         self.hl_groupTopRow.addWidget(self.bt_openVisualizer)
-        # TODO
+
+        # button to delete ContactGroup
+        self.bt_deleteGroup = QPushButton(self)
+        self.bt_deleteGroup.setMaximumWidth(40)
+        self.bt_deleteGroup.setFont(font11)
+        self.bt_deleteGroup.setToolTip("Delete Contact Group")
+        self.bt_deleteGroup.setText("\u274C")
+        self.bt_deleteGroup.clicked.connect(self._handleGroupDelete)
+        self.hl_groupTopRow.addWidget(self.bt_deleteGroup)
 
         # button to open the group settings dialog
         self.bt_openGroupSettings = QPushButton(self)
@@ -674,9 +718,7 @@ class ContactGroupRow(BaseRow):
         self.bt_openGroupSettings.setFont(font11)
         self.bt_openGroupSettings.setToolTip("Configure")
         self.bt_openGroupSettings.setText("\ud83d\udd27")
-        self.bt_openGroupSettings.clicked.connect(
-            partial(self._openSettingsWindow,
-                    ContactGroupSettings, self._configKey))
+        self.bt_openGroupSettings.clicked.connect(self.openSettingsWindow)
         self.hl_groupTopRow.addWidget(self.bt_openGroupSettings)
 
         self.selfLayout.addLayout(self.hl_groupTopRow)
@@ -688,12 +730,25 @@ class ContactGroupRow(BaseRow):
         self.hsld_strength.setValue(strength)
         self.lb_strength.setNum(strength)
 
+    def openSettingsWindow(self) -> None:
+        self._openSettingsWindow(ContactGroupSettings, self._configKey)
+
     def _openExpandingWidget(self) -> None:
         """Create the expanding widget and initialize it.
         """
         widget = ContactGroupPointsWidget(self)
         widget.connect(self._contactGroupRef)
         self.createExpandingWidget(widget)
+
+    def _handleGroupDelete(self) -> None:
+        group = config.get(self._configKey)
+        if group:
+            delete = handleDeletePrompt(self,
+                                        f"Contact Group ID: {group["id"]}"
+                                        f" Name: {group["name"]}")
+            if delete:
+                logger.debug(f"Deleting {self._configKey}")
+                config.delete(self._configKey)
 
 
 class ContactGroupPointsWidget(QWidget):

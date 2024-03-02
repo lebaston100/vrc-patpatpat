@@ -9,7 +9,7 @@ Exposes:
     threadAsStr()
 """
 
-from .FileHelper import FileHelper
+from .ConfigHandler import FileHelper
 from .Logger import LoggerClass, SignalLogHandler
 from .PathReader import PathReader
 from .threadToStr import threadAsStr
