@@ -59,6 +59,13 @@ class Visualizer(QWidget):
 
         self.buildUi()
         self._drawScalingPoints()
+        # TODO: The solver should not have to care about the index
+        self._createSeries(
+            [motor.point for motor in self._contactGroupRef.motors],
+            False, QColorConstants.Green, 0.05)
+        self._createSeries(
+            [point for point in self._contactGroupRef.avatarPoints],
+            False, QColorConstants.Blue, 0.05)
 
     def buildUi(self) -> None:
         """Initialize UI elements."""
