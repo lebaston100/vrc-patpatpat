@@ -26,7 +26,7 @@ class Motor(QObject):
         self.currentPWM: int = 0
 
     def setSpeed(self, newSpeed: float) -> None:
-        """Takes a normalized speed from 0-1 and converts it to the
+        """Takes a normalized speed from 0.0-1.0 and converts it to the
         required pwm value.
 
         It handles the dead-band between 0 and self._minPwm and
@@ -37,22 +37,18 @@ class Motor(QObject):
         Args:
             newSpeed (float): The speed to set
         """
-        # little deadband in the middle, maybe not needed, not sure yet
-        # distance = max(distance, 0.1)
-        # this would invert the value, we should do this somewhere else!
-        # motorPwm = self._maxPwm-min(ceil(self._maxPwm*newSpeed), self._maxPwm)
         motorPwm = min(ceil(self._maxPwm * newSpeed), self._maxPwm)
         pwm = self._minPwm if (motorPwm < self._minPwm
                                and motorPwm > 0) else motorPwm
         self.setPwm(pwm)
+        self.speedChanged.emit(*self._espAddr, newSpeed)
 
     def fadeOut(self):
         if self.currentPWM:
-            self.setPwm(max(self.currentPWM-2, 0))
+            self.setPwm(max(self.currentPWM-4, 0))
 
     def setPwm(self, pwm: int) -> None:
         self.currentPWM = pwm
-        self.speedChanged.emit(*self._espAddr, self.currentPWM)
 
     def __repr__(self) -> str:
         return self.__class__.__name__ + ":" + ";"\

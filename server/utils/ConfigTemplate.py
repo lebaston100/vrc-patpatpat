@@ -2,6 +2,10 @@
 entries or whenever needed
 """
 
+# TODO:
+# We need more specific templates for all the different solver types.
+# Those could be used in the ui
+
 
 class ConfigTemplate:
     TEMPLATE = {

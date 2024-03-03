@@ -17,7 +17,7 @@ logger = LoggerClass.getSubLogger(__name__)
 
 
 class ContactGroup(QObject):
-    dataRxStateChanged = QSignal(bool)
+    dataRxStateChanged = QSignal(bool)  # TODO: Emit this signal for ui
     avatarPointAdded = QSignal(object)
     avatarPointRemoved = QSignal(object)
     motorSpeedChanged = QSignal(int, int, int)

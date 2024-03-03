@@ -189,7 +189,6 @@ class OscCommunicationAdapterImpl(IHardwareCommunicationAdapter, QObject):
 
     def sendPinValues(self, pinValues: list) -> None:
         """Send motor values to device over osc."""
-        # TODO: Inspect exception behaviour and add catch if needed
         try:
             if self._oscClient:
                 self._oscClient.send_message("/m", pinValues)
