@@ -26,7 +26,6 @@ class ISolver(QObject):
         self._motors = motors
         self._configKey = configKey
         self._loadConfig()
-        logger.debug(self)
 
     def _loadConfig(self) -> None:
         self._config = config.get(f"{self._configKey}.solver")
@@ -97,6 +96,8 @@ class MlatSolver(ISolver):
 
     def solve(self) -> None:
         if not self._validatePointDataAge():
+            for motor in self._motors:
+                motor.fadeOut()
             return
 
         # Add inverted and scaled point measures to solver
@@ -121,12 +122,23 @@ class MlatSolver(ISolver):
             logger.debug(f"Validation failed for {solvedPoint}")
             return
 
-        self.newPointSolved.emit(solvedPoint, 1)
+        self.newPointSolved.emit(solvedPoint, 3)
         logger.debug(solvedPoint)
 
-        # TODO: Calculate values
-
-        # TODO: Write calculated values into motors
+        strengthFactor = self._config.get("strength", 100)/100.0
+        for motor in self._motors:
+            # calculate the distance and normalize it
+            strength = solvedPoint.distanceToPoint(
+                motor.point)/motor.point.radius
+            # at this point we have a %(0-1) for how far the contact is from the motor
+            # where 0=both points touching, 1=edge of range, >1 out of range
+            # little deadband near the motors center
+            strength = max(strength, 0.1)
+            # apply strength setting
+            strength *= strengthFactor
+            # invert the value
+            strength = max(1.0-strength, 0)
+            motor.setSpeed(strength)
 
     def _validatePointDataAge(self) -> bool:
         """Check that all received points are fresh"""
