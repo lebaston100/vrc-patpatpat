@@ -196,10 +196,10 @@ class TabMotors(QWidget):
         self.motorsTableModel = SettingsTableModel(self._data)
         self.motorsTableModel.setHorizontalHeaderLabels(
             "Name", "ESP Id", "ESP Channel", "Min PWM", "Max PWM",
-            "Radius", "X", "Y", "Z", "Radius")
+            "Radius", "X", "Y", "Z")
         self.motorsTableModel.setSettingsOrder(
             "name", "espAddr.0", "espAddr.1", "minPwm", "maxPwm",
-            "xyz.0", "xyz.1", "xyz.2", "r")
+            "r", "xyz.0", "xyz.1", "xyz.2")
         self.motorsTableModel.setSettingsDataTypes(
             str, int, int, int, int, float, float, float, float)
 
