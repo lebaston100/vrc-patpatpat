@@ -9,4 +9,6 @@ class HardwareConnectionType(str, Enum):
 
 class SolverType(str, Enum):
     MLAT = "MLat"
-    LINEAR = "Linear"
+    SINGLEN2N = "Single n:n"
+    LINEARGROUP = "Linear Group"
+    DPSLINEAR = "DPS Linear"
