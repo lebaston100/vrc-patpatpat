@@ -22,6 +22,7 @@ class Motor(QObject):
         self.point = Sphere3D(self._name)
         self.point.radius = settings["r"]
         self.point.xyz = settings["xyz"]
+        self.currentSpeed: float = 0.0
         self.currentPWM: int = 0
 
     def setSpeed(self, newSpeed: float) -> None:
@@ -41,8 +42,16 @@ class Motor(QObject):
         # this would invert the value, we should do this somewhere else!
         # motorPwm = self._maxPwm-min(ceil(self._maxPwm*newSpeed), self._maxPwm)
         motorPwm = min(ceil(self._maxPwm * newSpeed), self._maxPwm)
-        self.currentPWM = self._minPwm if (motorPwm < self._minPwm
-                                           and motorPwm > 0) else motorPwm
+        pwm = self._minPwm if (motorPwm < self._minPwm
+                               and motorPwm > 0) else motorPwm
+        self.setPwm(pwm)
+
+    def fadeOut(self):
+        if self.currentPWM:
+            self.setPwm(max(self.currentPWM-2, 0))
+
+    def setPwm(self, pwm: int) -> None:
+        self.currentPWM = pwm
         self.speedChanged.emit(*self._espAddr, self.currentPWM)
 
     def __repr__(self) -> str:
