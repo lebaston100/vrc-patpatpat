@@ -91,7 +91,8 @@ class Visualizer(QWidget):
                     dataProxy.resetArray([])
 
     def _drawScalingPoints(self) -> None:
-        """Draws some initial points to have a static reference."""
+        """Draws some initial points to have a static reference.
+        This is basically a 3d bounding box."""
         avatarPoints = self._contactGroupRef.avatarPoints
         minPoint = QVector3D()
         maxPoint = QVector3D()
@@ -115,8 +116,6 @@ class Visualizer(QWidget):
         Args:
             point (QVector3D): The point to add.
         """
-        logger.debug(f"Handling point {str(point)} with id {id}")
-
         # check if id is a valid series
         if 0 <= id >= len(self._series):
             newId = self._createSeries([], True)

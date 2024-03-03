@@ -19,7 +19,7 @@ class AvatarPointSphere(Sphere3D):
         self.lastValueTs: float = 0.0
 
     def vrcContact(self, time: float, params: list):
-        """The callback send by the ContactGroupManager when new data
+        """The callback run by the ContactGroupManager when new data
         from VRC comes in for this contact receiver
 
         Args:
@@ -29,8 +29,6 @@ class AvatarPointSphere(Sphere3D):
         try:
             self.lastValue = params[0]
             self.lastValueTs = time
-            # logger.debug(f"received new value for {self.receiverId}: "
-            #  f"{self.lastValue}")
         except Exception as E:
             logger.exception(E)
 

@@ -57,6 +57,7 @@ class HwManager(QObject):
             channelId (int, optional): The destined esp's channel. Defaults to 0.
             value (float | int, optional): The value to write. Defaults to 0.
         """
+        # logger.debug(f"writeSpeed({hwId}, {channelId}, {value})")
         if hwId in self.hardwareDevices \
                 and channelId in self.hardwareDevices[hwId].pinStates:
             self.hardwareDevices[hwId].pinStates[channelId] = value

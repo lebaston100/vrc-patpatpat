@@ -12,6 +12,7 @@ logger = LoggerClass.getSubLogger(__name__)
 class Motor(QObject):
     """Represents a motor attached to an ESP Pin (Channel)"""
     speedChanged = QSignal(int, int, float)
+    motorPwmChanged = QSignal(int, int, int)
 
     def __init__(self, settings: dict, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -49,6 +50,7 @@ class Motor(QObject):
 
     def setPwm(self, pwm: int) -> None:
         self.currentPWM = pwm
+        self.motorPwmChanged.emit(*self._espAddr, pwm)
 
     def __repr__(self) -> str:
         return self.__class__.__name__ + ":" + ";"\

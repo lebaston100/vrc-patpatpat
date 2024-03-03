@@ -17,10 +17,10 @@ logger = LoggerClass.getSubLogger(__name__)
 
 
 class ContactGroup(QObject):
-    dataRxStateChanged = QSignal(bool)  # TODO: Emit this signal for ui
+    dataRxStateChanged = QSignal(bool)
     avatarPointAdded = QSignal(object)
     avatarPointRemoved = QSignal(object)
-    motorSpeedChanged = QSignal(int, int, int)
+    motorPwmChanged = QSignal(int, int, int)
     strengthSliderValueChanged = QSignal(int)
     newPointSolved = QSignal(QVector3D, int)
     openSettings = QSignal()
@@ -33,6 +33,11 @@ class ContactGroup(QObject):
         self.motors: list[Motor] = []
         self.avatarPoints: list[AvatarPointSphere] = []
 
+        self._currentDataState = False
+        self._dataTimer = QTimer()
+        self._dataTimer.timeout.connect(self._checkDataTimeout)
+        self._dataTimer.start(200)
+
     def setup(self) -> None:
         try:
             self._config = config.get(self._configKey)
@@ -40,7 +45,9 @@ class ContactGroup(QObject):
             self._name = self._config["name"]
 
             for motor in self._config["motors"]:
-                self.motors.append(Motor(motor))
+                newMotor = Motor(motor)
+                newMotor.motorPwmChanged.connect(self.motorPwmChanged)
+                self.motors.append(newMotor)
 
             for avatarPoint in self._config["avatarPoints"]:
                 newAvatarPoint = AvatarPointSphere(avatarPoint)
@@ -61,6 +68,17 @@ class ContactGroup(QObject):
         except Exception as E:
             logger.exception(E)
 
+    def _checkDataTimeout(self) -> None:
+        """Calculate if data for this group has recently come in.
+        """
+        # TODO: This also needs some rework as all other timeout checkers
+        now = time.time()
+        currentState = any(now - obj.lastValueTs <=
+                           0.5 for obj in self.avatarPoints)
+        if self._currentDataState != currentState:
+            self._currentDataState = currentState
+            self.dataRxStateChanged.emit(self._currentDataState)
+
     def close(self) -> None:
         """Closes everything we own and care for."""
         logger.debug(f"Stopping {__class__.__name__}({self._configKey})")
@@ -77,7 +95,7 @@ class ContactGroupManager(QObject):
     registerAvatarPoint = QSignal(str)
     unregisterAvatarPoint = QSignal(str)
     tickSkipped = QSignal()  # ??
-    motorSpeedChanged = QSignal(int, int, int)
+    motorPwmChanged = QSignal(int, int, int)
     solverDone = QSignal()
     contactGroupListChanged = QSignal(dict)
     currentTpsChanged = QSignal(int)
@@ -113,7 +131,7 @@ class ContactGroupManager(QObject):
 
     def _contactGroupFactory(self, key: str) -> ContactGroup:
         group = ContactGroup(key)
-        group.motorSpeedChanged.connect(self.motorSpeedChanged)
+        group.motorPwmChanged.connect(self.motorPwmChanged)
         group.avatarPointAdded.connect(self.avatarPointAdded)
         group.avatarPointRemoved.connect(self.avatarPointRemoved)
         group.setup()
@@ -192,6 +210,7 @@ class ContactGroupManager(QObject):
             newGroup = self._contactGroupFactory(path)
             self.contactGroups[group["id"]] = newGroup
             self.contactGroupListChanged.emit(self.contactGroups)
+            # TODO: This currently fires after saving an existing group too
             newGroup.openSettings.emit()
 
     @QSlot(str)
