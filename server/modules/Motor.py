@@ -19,8 +19,9 @@ class Motor(QObject):
         self._espAddr: list[int] = settings["espAddr"]
         self._minPwm: int = settings["minPwm"]
         self._maxPwm: int = settings["maxPwm"]
-        self._point = Sphere3D(self._name)
-        self._point.xyz = settings["xyz"]
+        self.point = Sphere3D(self._name)
+        self.point.radius = settings["r"]
+        self.point.xyz = settings["xyz"]
         self.currentPWM: int = 0
 
     def setSpeed(self, newSpeed: float) -> None:
