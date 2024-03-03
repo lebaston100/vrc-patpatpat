@@ -12,11 +12,10 @@ from PyQt6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMainWindow,
                              QSpacerItem, QSplitter, QVBoxLayout, QWidget)
 
 import ui
-from modules import HardwareDevice, ContactGroup, ServerSingleton, config
-from ui import EspSettingsDialog, ContactGroupSettings, VisualizerWindow
+from modules import ContactGroup, HardwareDevice, ServerSingleton, config
+from ui import ContactGroupSettings, EspSettingsDialog, VisualizerWindow
 from ui.UiHelpers import handleDeletePrompt
-from utils import LoggerClass
-from utils import HardwareConnectionType
+from utils import HardwareConnectionType, LoggerClass
 
 logger = LoggerClass.getSubLogger(__name__)
 
@@ -287,6 +286,9 @@ class MainWindow(QMainWindow):
 
         for window in self._singleWindows.values():
             window.close()
+
+        # TODO: Close other windows that rows might have opened
+        # like visualizer or settings
 
 
 class BaseRow(QFrame):
@@ -739,11 +741,11 @@ class ContactGroupRow(BaseRow):
             self._visualizerWindow.raise_()
             self._visualizerWindow.activateWindow()
         else:
-            self._visualizerWindow = ui.VisualizerWindow()
+            self._visualizerWindow = ui.VisualizerWindow(self._contactGroupRef)
             self._visualizerWindow.destroyed.connect(
                 self._closedVisualizerWindow)
             self._contactGroupRef.newPointSolved.connect(
-                self._visualizerWindow.handlePoint)
+                self._visualizerWindow.visualizer.handleDataPoint)
             self._visualizerWindow.show()
 
     def _closedVisualizerWindow(self):

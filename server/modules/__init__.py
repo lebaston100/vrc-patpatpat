@@ -16,5 +16,5 @@ from .OptionAdapter import OptionAdapter
 from .OscMessageTypes import *
 from .Points import Sphere3D
 from .Server import ServerSingleton
-from .Solver import LinearSolver, MlatSolver, SolverFactory
+from .Solver import SolverFactory
 from .VrcConnector import VrcConnectorImpl

@@ -420,7 +420,7 @@ class TabSolver(QWidget, OptionAdapter):
             "cb_allowOnlyUpperSphereHalf")
         self.cb_allowOnlyUpperSphereHalf.setText(
             "Only allow upper sphere half")
-        self.addOpt("enableHalfSphereCheck",
+        self.addOpt("MLat_enableHalfSphereCheck",
                     self.cb_allowOnlyUpperSphereHalf, bool)
         self._solverOptionMapping.append(
             ("Mlat", self.cb_allowOnlyUpperSphereHalf))

@@ -5,6 +5,7 @@ import time
 from PyQt6.QtCore import QObject, Qt, QThread, QTimer
 from PyQt6.QtCore import pyqtSignal as QSignal
 from PyQt6.QtCore import pyqtSlot as QSlot
+from PyQt6.QtGui import QVector3D
 
 from modules import config
 from modules.AvatarPoint import AvatarPointSphere
@@ -21,7 +22,7 @@ class ContactGroup(QObject):
     avatarPointRemoved = QSignal(object)
     motorSpeedChanged = QSignal(int, int, int)
     strengthSliderValueChanged = QSignal(int)
-    newPointSolved = QSignal(object)
+    newPointSolved = QSignal(QVector3D, int)
     openSettings = QSignal()
 
     def __init__(self, configKey) -> None:
@@ -245,10 +246,8 @@ class ContactGroupSolverWorker(QObject):
 
     @QSlot()
     def startTimer(self):
-        logger.debug(f"startTimer in {__class__.__name__}")
-        selfThread = self.thread()
-        logger.debug(f"pid_QThread.currentThread={threadAsStr(QThread.currentThread())} "
-                     f"pid_selfThread={threadAsStr(selfThread)}")
+        logger.debug(f"startTimer in {__class__.__name__} with "
+                     f"pid={threadAsStr(self.thread())}")
 
         # Setup solver runner timer
         if not hasattr(self, "_timer"):

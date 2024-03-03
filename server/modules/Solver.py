@@ -16,7 +16,7 @@ logger = LoggerClass.getSubLogger(__name__)
 
 class ISolver(QObject):
     """The interface/base class."""
-    newPointSolved = QSignal(object)
+    newPointSolved = QSignal(QVector3D, int)
 
     def __init__(self, motors: list[Motor],
                  avatarPoints: list[AvatarPointSphere],
@@ -50,7 +50,7 @@ class ISolver(QObject):
             .join([f"{key}={str(val)}" for key, val in self.__dict__.items()])
 
 
-class LinearSolver(ISolver):
+class SingleN2NSolver(ISolver):
     def __init__(self, *args) -> None:
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args)
@@ -99,26 +99,34 @@ class MlatSolver(ISolver):
         if not self._validatePointDataAge():
             return
 
-        # Add point measures to solver
+        # Add inverted and scaled point measures to solver
         for avatarPoint in self._avatarPoints:
+            scaledDistance = (1.0-avatarPoint.lastValue)*avatarPoint.radius
             self.mlatEngine.add_measure_id(
-                avatarPoint.receiverId, avatarPoint.lastValue)
+                avatarPoint.receiverId, scaledDistance)
 
         # Try to solve
         if not (solveResult := self.mlatEngine.solve()):
             logger.debug("Could not solve")
             return
 
-        logger.debug(f"Sucessfully solved to {str(solveResult)}")
+        # logger.debug(f"Sucessfully solved to {str(solveResult)}")
 
+        # convert mlat Point to QVector3D
         solvedPoint = self._QVector3DfromMlatPoint(solveResult)
 
-        self.newPointSolved.emit(solvedPoint)
-
-        if not self._validateMlatPoint(solvedPoint):
+        # run validation of computed point if enabled
+        if self._config.get("MLat_enableHalfSphereCheck", False) \
+                and not self._runHalfSphereCheck(solvedPoint):
             logger.debug(f"Validation failed for {solvedPoint}")
             return
+
+        self.newPointSolved.emit(solvedPoint, 1)
         logger.debug(solvedPoint)
+
+        # TODO: Calculate values
+
+        # TODO: Write calculated values into motors
 
     def _validatePointDataAge(self) -> bool:
         """Check that all received points are fresh"""
@@ -128,7 +136,7 @@ class MlatSolver(ISolver):
     def _QVector3DfromMlatPoint(self, point: Point):
         return QVector3D(point.x, point.y, point.z)
 
-    def _validateMlatPoint(self, point: QVector3D) -> bool:
+    def _runHalfSphereCheck(self, point: QVector3D) -> bool:
         """Validate that the calculcated point makes sense"""
         # distance from center point to calculcated point
         # <= center radius + some margin
@@ -147,10 +155,10 @@ class MlatSolver(ISolver):
 class SolverFactory:
     @staticmethod
     def fromType(solverType: SolverType) -> \
-            type[LinearSolver] | type[MlatSolver] | None:
+            type[SingleN2NSolver] | type[MlatSolver] | None:
         match solverType:
-            case SolverType.LINEAR:
-                return LinearSolver
+            case SolverType.SINGLEN2N:
+                return SingleN2NSolver
             case SolverType.MLAT:
                 return MlatSolver
 

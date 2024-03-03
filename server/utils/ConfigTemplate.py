@@ -60,7 +60,7 @@ class ConfigTemplate:
                 "solver": {
                     "solverType": "MLat",
                     "strength": 100,
-                    "enableHalfSphereCheck": True,
+                    "MLat_enableHalfSphereCheck": True,
                     "contactOnly": False
                 }
             }
