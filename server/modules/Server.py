@@ -48,6 +48,8 @@ class ServerSingleton(QObject):
             self.vrcOscConnector.addToFilter)
         self.contactGroupManager.unregisterAvatarPoint.connect(
             self.vrcOscConnector.removeFromFilter)
+        self.contactGroupManager.motorSpeedChanged.connect(
+            self.hwManager.writeSpeed)
         self.contactGroupManager.solverDone.connect(
             self.hwManager.sendHwUpdate)
 
