@@ -90,7 +90,6 @@ class MlatSolver(ISolver):
         Args:
             strength (int): The new strength percentage
         """
-        logger.debug(f"strength was changed to {strength}%")
         config.set(f"{self._configKey}.solver.strength", strength)
         self._loadConfig()
 
@@ -128,17 +127,19 @@ class MlatSolver(ISolver):
         strengthFactor = self._config.get("strength", 100)/100.0
         for motor in self._motors:
             # calculate the distance and normalize it
-            strength = solvedPoint.distanceToPoint(
+            distance = solvedPoint.distanceToPoint(
                 motor.point)/motor.point.radius
-            # at this point we have a %(0-1) for how far the contact is from the motor
-            # where 0=both points touching, 1=edge of range, >1 out of range
+            # at this point we have a %(0-1) for how far the contact is
+            # from the motor where:
+            # 0=both points touching, 1=edge of range, >1 out of range
+
             # little deadband near the motors center
-            strength = max(strength, 0.1)
-            # apply strength setting
-            strength *= strengthFactor
-            # invert the value
-            strength = max(1.0-strength, 0)
-            motor.setSpeed(strength)
+            distance = max(distance, 0.1)
+
+            # invert value, clamp it and apply strength factor
+            speed = max(1.0-distance, 0)*strengthFactor
+
+            motor.setSpeed(speed)
 
     def _validatePointDataAge(self) -> bool:
         """Check that all received points are fresh"""
@@ -154,14 +155,8 @@ class MlatSolver(ISolver):
         # <= center radius + some margin
         # and the point's y is not below half the radius of the center y
         center = self._centerPoint
-        logger.debug(center.radius*1.2)
-        logger.debug(center.distanceToPoint(point))
-        logger.debug(point.y())
-        logger.debug(center.y())
-        logger.debug(center.radius*0.5)
-        logger.debug(center.y()-center.radius*0.5)
-        return center.distanceToPoint(point) <= center.radius*1.2 \
-            and point.y() >= center.y()-center.radius*0.5
+        return center.distanceToPoint(point) <= center.radius*1.3 \
+            and point.y() >= center.y()
 
 
 class SolverFactory:
