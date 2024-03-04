@@ -80,9 +80,10 @@ class HardwareDevice(QObject):
     def sendPinValues(self) -> None:
         """Create and send current self.pinStates to hardware."""
         # logger.debug(f"Sending all pin values for {self._name}")
-        motorData = list(self.pinStates.values())[:self._numMotors]
-        self.hardwareCommunicationAdapter.sendPinValues(motorData)
-        self.motorDataSent.emit(motorData)
+        if self.currentConnectionState:
+            motorData = list(self.pinStates.values())[:self._numMotors]
+            self.hardwareCommunicationAdapter.sendPinValues(motorData)
+            self.motorDataSent.emit(motorData)
 
     def processHeartbeat(self, msg: HeartbeatMessage) -> None:
         """Process an incoming heartbeat message from the comms interface.
