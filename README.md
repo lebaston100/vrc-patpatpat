@@ -20,18 +20,19 @@ The "old" basic working server version can still be accessed from the master bra
 
 Server:
 
-- [ ] Main UI
+- [x] Main UI
 - [x] Configuration windows
-- [ ] 3D visualizer
+- [x] 3D visualizer
 - [x] Log viewer
 - [x] Config file
 - [x] VRC comms
 - [x] Hardware discovery
 - [x] Hardware comms
-- [ ] MLAT solver
+- [x] MLAT solver
 - [ ] Linear solver
 - [ ] Slipserial support (base is there, but no priority)
 - [ ] MQTT control support (maybe)
+- [ ] Fix bugs
 
 Hardware:
 
@@ -44,7 +45,7 @@ Misc:
 - [x] Design dev pcb (v1 dev board manufactured and built, v2 dev board design done)
 - [ ] Rewrite readme
 - [ ] Add CI pytest job for server (more tests need to be written)
-- [ ] Add CI build job for server
+- [ ] Add CI build job for server (needs improvement)
 
 Other stuff/notes to later add to the readme:
 
