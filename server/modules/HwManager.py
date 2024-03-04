@@ -320,7 +320,7 @@ class HwOscRxWorker(QObject):
             self._oscRx.serve_forever()
         except Exception as E:
             logger.exception(E)
-        logger.debug("startOsc done, cleaning up...")
+        logger.debug("startOscServer done, cleaning up...")
         self._oscRx.socket.close()
         del self._oscRx  # dereferene so the gc can pick it up
 
@@ -360,7 +360,7 @@ class HwOscRx(QObject):
             self.onOscHeartbeatMessage)
 
         logger.debug("Starting heartbeat osc server and client")
-        self.workerThread.start()
+        self.workerThread.start(QThread.Priority.HighestPriority)
 
     def close(self) -> None:
         """Closes everything heartbeat osc related."""

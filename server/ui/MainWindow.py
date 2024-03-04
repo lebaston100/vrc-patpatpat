@@ -224,6 +224,7 @@ class MainWindow(QMainWindow):
             devices (dict[int, HardwareDevice]): The hardwareDevices dict.
         """
         for id, row in self._hwRows.items():
+            row.close()
             row.deleteLater()
         self._hwRows = {}
         for id, device in devices.items():
@@ -249,6 +250,7 @@ class MainWindow(QMainWindow):
             groups (list[ContactGroup]): The list of ContactGroups
         """
         for id, row in self._cgRows.items():
+            row.close()
             row.deleteLater()
         self._cgRows = {}
         for id, group in groups.items():
@@ -281,14 +283,18 @@ class MainWindow(QMainWindow):
         logger.debug("-----EXIT STARTED-----")
         logger.debug(f"closeEvent in {__class__.__name__}")
 
-        logger.debug("Stopping server...")
-        self.server.stop()
-
+        logger.debug("Closing windows")
         for window in self._singleWindows.values():
             window.close()
 
-        # TODO: Close other windows that rows might have opened
-        # like visualizer or settings
+        for hwRow in self._hwRows.values():
+            hwRow.close()
+
+        for cgRow in self._cgRows.values():
+            cgRow.close()
+
+        logger.debug("Stopping server...")
+        self.server.stop()
 
 
 class BaseRow(QFrame):
@@ -346,12 +352,14 @@ class BaseRow(QFrame):
         self._settingsWindow = None
 
     def _lockSlider(self) -> None:
-        logger.debug("Slider locked")
         self.sliderLocked = True
 
     def _unlockSlider(self) -> None:
-        logger.debug("Slider unlocked")
         self.sliderLocked = False
+
+    def close(self) -> None:
+        """Close any windows that might be open"""
+        super().close()
 
 
 class ExpandedWidgetDataRowBase(QHBoxLayout):
@@ -480,8 +488,7 @@ class HardwareEspRow(BaseRow):
         self.lb_espIdMac.setText(f"{id} '{name}' ({mac}/{connAddr})")
 
     def _openExpandingWidget(self) -> None:
-        """Create the expanding widget and initialize it.
-        """
+        """Create the expanding widget and initialize it."""
         widget = EspMoreInfoWidget(self)
         widget.connect(self._deviceRef)
         self.createExpandingWidget(widget)
@@ -767,6 +774,11 @@ class ContactGroupRow(BaseRow):
             if delete:
                 logger.debug(f"Deleting {self._configKey}")
                 config.delete(self._configKey)
+
+    def close(self) -> None:
+        if self._visualizerWindow:
+            self._visualizerWindow.close()
+        super().close()
 
 
 class ContactGroupPointsWidget(QWidget):
