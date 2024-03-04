@@ -202,16 +202,19 @@ class ContactGroupManager(QObject):
             if not group:
                 return
 
+            fireSettings = False
             groupId = group["id"]
             if groupId in self.contactGroups:
                 # Existing group, close
                 self.contactGroups[groupId].close()
+            else:
+                fireSettings = True
 
             newGroup = self._contactGroupFactory(path)
             self.contactGroups[group["id"]] = newGroup
             self.contactGroupListChanged.emit(self.contactGroups)
-            # TODO: This currently fires after saving an existing group too
-            newGroup.openSettings.emit()
+            if fireSettings:
+                newGroup.openSettings.emit()
 
     @QSlot(str)
     def _handleConfigPathDeleted(self, path: str) -> None:
