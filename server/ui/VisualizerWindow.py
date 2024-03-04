@@ -1,10 +1,10 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import pyqtSlot as QSlot
-from PyQt6.QtDataVisualization import (Q3DScatter, QScatter3DSeries,
+from PyQt6.QtDataVisualization import (Q3DCamera, Q3DScatter, QScatter3DSeries,
                                        QScatterDataItem, QScatterDataProxy)
 from PyQt6.QtGui import QCloseEvent, QColor, QColorConstants, QVector3D
-from PyQt6.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QVBoxLayout,
-                             QWidget)
+from PyQt6.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QSizePolicy,
+                             QVBoxLayout, QWidget)
 
 from modules.ContactGroup import ContactGroup
 from utils import LoggerClass
@@ -12,7 +12,7 @@ from utils import LoggerClass
 logger = LoggerClass.getSubLogger(__name__)
 
 
-class VisualizerWindow(QWidget):
+class MLATVisualizerWindow(QWidget):
     def __init__(self, groupRef: ContactGroup, *args, **kwargs) -> None:
         """Initialize the 3d visualizer window"""
         logger.debug(f"Creating {__class__.__name__}")
@@ -31,10 +31,11 @@ class VisualizerWindow(QWidget):
         self.selfLayout = QVBoxLayout(self)
         self.buttonRowLayout = QHBoxLayout()
 
-        self.visualizer = Visualizer(self._contactGroupRef)
+        self.visualizer = MLATVisualizer(self._contactGroupRef)
         self.selfLayout.addWidget(self.visualizer)
 
         self.bt_clearPlot = QPushButton("Clear Plot")
+        self.bt_clearPlot.setMaximumHeight(30)
         self.bt_clearPlot.clicked.connect(self.visualizer.clearPlot)
         self.buttonRowLayout.addWidget(self.bt_clearPlot)
 
@@ -49,7 +50,7 @@ class VisualizerWindow(QWidget):
         logger.debug(f"closeEvent in {__class__.__name__}")
 
 
-class Visualizer(QWidget):
+class MLATVisualizer(QWidget):
     def __init__(self, groupRef: ContactGroup) -> None:
         super().__init__()
 
@@ -69,6 +70,8 @@ class Visualizer(QWidget):
 
     def buildUi(self) -> None:
         """Initialize UI elements."""
+        self.setSizePolicy(QSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding))
 
         self.plot = Q3DScatter()
         self.plot.setAspectRatio(1.0)
@@ -79,20 +82,19 @@ class Visualizer(QWidget):
         self.selfLayout.setContentsMargins(0, 0, 0, 0)
 
         winCont = QWidget.createWindowContainer(self.plot)
-        # TODO: There needs to be a better way for scaling this
-        winCont.setFixedHeight(500)
+        winCont.setSizePolicy(QSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding))
         self.selfLayout.addWidget(winCont)
 
     def clearPlot(self) -> None:
         """Clears all QScatter3DSeries data where dynamic flag is set"""
         for series, isDynamic in self._series:
-            if isDynamic:
-                if dataProxy := series.dataProxy():
-                    dataProxy.resetArray([])
+            if isDynamic and (dataProxy := series.dataProxy()):
+                dataProxy.resetArray([])
 
     def _drawScalingPoints(self) -> None:
         """Draws some initial points to have a static reference.
-        This is basically a 3d bounding box."""
+        This is basically brute-forcing a 3d bounding box."""
         avatarPoints = self._contactGroupRef.avatarPoints
         minPoint = QVector3D()
         maxPoint = QVector3D()
@@ -108,6 +110,12 @@ class Visualizer(QWidget):
         newId = self._createSeries(
             [minPoint, maxPoint], False, QColorConstants.White, 0.01)
         logger.debug(f"Created scaling series with index {newId}")
+        # set camera to default position
+        if scene := self.plot.scene():
+            if camera := scene.activeCamera():
+                camera.setCameraPreset(
+                    Q3DCamera.CameraPreset.CameraPresetIsometricRight)
+                camera.setZoomLevel(160)
 
     @QSlot(QVector3D, int)
     def handleDataPoint(self, point: QVector3D, id: int = 0) -> None:
