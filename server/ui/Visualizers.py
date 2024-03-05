@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QSizePolicy,
 
 from modules.ContactGroup import ContactGroup
 from utils import LoggerClass
+from utils.Enums import SolverType
 
 logger = LoggerClass.getSubLogger(__name__)
 
@@ -175,3 +176,13 @@ class MLATVisualizer(QWidget):
         series.setBaseColor(QColorConstants.Red)
         series.setDataProxy(proxy)
         return series
+
+
+class VisualizerFactory:
+    @staticmethod
+    def fromType(solverType: SolverType) -> \
+            type[MLATVisualizerWindow] | None:
+        match solverType:
+            case SolverType.MLAT:
+                return MLATVisualizerWindow
+        return None

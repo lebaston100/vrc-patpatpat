@@ -10,6 +10,7 @@ from modules import config
 from modules.AvatarPoint import AvatarPointSphere
 from modules.Motor import Motor
 from utils import LoggerClass, SolverType
+from utils.Enums import VisualizerType
 
 logger = LoggerClass.getSubLogger(__name__)
 
@@ -31,6 +32,10 @@ class ISolver(QObject):
         self._config = config.get(f"{self._configKey}.solver")
         if not self._config:
             logger.error("Failed to load config for solver")
+
+    def getType(self) -> VisualizerType:
+        """Return the type of visualizer it is"""
+        raise NotImplementedError
 
     def setup(self) -> None:
         """A generic setup method to be reimplemented."""
@@ -57,6 +62,9 @@ class SingleN2NSolver(ISolver):
     def setup(self) -> None:
         pass
 
+    def getType(self):
+        return SolverType.SINGLEN2N
+
     @QSlot(int)
     def setStrength(self, strength: int) -> None:
         logger.debug(f"strength was changed to {strength}")
@@ -82,6 +90,9 @@ class MlatSolver(ISolver):
 
         # find center point for validation
         self._centerPoint = min(self._avatarPoints, key=lambda p: p.y())
+
+    def getType(self):
+        return SolverType.MLAT
 
     @QSlot(int)
     def setStrength(self, strength: int) -> None:

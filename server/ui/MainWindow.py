@@ -13,7 +13,8 @@ from PyQt6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMainWindow,
 
 import ui
 from modules import ContactGroup, HardwareDevice, ServerSingleton, config
-from ui import ContactGroupSettings, EspSettingsDialog, VisualizerWindow
+from ui import ContactGroupSettings, EspSettingsDialog
+from ui.Visualizers import VisualizerFactory
 from ui.UiHelpers import handleDeletePrompt
 from utils import HardwareConnectionType, LoggerClass
 
@@ -650,7 +651,9 @@ class ContactGroupRow(BaseRow):
                  parent: QWidget | None) -> None:
         # logger.debug(f"Creating {__class__.__name__}")
         self._configKey = configKey
-        self._visualizerWindow: VisualizerWindow | None = None
+        self._visualizerWindow: QWidget | None = None
+        self.visualizerType = VisualizerFactory.fromType(
+            contactGroupRef.solver.getType())
         super().__init__(parent)
         self._contactGroupRef = contactGroupRef
 
@@ -704,14 +707,15 @@ class ContactGroupRow(BaseRow):
             self._deleteExpandingWidget)
         self.hl_groupTopRow.addWidget(self.bt_groupExpand)
 
-        # the open visualizer button
-        self.bt_openVisualizer = QPushButton(self)
-        self.bt_openVisualizer.setMaximumWidth(40)
-        self.bt_openVisualizer.setFont(font11)
-        self.bt_openVisualizer.setToolTip("Open visualizer")
-        self.bt_openVisualizer.setText("\ud83d\udcc8")
-        self.bt_openVisualizer.clicked.connect(self._openVisualizerWindow)
-        self.hl_groupTopRow.addWidget(self.bt_openVisualizer)
+        if self.visualizerType:
+            # the open visualizer button if supported
+            self.bt_openVisualizer = QPushButton(self)
+            self.bt_openVisualizer.setMaximumWidth(40)
+            self.bt_openVisualizer.setFont(font11)
+            self.bt_openVisualizer.setToolTip("Open visualizer")
+            self.bt_openVisualizer.setText("\ud83d\udcc8")
+            self.bt_openVisualizer.clicked.connect(self._openVisualizerWindow)
+            self.hl_groupTopRow.addWidget(self.bt_openVisualizer)
 
         # button to delete ContactGroup
         self.bt_deleteGroup = QPushButton(self)
@@ -747,8 +751,9 @@ class ContactGroupRow(BaseRow):
         if self._visualizerWindow:
             self._visualizerWindow.raise_()
             self._visualizerWindow.activateWindow()
-        else:
-            self._visualizerWindow = ui.VisualizerWindow(self._contactGroupRef)
+        elif self.visualizerType:
+            self._visualizerWindow = self.visualizerType(
+                self._contactGroupRef)
             self._visualizerWindow.destroyed.connect(
                 self._closedVisualizerWindow)
             self._contactGroupRef.newPointSolved.connect(

@@ -7,4 +7,3 @@ from .MainWindow import MainWindow
 from .ProgramSettingsDialog import ProgramSettingsDialog
 from .ToggleButton import ToggleButton
 from .UiHelpers import handleClosePrompt, handleDeletePrompt
-from .VisualizerWindow import VisualizerWindow

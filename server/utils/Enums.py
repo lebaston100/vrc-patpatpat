@@ -12,3 +12,7 @@ class SolverType(str, Enum):
     SINGLEN2N = "Single n:n"
     LINEARGROUP = "Linear Group"
     DPSLINEAR = "DPS Linear"
+
+
+class VisualizerType(str, Enum):
+    MLAT = 0
