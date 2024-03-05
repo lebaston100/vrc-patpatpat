@@ -33,11 +33,6 @@ class ContactGroup(QObject):
         self.motors: list[Motor] = []
         self.avatarPoints: list[AvatarPointSphere] = []
 
-        self._currentDataState = False
-        self._dataTimer = QTimer()
-        self._dataTimer.timeout.connect(self._checkDataTimeout)
-        self._dataTimer.start(200)
-
     def setup(self) -> None:
         try:
             self._config = config.get(self._configKey)
@@ -65,6 +60,11 @@ class ContactGroup(QObject):
                 self.solver.setup()
             else:
                 logger.error("Unknown solver type specified")
+
+            self._currentDataState = False
+            self._dataTimer = QTimer()
+            self._dataTimer.timeout.connect(self._checkDataTimeout)
+            self._dataTimer.start(200)
         except Exception as E:
             logger.exception(E)
 

@@ -132,7 +132,7 @@ class MlatSolver(ISolver):
             logger.debug(f"Validation failed for {solvedPoint}")
             return
 
-        self.newPointSolved.emit(solvedPoint, 3)
+        self.newPointSolved.emit(solvedPoint, 0)
         logger.debug(solvedPoint)
 
         strengthFactor = self._config.get("strength", 100)/100.0

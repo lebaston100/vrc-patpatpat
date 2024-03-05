@@ -137,13 +137,13 @@ class VrcConnectorImpl(IVrcConnector, QObject):
         if not self.currentDataState and self._lastVrcMessage and \
                 (datetime.now() - self._lastVrcMessage).total_seconds() <= 3:
             self.currentDataState = True
-            logger.debug("vrc connection state changed to "
+            logger.debug("VRC connection state changed to "
                          f"{self.currentDataState}")
             self.onVrcConnectionStateChanged.emit(self.currentDataState)
         elif self.currentDataState and self._lastVrcMessage and \
                 (datetime.now() - self._lastVrcMessage).total_seconds() > 3:
             self.currentDataState = False
-            logger.debug("vrc connection state changed to "
+            logger.debug("VRC connection state changed to "
                          f"{self.currentDataState}")
             self.onVrcConnectionStateChanged.emit(self.currentDataState)
 
