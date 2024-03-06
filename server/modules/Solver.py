@@ -62,7 +62,7 @@ class SingleN2NSolver(ISolver):
     def setup(self) -> None:
         pass
 
-    def getType(self):
+    def getType(self) -> SolverType:
         return SolverType.SINGLEN2N
 
     @QSlot(int)
@@ -83,6 +83,7 @@ class MlatSolver(ISolver):
 
     def setup(self) -> None:
         self.mlatEngine = Engine()
+        self._contactOnly = self._config.get("contactOnly", False)
 
         # Create anchor points
         for avatarPoint in self._avatarPoints:
@@ -91,7 +92,7 @@ class MlatSolver(ISolver):
         # find center point for validation
         self._centerPoint = min(self._avatarPoints, key=lambda p: p.y())
 
-    def getType(self):
+    def getType(self) -> SolverType:
         return SolverType.MLAT
 
     @QSlot(int)
@@ -144,11 +145,15 @@ class MlatSolver(ISolver):
             # from the motor where:
             # 0=both points touching, 1=edge of range, >1 out of range
 
-            # little deadband near the motors center
-            distance = max(distance, 0.1)
+            if self._contactOnly:
+                # full speed ahead on contact if configured
+                speed = strengthFactor if distance <= 1.0 else 0
+            else:
+                # little deadband near the motors center
+                distance = max(distance, 0.1)
 
-            # invert value, clamp it and apply strength factor
-            speed = max(1.0-distance, 0)*strengthFactor
+                # invert value, clamp it and apply strength factor
+                speed = max(1.0-distance, 0)*strengthFactor
 
             motor.setSpeed(speed)
 
@@ -161,10 +166,9 @@ class MlatSolver(ISolver):
         return QVector3D(point.x, point.y, point.z)
 
     def _runHalfSphereCheck(self, point: QVector3D) -> bool:
-        """Validate that the calculcated point makes sense"""
-        # distance from center point to calculcated point
-        # <= center radius + some margin
-        # and the point's y is not below half the radius of the center y
+        """Validate that the calculcated point makes somewhat sense"""
+        # distance from center point to calculcated point<=center radius
+        # and the point's y is not below the center y
         center = self._centerPoint
         return center.distanceToPoint(point) <= center.radius*1.3 \
             and point.y() >= center.y()
