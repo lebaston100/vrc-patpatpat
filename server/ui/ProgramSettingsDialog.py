@@ -4,9 +4,9 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import pyqtSignal as Signal
 from PyQt6.QtGui import QCloseEvent
-from PyQt6.QtWidgets import (QComboBox, QDialogButtonBox, QFormLayout, QLabel,
-                             QLineEdit, QSizePolicy, QSpacerItem, QSpinBox,
-                             QWidget)
+from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDialogButtonBox,
+                             QFormLayout, QLabel, QLineEdit, QSizePolicy,
+                             QSpacerItem, QSpinBox, QWidget)
 
 from modules import OptionAdapter, config
 from ui.UiHelpers import handleClosePrompt
@@ -64,6 +64,12 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
 
         self.selfLayout.addRow("VRC OSC Receive Port:",
                                self.sb_vrcOscReceivePort)
+
+        self.cb_enableOscDiscovery = QCheckBox(self)
+        self.cb_enableOscDiscovery.setText("Enable osc device discovery")
+        self.addOpt("enableOscDiscovery",
+                    self.cb_enableOscDiscovery, dataType=bool)
+        self.selfLayout.addRow("", self.cb_enableOscDiscovery)
 
         # main tps
         self.sb_tps = QSpinBox(self)

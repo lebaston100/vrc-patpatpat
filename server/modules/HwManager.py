@@ -38,10 +38,10 @@ class HwManager(QObject):
         self.hwOscRx.onDiscoveryResponseMessage.connect(
             self._handleDiscoveryResponseMessage)
 
-        # Start osc device discovery
-        self.hwOscDiscoveryTx = HwOscDiscoveryTx()
-        self.hwOscDiscoveryTx.start()
+        self.hwOscDiscoveryTx: HwOscDiscoveryTx | None = None
+        self._handleProgramConfigChange("program.enableOscDiscovery")
 
+        config.configPathHasChanged.connect(self._handleProgramConfigChange)
         config.registerChangeSignal(
             r"esps\..*", self._hwConfigChanged)
         self._hwConfigChanged.connect(self._handleConfigChange)
@@ -49,13 +49,16 @@ class HwManager(QObject):
             r"esps\..*", self._hwConfigRemoved)
         self._hwConfigRemoved.connect(self._handleConfigRemoved)
 
-    def writeSpeed(self, hwId: int = 0, channelId: int = 0, value: float | int = 0) -> None:
+    def writeSpeed(self, hwId: int = 0, channelId: int = 0,
+                   value: float | int = 0) -> None:
         """Write speed from motor into esp's state buffer
 
         Args:
             hwId (int, optional): The destined esp. Defaults to 0.
-            channelId (int, optional): The destined esp's channel. Defaults to 0.
-            value (float | int, optional): The value to write. Defaults to 0.
+            channelId (int, optional): The destined esp's channel.
+                Defaults to 0.
+            value (float | int, optional): The value to write.
+                Defaults to 0.
         """
         # logger.debug(f"writeSpeed({hwId}, {channelId}, {value})")
         if hwId in self.hardwareDevices \
@@ -113,6 +116,20 @@ class HwManager(QObject):
             self.hardwareDevices[deviceId].close()
             del self.hardwareDevices[deviceId]
             self.hwListChanged.emit(self.hardwareDevices)
+
+    def _handleProgramConfigChange(self, path: str) -> None:
+        if path == "program.enableOscDiscovery":
+            """Handle start/stop of the osc discovery sender"""
+            if config.get("program.enableOscDiscovery"):
+                if hasattr(self, "hwOscDiscoveryTx") \
+                        and self.hwOscDiscoveryTx:
+                    self.hwOscDiscoveryTx.stop()
+                    self.hwOscDiscoveryTx = None
+                self.hwOscDiscoveryTx = HwOscDiscoveryTx()
+                self.hwOscDiscoveryTx.start()
+            elif hasattr(self, "hwOscDiscoveryTx") and self.hwOscDiscoveryTx:
+                self.hwOscDiscoveryTx.stop()
+                self.hwOscDiscoveryTx = None
 
     def _deviceFactory(self, key: str) -> HardwareDevice:
         """Creates a new device given it's config key.
@@ -206,7 +223,7 @@ class HwManager(QObject):
     def close(self) -> None:
         """Closes everything hardware related."""
         logger.debug(f"Stopping {__class__.__name__}")
-        if hasattr(self, "hwOscDiscoveryTx"):
+        if hasattr(self, "hwOscDiscoveryTx") and self.hwOscDiscoveryTx:
             self.hwOscDiscoveryTx.stop()
         if hasattr(self, "hwOscRx"):
             self.hwOscRx.close()

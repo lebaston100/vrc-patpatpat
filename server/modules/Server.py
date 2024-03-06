@@ -3,9 +3,9 @@ from typing import TypeVar
 from PyQt6.QtCore import QObject, QThread
 
 from modules import config
+from modules.ContactGroup import ContactGroupManager
 from modules.HwManager import HwManager
 from modules.VrcConnector import VrcConnectorImpl
-from modules.ContactGroup import ContactGroupManager
 from utils import LoggerClass, threadAsStr
 
 logger = LoggerClass.getSubLogger(__name__)

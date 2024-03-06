@@ -14,6 +14,7 @@ class ConfigTemplate:
             "vrcOscSendPort": 9001,
             "vrcOscReceivePort": 9000,
             "vrcOscReceiveAddress": "127.0.0.1",
+            "enableOscDiscovery": True,
             "mainTps": 40,
             "logLevel": "DEBUG"
         },
