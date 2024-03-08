@@ -8,7 +8,7 @@ from PyQt6.QtCore import QAbstractTableModel, QModelIndex, QSize, Qt, QVariant
 from PyQt6.QtCore import pyqtSignal as Signal
 from PyQt6.QtGui import QCloseEvent
 from PyQt6.QtWidgets import (QAbstractItemView, QAbstractScrollArea, QCheckBox,
-                             QComboBox, QDialogButtonBox, QFormLayout,
+                             QComboBox, QDialogButtonBox, QFormLayout, QFrame,
                              QHBoxLayout, QHeaderView, QLineEdit, QPushButton,
                              QSizePolicy, QSpacerItem, QSpinBox, QTableView,
                              QTabWidget, QVBoxLayout, QWidget)
@@ -380,9 +380,6 @@ class TabSolver(QWidget, OptionAdapter):
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
 
-        self._currentSolver = ""
-        self._solverOptionMapping = []
-
         self._configKey = configKey + ".solver"
         self.buildUi()
         # after UI is setup load options into ui elements
@@ -405,49 +402,60 @@ class TabSolver(QWidget, OptionAdapter):
         self.addOpt("solverType", self.cb_solverType)
         self.selfLayout.addRow("Solver Type:", self.cb_solverType)
 
-        # the strength slider
-        self.sb_strength = QSpinBox(self)
-        self.sb_strength.setMinimum(0)
-        self.sb_strength.setMaximum(100)
-        self.sb_strength.setSuffix(" %")
-        self.addOpt("strength", self.sb_strength, int)
-        self.selfLayout.addRow("Strength", self.sb_strength)
-
-        # TODO: Refactor so each solver's setting is in their own class
-        # that is swapped out
-
-        # upper sphere check
-        self.cb_allowOnlyUpperSphereHalf = QCheckBox(self)
-        self.cb_allowOnlyUpperSphereHalf.setObjectName(
-            "cb_allowOnlyUpperSphereHalf")
-        self.cb_allowOnlyUpperSphereHalf.setText(
-            "Only allow upper sphere half")
-        self.addOpt("MLat_enableHalfSphereCheck",
-                    self.cb_allowOnlyUpperSphereHalf, bool)
-        self._solverOptionMapping.append(
-            ("MLat", self.cb_allowOnlyUpperSphereHalf))
-        self.selfLayout.addRow("", self.cb_allowOnlyUpperSphereHalf)
-
-        # contact only (on/off instead of pwm, might be better in the contact point?)
-        self.cb_contactOnly = QCheckBox(self)
-        self.cb_contactOnly.setObjectName("cb_contactOnly")
-        self.cb_contactOnly.setText("Contact only")
-        self.addOpt("contactOnly", self.cb_contactOnly, bool)
-        self.selfLayout.addRow("", self.cb_contactOnly)
-
-        # spacer
-        self.spacer1 = QSpacerItem(
-            20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-        self.selfLayout.addItem(self.spacer1)
+        # a dividing line
+        self.ln_spacer = QFrame()
+        self.ln_spacer.setFrameShape(QFrame.Shape.HLine)
+        self.ln_spacer.setFrameShadow(QFrame.Shadow.Raised)
+        self.selfLayout.addRow(self.ln_spacer)
 
     def changeSolver(self, selected: str) -> None:
-        # TODO: Refactor out and also use Enum
-        self._currentSolver = selected
-        for solver, uiElement in self._solverOptionMapping:
-            if solver == self._currentSolver:
-                uiElement.show()
-            else:
-                uiElement.hide()
+        """Changes out the settings for each solver type.
+
+        Args:
+            selected (str): The selected solver.
+        """
+        if hasattr(self, "solverSettingsWidget") and self.solverSettingsWidget:
+            self.solverSettingsWidget.deleteLater()
+            self.selfLayout.removeRow(self.solverSettingsWidget)
+            self.solverSettingsWidget = None
+        settingsWidget = SolverSettingsFactory.fromType(SolverType(selected))
+        if settingsWidget:
+            self.solverSettingsWidget = settingsWidget(self._configKey)
+            self.selfLayout.addRow(self.solverSettingsWidget)
+
+    def hasUnsavedOptions(self) -> bool:
+        """Check if this tab has unsaved options.
+
+        Returns:
+            bool: True if there are modified options otherwise False.
+        """
+        changedPaths = self.saveOptsFromGui(
+            config, self._configKey, onlyDiff=True)
+        changedSolverSettings = []
+        if hasattr(self, "solverSettingsWidget") and self.solverSettingsWidget:
+            changedSolverSettings = self.solverSettingsWidget.hasUnsavedOptions()
+        return bool(changedPaths) or bool(changedSolverSettings)
+
+    def saveOptions(self) -> None:
+        """Save the options from this tab."""
+        if hasattr(self, "solverSettingsWidget") and self.solverSettingsWidget:
+            self.solverSettingsWidget.saveOptions()
+        self.saveOptsFromGui(config, self._configKey, blockSignal=True)
+
+
+class BaseSolverSettingsRow(QWidget, OptionAdapter):
+    def __init__(self, configKey: str, *args, **kwargs) -> None:
+        """Create the settings widget for a solver"""
+        logger.debug(f"Creating {__class__.__name__}")
+        super().__init__(*args, **kwargs)
+
+        self._configKey = configKey
+        self.selfLayout = QFormLayout(self)
+        self.buildUi()
+        self.loadOptsToGui(config, self._configKey)
+
+    def buildUi(self) -> None:
+        raise NotImplementedError
 
     def hasUnsavedOptions(self) -> bool:
         """Check if this tab has unsaved options.
@@ -460,10 +468,72 @@ class TabSolver(QWidget, OptionAdapter):
         return bool(changedPaths)
 
     def saveOptions(self) -> None:
-        """Save the options from this tab.
-        """
-
+        """Save the options from this tab."""
         self.saveOptsFromGui(config, self._configKey, blockSignal=True)
+
+
+class MLATSolverSettings(BaseSolverSettingsRow):
+    def buildUi(self):
+        # the strength spinbox
+        self.sb_strength = QSpinBox(self)
+        self.sb_strength.setMinimum(0)
+        self.sb_strength.setMaximum(100)
+        self.sb_strength.setSuffix(" %")
+        self.addOpt("strength", self.sb_strength, int)
+        self.selfLayout.addRow("Strength", self.sb_strength)
+
+        # upper sphere check
+        self.cb_allowOnlyUpperSphereHalf = QCheckBox(self)
+        self.cb_allowOnlyUpperSphereHalf.setObjectName(
+            "cb_allowOnlyUpperSphereHalf")
+        self.cb_allowOnlyUpperSphereHalf.setText(
+            "Only allow upper sphere half")
+        self.addOpt("MLAT_enableHalfSphereCheck",
+                    self.cb_allowOnlyUpperSphereHalf, bool)
+        self.selfLayout.addRow("", self.cb_allowOnlyUpperSphereHalf)
+
+        # contact only (on/off instead of pwm, might be better in the contact point?)
+        self.cb_contactOnly = QCheckBox(self)
+        self.cb_contactOnly.setObjectName("cb_contactOnly")
+        self.cb_contactOnly.setText("Contact only")
+        self.addOpt("contactOnly", self.cb_contactOnly, bool)
+        self.selfLayout.addRow("", self.cb_contactOnly)
+
+
+class SINGLEN2NSolverSettings(BaseSolverSettingsRow):
+    def buildUi(self):
+        # the strength spinbox
+        self.sb_strength = QSpinBox(self)
+        self.sb_strength.setMinimum(0)
+        self.sb_strength.setMaximum(100)
+        self.sb_strength.setSuffix(" %")
+        self.addOpt("strength", self.sb_strength, int)
+        self.selfLayout.addRow("Strength", self.sb_strength)
+
+        # min max setting
+        self.cb_minmax = QComboBox(self)
+        self.cb_minmax.addItems(["Min", "Max"])
+        self.addOpt("SINGLEN2N_minMaxMode", self.cb_minmax)
+        self.selfLayout.addRow("Min/Max Mode:", self.cb_minmax)
+
+        # contact only (on/off instead of pwm, might be better in the contact point?)
+        self.cb_contactOnly = QCheckBox(self)
+        self.cb_contactOnly.setObjectName("cb_contactOnly")
+        self.cb_contactOnly.setText("Contact only")
+        self.addOpt("contactOnly", self.cb_contactOnly, bool)
+        self.selfLayout.addRow("", self.cb_contactOnly)
+
+
+class SolverSettingsFactory:
+    @staticmethod
+    def fromType(solverType: SolverType) -> \
+            type[MLATSolverSettings] | \
+            type[SINGLEN2NSolverSettings] | None:
+        match solverType:
+            case SolverType.MLAT:
+                return MLATSolverSettings
+            case SolverType.SINGLEN2N:
+                return SINGLEN2NSolverSettings
 
 
 type validValueTypes = type[str] | type[int] | type[float] \

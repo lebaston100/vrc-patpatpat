@@ -53,6 +53,7 @@ class MainWindow(QMainWindow):
 
     def setupUi(self) -> None:
         """Initialize the main UI."""
+        # TODO: Rework this part of the UI to solve the divider scaling issue
         # the widget and it's layout
         self.setWindowTitle("VRC-patpatpat")
         self.resize(QSize(800, 430))

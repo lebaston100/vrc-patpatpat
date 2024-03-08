@@ -65,8 +65,9 @@ class ConfigTemplate:
                 "solver": {
                     "solverType": "MLat",
                     "strength": 100,
-                    "MLat_enableHalfSphereCheck": True,
-                    "contactOnly": False
+                    "contactOnly": False,
+                    "MLAT_enableHalfSphereCheck": True,
+                    "SINGLEN2N_minMaxMode": "Max"
                 }
             }
         }
