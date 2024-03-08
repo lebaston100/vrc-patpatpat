@@ -2,10 +2,6 @@
 entries or whenever needed
 """
 
-# TODO:
-# We need more specific templates for all the different solver types.
-# Those could be used in the ui
-
 
 class ConfigTemplate:
     TEMPLATE = {
@@ -71,4 +67,18 @@ class ConfigTemplate:
                 }
             }
         }
+    }
+
+    SOLVER_MLAT = {
+        "solverType": "MLat",
+        "strength": 100,
+        "contactOnly": False,
+        "MLAT_enableHalfSphereCheck": False
+    }
+
+    SOLVER_SINGLEN2N = {
+        "solverType": "Single n:n",
+        "strength": 100,
+        "contactOnly": False,
+        "SINGLEN2N_minMaxMode": "Mean"
     }

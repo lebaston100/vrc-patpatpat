@@ -15,4 +15,5 @@ class SolverType(str, Enum):
 
 
 class VisualizerType(str, Enum):
+    NONE = None
     MLAT = 0

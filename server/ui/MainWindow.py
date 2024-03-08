@@ -53,10 +53,9 @@ class MainWindow(QMainWindow):
 
     def setupUi(self) -> None:
         """Initialize the main UI."""
-        # TODO: Rework this part of the UI to solve the divider scaling issue
         # the widget and it's layout
         self.setWindowTitle("VRC-patpatpat")
-        self.resize(QSize(800, 430))
+        self.resize(QSize(800, 200))
         self.setMaximumWidth(2000)
         self.setMinimumWidth(600)
         sizePolicy = QSizePolicy(
@@ -125,24 +124,14 @@ class MainWindow(QMainWindow):
 
         self.selfLayout.addLayout(self.hl_topBar)
 
-        # the hardware scroll area
-        self.hardwareScrollArea = self.createScrollArea()
-
-        # the single widget inside the scroll area
-        self.hardwareScrollAreaWidgetContent = QWidget(self.hardwareScrollArea)
-        self.hardwareScrollAreaWidgetContent.setSizePolicy(QSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum))
-
-        # the layout inside the widget that's inside the scroll area
-        self.hardwareScrollAreaWidgetContentLayout = QVBoxLayout(
-            self.hardwareScrollAreaWidgetContent)
-        self.hardwareScrollAreaWidgetContentLayout.setContentsMargins(
+        self.hardwareAreaWidgetContent = QWidget(self)
+        self.hardwareAreaWidgetContent.setSizePolicy(QSizePolicy(
+            QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum))
+        self.hardwareAreaWidgetContentLayout = QVBoxLayout(
+            self.hardwareAreaWidgetContent)
+        self.hardwareAreaWidgetContentLayout.setContentsMargins(
             0, 0, 0, 0)
-
-        # set the hardware scroll areas only widget to our scrollarea content widget
-        self.hardwareScrollArea.setWidget(self.hardwareScrollAreaWidgetContent)
-        # finally add the scroll area to our splitter
-        self.splitter.addWidget(self.hardwareScrollArea)
+        self.splitter.addWidget(self.hardwareAreaWidgetContent)
 
         # contact group label
         self.lb_groupRowHeader = QLabel(self)
@@ -150,44 +139,17 @@ class MainWindow(QMainWindow):
         self.lb_groupRowHeader.setMaximumHeight(25)
         self.splitter.addWidget(self.lb_groupRowHeader)
 
-        # contact group row
-        # the contact group scroll area
-        self.contactGroupScrollArea = self.createScrollArea()
-        # the single widget inside the scroll area
-        self.contactGroupScrollAreaWidgetContent = QWidget(
-            self.contactGroupScrollArea)
-        self.contactGroupScrollAreaWidgetContent.setSizePolicy(QSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum))
-
-        # the layout inside the widget that's inside the scroll area
-        self.contactGroupScrollAreaWidgetContentLayout = QVBoxLayout(
-            self.contactGroupScrollAreaWidgetContent)
-        self.contactGroupScrollAreaWidgetContentLayout.setContentsMargins(
+        self.contactGroupAreaWidgetContent = QWidget(self)
+        self.contactGroupAreaWidgetContentLayout = QVBoxLayout(
+            self.contactGroupAreaWidgetContent)
+        self.contactGroupAreaWidgetContentLayout.setContentsMargins(
             0, 0, 0, 0)
-
-        # set hardware scroll areas only widget to our scrollarea content widget
-        self.contactGroupScrollArea.setWidget(
-            self.contactGroupScrollAreaWidgetContent)
-        # finally add the scroll area to our splitter
-        self.splitter.addWidget(self.contactGroupScrollArea)
+        self.splitter.addWidget(self.contactGroupAreaWidgetContent)
 
         # add layout to central widget to mainwindow
         self.selfLayout.addWidget(self.splitter)
         self.theCentralWidet.setLayout(self.selfLayout)
         self.setCentralWidget(self.theCentralWidet)
-
-    def createScrollArea(self) -> QScrollArea:
-        scrollArea = QScrollArea(self)
-        sizePolicy = QSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        sizePolicy.setVerticalStretch(1)
-        scrollArea.setSizePolicy(sizePolicy)
-        scrollArea.setMinimumSize(QSize(0, 55))
-        scrollArea.setFrameShape(QFrame.Shape.Box)  # -> NoFrame maybe?
-        scrollArea.setWidgetResizable(True)
-        scrollArea.setAlignment(Qt.AlignmentFlag.AlignLeading |
-                                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
-        return scrollArea
 
     def openSingleWindow(self, windowReference: str) -> None:
         if windowReference in self._singleWindows:
@@ -232,14 +194,12 @@ class MainWindow(QMainWindow):
         for id, device in devices.items():
             newRow = HardwareEspRow(device._configKey,
                                     self.server.hwManager.hardwareDevices[id],
-                                    self.hardwareScrollAreaWidgetContent)
+                                    self.hardwareAreaWidgetContent)
             device.uiBatteryStateChanged.connect(newRow.lb_espBat.setFloat)
             device.uiRssiStateChanged.connect(newRow.lb_espRssi.setNum)
             device.deviceConnectionChanged.connect(newRow.lb_espCon.setState)
-            # newRow.widgetExpanded.connect(self._triggerSplitterResize)
-            self.hardwareScrollAreaWidgetContentLayout.addWidget(newRow)
+            self.hardwareAreaWidgetContentLayout.addWidget(newRow)
             self._hwRows[id] = newRow
-        self._triggerSplitterResize()
 
     def _pollCgList(self) -> None:
         """Trigger initial ContactGroup row loading after startup"""
@@ -258,23 +218,15 @@ class MainWindow(QMainWindow):
         for id, group in groups.items():
             newRow = ContactGroupRow(group._configKey,
                                      self.server.contactGroupManager.contactGroups[id],
-                                     self.contactGroupScrollAreaWidgetContent)
+                                     self.contactGroupAreaWidgetContent)
             group.dataRxStateChanged.connect(
                 newRow.lb_groupHasIncomingData.setState)
             newRow.hsld_strength.valueChanged.connect(
                 group.strengthSliderValueChanged)
             group.openSettings.connect(newRow.openSettingsWindow)
-            # newRow.widgetExpanded.connect(self._triggerSplitterResize)
-            self.contactGroupScrollAreaWidgetContentLayout.addWidget(
+            self.contactGroupAreaWidgetContentLayout.addWidget(
                 newRow)
             self._cgRows[id] = newRow
-        self._triggerSplitterResize()
-
-    @QSlot()
-    def _triggerSplitterResize(self):
-        sizes = [0] * len(self.splitter.children())
-        sizes[1] = self.hardwareScrollArea.sizeHint().height()
-        self.splitter.setSizes(sizes)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Handle window close event cleanly.
@@ -301,7 +253,7 @@ class MainWindow(QMainWindow):
 
 class BaseRow(QFrame):
     """The base for hardware and group rows with an expandable row."""
-    widgetExpanded = QSignal()
+    widgetExpansionStateChanged = QSignal(bool)
 
     def __init__(self, parent: QWidget | None) -> None:
         super().__init__(parent)
@@ -324,16 +276,17 @@ class BaseRow(QFrame):
     def buildUi(self) -> None:
         raise NotImplementedError
 
-    def createExpandingWidget(self, instance) -> None:
+    def createExpandingWidget(self, instance: QWidget) -> None:
         self.expandingWidget = instance
         self.selfLayout.addWidget(instance)
-        self.widgetExpanded.emit()
+        self.widgetExpansionStateChanged.emit(True)
 
     def _deleteExpandingWidget(self) -> None:
         if self.expandingWidget:
             self.selfLayout.removeWidget(self.expandingWidget)
             self.expandingWidget.close()
             self.expandingWidget = None
+            self.widgetExpansionStateChanged.emit(False)
 
     @QSlot()
     def _openSettingsWindow(self,
@@ -582,7 +535,6 @@ class HardwareMotorChannelRow(ExpandedWidgetDataRowBase):
 
     def __init__(self, rowId: int, *args, **kwargs) -> None:
         """Initialize HardwareMotorChannelRow."""
-        # logger.debug(f"Creating {__class__.__name__}")
         self.rowId = rowId
         self.sliderLocked = False
         super().__init__(*args, **kwargs)
@@ -650,7 +602,6 @@ class ContactGroupRow(BaseRow):
 
     def __init__(self, configKey: str, contactGroupRef: ContactGroup,
                  parent: QWidget | None) -> None:
-        # logger.debug(f"Creating {__class__.__name__}")
         self._configKey = configKey
         self._visualizerWindow: QWidget | None = None
         self.visualizerType = VisualizerFactory.fromType(
