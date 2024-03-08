@@ -3,7 +3,7 @@ import sys
 
 from PyQt6.QtWidgets import QApplication
 
-from modules import config, ServerSingleton
+from modules import ServerSingleton, config
 from ui import MainWindow
 from utils import LoggerClass
 
@@ -53,6 +53,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     app = QApplication(sys.argv)
+    app.setStyle("fusion")
     server = ServerSingleton()
     window = MainWindow()
     window.show()
