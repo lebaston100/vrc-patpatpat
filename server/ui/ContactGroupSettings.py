@@ -10,10 +10,11 @@ from PyQt6.QtGui import QCloseEvent
 from PyQt6.QtWidgets import (QAbstractItemView, QAbstractScrollArea, QCheckBox,
                              QComboBox, QDialogButtonBox, QFormLayout,
                              QHBoxLayout, QHeaderView, QLineEdit, QPushButton,
-                             QSizePolicy, QSlider, QSpacerItem, QTableView,
+                             QSizePolicy, QSpacerItem, QSpinBox, QTableView,
                              QTabWidget, QVBoxLayout, QWidget)
 
 from modules import OptionAdapter, config
+from ui.CustomLabel import StaticLabel
 from ui.Delegates import FloatSpinBoxDelegate, IntSpinBoxDelegate
 from ui.UiHelpers import handleClosePrompt, handleDeletePrompt
 from utils import LoggerClass, PathReader
@@ -80,19 +81,19 @@ class ContactGroupSettings(QWidget, OptionAdapter):
         """Save all options when save button was pressed."""
         logger.debug(f"handleSaveButton in {__class__.__name__}")
 
-        fireUpdate = False
+        emitUpdateSignal = False
         if (self.tab_general.hasUnsavedOptions()
                 or self.tab_motors.hasUnsavedOptions()
                 or self.tab_colliderPoints.hasUnsavedOptions()
                 or self.tab_solver.hasUnsavedOptions()):
-            fireUpdate = True
+            emitUpdateSignal = True
 
         self.tab_general.saveOptions()
         self.tab_motors.saveOptions()
         self.tab_colliderPoints.saveOptions()
         self.tab_solver.saveOptions()
 
-        if fireUpdate:
+        if emitUpdateSignal:
             config.configRootUpdateDone.emit(self._configKey)
         self.close()
 
@@ -405,11 +406,12 @@ class TabSolver(QWidget, OptionAdapter):
         self.selfLayout.addRow("Solver Type:", self.cb_solverType)
 
         # the strength slider
-        self.hsld_strength = QSlider(Qt.Orientation.Horizontal)
-        self.hsld_strength.setMinimum(0)
-        self.hsld_strength.setMaximum(100)
-        self.addOpt("strength", self.hsld_strength, int)
-        self.selfLayout.addRow("Strength", self.hsld_strength)
+        self.sb_strength = QSpinBox(self)
+        self.sb_strength.setMinimum(0)
+        self.sb_strength.setMaximum(100)
+        self.sb_strength.setSuffix(" %")
+        self.addOpt("strength", self.sb_strength, int)
+        self.selfLayout.addRow("Strength", self.sb_strength)
 
         # TODO: Refactor so each solver's setting is in their own class
         # that is swapped out
@@ -423,7 +425,7 @@ class TabSolver(QWidget, OptionAdapter):
         self.addOpt("MLat_enableHalfSphereCheck",
                     self.cb_allowOnlyUpperSphereHalf, bool)
         self._solverOptionMapping.append(
-            ("Mlat", self.cb_allowOnlyUpperSphereHalf))
+            ("MLat", self.cb_allowOnlyUpperSphereHalf))
         self.selfLayout.addRow("", self.cb_allowOnlyUpperSphereHalf)
 
         # contact only (on/off instead of pwm, might be better in the contact point?)
