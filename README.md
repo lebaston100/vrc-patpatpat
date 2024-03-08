@@ -29,9 +29,8 @@ Server:
 - [x] Hardware discovery
 - [x] Hardware comms
 - [x] MLAT solver
-- [ ] Linear solver
-- [ ] Slipserial support (base is there, but no priority)
-- [ ] MQTT control support (maybe)
+- [x] Linear solver
+- [x] Slipserial support (base is there, but no priority)
 - [ ] Fix bugs
 
 Hardware:
