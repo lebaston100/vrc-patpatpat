@@ -46,7 +46,7 @@ class Motor(QObject):
 
     def fadeOut(self):
         if self.currentPWM:
-            self.setPwm(max(self.currentPWM-4, 0))
+            self.setPwm(max(self.currentPWM-6, 0))
 
     def setPwm(self, pwm: int) -> None:
         self.currentPWM = pwm

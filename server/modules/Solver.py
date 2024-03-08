@@ -1,3 +1,4 @@
+from statistics import mean
 import time
 
 from multilateration import Engine, Point
@@ -41,9 +42,15 @@ class ISolver(QObject):
         """A generic setup method to be reimplemented."""
         raise NotImplementedError
 
+    @QSlot(int)
     def setStrength(self, strength: int) -> None:
-        """A generic setStrength method to be reimplemented."""
-        raise NotImplementedError
+        """Update the strength value from the ui side
+
+        Args:
+            strength (int): The new strength percentage
+        """
+        config.set(f"{self._configKey}.solver.strength", strength)
+        self._loadConfig()
 
     def solve(self) -> None:
         """A generic solve method to be reimplemented."""
@@ -55,28 +62,56 @@ class ISolver(QObject):
 
 
 class SingleN2NSolver(ISolver):
+    """This solver takes the min, max or mean of all contact receivers
+    and runs all configured motors at the same calculated speed.
+    """
+
     def __init__(self, *args) -> None:
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args)
 
     def setup(self) -> None:
-        pass
+        self._contactOnly = self._config.get("contactOnly", False)
+        self._mode = self._config.get("SINGLEN2N_minMaxMode", "Max")
+        self._modeModule = mean if self._mode == "Mean" \
+            else max if self._mode == "Max" else min
 
     def getType(self) -> SolverType:
         return SolverType.SINGLEN2N
 
-    @QSlot(int)
-    def setStrength(self, strength: int) -> None:
-        logger.debug(f"strength was changed to {strength}")
-        config.set(f"{self._configKey}.solver.strength", strength)
-        self._loadConfig()
-
     def solve(self) -> None:
-        logger.debug(f"Hello from solve() in {self.__class__.__name__}")
-        # TODO: Linear solver implementation
+        if not self._validatePointDataAge():
+            for motor in self._motors:
+                motor.fadeOut()
+            return
+
+        # Get min or max value of all contact receiver points
+        distance = self._modeModule(
+            ((1.0-point.lastValue)*point.radius for point in self._avatarPoints))
+
+        # Calculate speeds
+        strengthFactor = self._config.get("strength", 100)/100.0
+        if self._contactOnly:
+            speed = strengthFactor if distance <= 1.0 else 0
+        else:
+            speed = max(1.0-distance, 0)*strengthFactor
+
+        # Write speed to motors
+        for motor in self._motors:
+            motor.setSpeed(speed)
+
+    def _validatePointDataAge(self) -> bool:
+        """Check that all received points are fresh"""
+        maxAge = time.time()-0.2
+        return all(p.lastValueTs > maxAge for p in self._avatarPoints)
 
 
 class MlatSolver(ISolver):
+    """This solver uses a localization algorithm called Multilateration
+    to calculate the 3d position of an object by using the distance from
+    multiple contact receivers
+    """
+
     def __init__(self, *args) -> None:
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args)
@@ -94,16 +129,6 @@ class MlatSolver(ISolver):
 
     def getType(self) -> SolverType:
         return SolverType.MLAT
-
-    @QSlot(int)
-    def setStrength(self, strength: int) -> None:
-        """Update the strength value from the ui side
-
-        Args:
-            strength (int): The new strength percentage
-        """
-        config.set(f"{self._configKey}.solver.strength", strength)
-        self._loadConfig()
 
     def solve(self) -> None:
         if not self._validatePointDataAge():

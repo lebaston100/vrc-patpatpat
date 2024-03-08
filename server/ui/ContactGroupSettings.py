@@ -512,7 +512,7 @@ class SINGLEN2NSolverSettings(BaseSolverSettingsRow):
 
         # min max setting
         self.cb_minmax = QComboBox(self)
-        self.cb_minmax.addItems(["Min", "Max"])
+        self.cb_minmax.addItems(["Min", "Max", "Mean"])
         self.addOpt("SINGLEN2N_minMaxMode", self.cb_minmax)
         self.selfLayout.addRow("Min/Max Mode:", self.cb_minmax)
 
