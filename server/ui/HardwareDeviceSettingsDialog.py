@@ -1,4 +1,4 @@
-"""The ESP settings window
+"""The Hardware Device settings window
 """
 
 from PyQt6.QtCore import Qt
@@ -17,9 +17,9 @@ logger = LoggerClass.getSubLogger(__name__)
 config = GlobalConfigSingleton.getInstance()
 
 
-class EspSettingsDialog(QWidget, OptionAdapter):
+class HardwareDeviceSettingsDialog(QWidget, OptionAdapter):
     def __init__(self, configKey: str, *args, **kwargs) -> None:
-        """Initialize esp settings window"""
+        """Initialize Hardware Device settings window"""
 
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
@@ -33,28 +33,24 @@ class EspSettingsDialog(QWidget, OptionAdapter):
     def buildUi(self) -> None:
         """Initialize UI elements."""
         # the widget and it's layout
-        self.setWindowTitle("ESP Settings")
-        self.setObjectName(__class__.__name__)
+        self.setWindowTitle("Hardware Device Settings")
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.resize(400, 200)
         self.selfLayout = QFormLayout(self)
-        self.selfLayout.setObjectName("selfLayout")
 
         # ID
-        self.sb_espId = QSpinBox(self)
-        self.sb_espId.setObjectName("sb_espId")
-        self.sb_espId.setEnabled(False)
-        self.addOpt("id", self.sb_espId, int)
+        self.sb_hwId = QSpinBox(self)
+        self.sb_hwId.setEnabled(False)
+        self.addOpt("id", self.sb_hwId, int)
 
-        self.selfLayout.addRow("ID:", self.sb_espId)
+        self.selfLayout.addRow("ID:", self.sb_hwId)
 
         # Name
-        self.le_espName = QLineEdit(self)
-        self.le_espName.setObjectName("le_espName")
-        self.le_espName.setMaxLength(30)
-        self.addOpt("name", self.le_espName)
+        self.le_hwName = QLineEdit(self)
+        self.le_hwName.setMaxLength(30)
+        self.addOpt("name", self.le_hwName)
 
-        self.selfLayout.addRow("Name:", self.le_espName)
+        self.selfLayout.addRow("Name:", self.le_hwName)
 
         # Connection type
         self.cb_connectionType = QComboBox(self)
@@ -67,16 +63,14 @@ class EspSettingsDialog(QWidget, OptionAdapter):
         self.selfLayout.addRow("Connection Type:", self.cb_connectionType)
 
         # Number of motors
-        self.sb_espNumMotors = QSpinBox(self)
-        self.sb_espNumMotors.setObjectName("sb_espNumMotors")
-        self.sb_espNumMotors.setMinimum(1)
-        self.addOpt("numMotors", self.sb_espNumMotors, int)
+        self.sb_hwNumMotors = QSpinBox(self)
+        self.sb_hwNumMotors.setMinimum(1)
+        self.addOpt("numMotors", self.sb_hwNumMotors, int)
 
-        self.selfLayout.addRow("Number of motors:", self.sb_espNumMotors)
+        self.selfLayout.addRow("Number of motors:", self.sb_hwNumMotors)
 
         # Serial port name
         self.le_serialPort = QLineEdit(self)
-        self.le_serialPort.setObjectName("le_serialPort")
         self.le_serialPort.setEnabled(False)
         self.le_serialPort.setReadOnly(True)
         self.addOpt("serialPort", self.le_serialPort)
@@ -84,21 +78,19 @@ class EspSettingsDialog(QWidget, OptionAdapter):
         self.selfLayout.addRow("Serial Port:", self.le_serialPort)
 
         # Last Device IP
-        self.le_espLastIp = QLineEdit(self)
-        self.le_espLastIp.setObjectName("le_espLastIp")
-        self.le_espLastIp.setEnabled(False)
-        self.le_espLastIp.setReadOnly(True)
-        self.addOpt("lastIp", self.le_espLastIp)
+        self.le_hwLastIp = QLineEdit(self)
+        self.le_hwLastIp.setEnabled(False)
+        self.le_hwLastIp.setReadOnly(True)
+        self.addOpt("lastIp", self.le_hwLastIp)
 
-        self.selfLayout.addRow("Last Device IP:", self.le_espLastIp)
+        self.selfLayout.addRow("Last Device IP:", self.le_hwLastIp)
 
         # Device MAC
-        self.le_espMac = QLineEdit(self)
-        self.le_espMac.setObjectName("le_espMac")
-        self.le_espMac.setInputMask("Hh:Hh:Hh:Hh:Hh:Hh")
-        self.addOpt("wifiMac", self.le_espMac)
+        self.le_hwMac = QLineEdit(self)
+        self.le_hwMac.setInputMask("Hh:Hh:Hh:Hh:Hh:Hh")
+        self.addOpt("wifiMac", self.le_hwMac)
 
-        self.selfLayout.addRow("Device MAC:", self.le_espMac)
+        self.selfLayout.addRow("Device MAC:", self.le_hwMac)
 
         # spacer
         self.spacer1 = QSpacerItem(
@@ -107,7 +99,6 @@ class EspSettingsDialog(QWidget, OptionAdapter):
 
         # save/cancel buttons
         self.bt_saveCancelButtons = QDialogButtonBox(self)
-        self.bt_saveCancelButtons.setObjectName("bt_saveCancelButtons")
         self.bt_saveCancelButtons.setStandardButtons(
             QDialogButtonBox.StandardButton.Cancel
             | QDialogButtonBox.StandardButton.Save)

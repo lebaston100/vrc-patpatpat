@@ -17,7 +17,7 @@ from modules.HardwareDevice import HardwareDevice
 from modules.Server import ServerSingleton
 from ui.ContactGroupSettings import ContactGroupSettings
 from ui.CustomLabel import StatefulLabel, StaticLabel
-from ui.EspSettingsDialog import EspSettingsDialog
+from ui.HardwareDeviceSettingsDialog import HardwareDeviceSettingsDialog
 from ui.LogWindow import LogWindow
 from ui.ProgramSettingsDialog import ProgramSettingsDialog
 from ui.ToggleButton import ToggleButton
@@ -83,9 +83,9 @@ class MainWindow(QMainWindow):
         self.hl_topBar = QHBoxLayout()
 
         # hardware row label
-        self.lb_espRowHeader = QLabel(self)
-        self.lb_espRowHeader.setText("Hardware:")
-        self.hl_topBar.addWidget(self.lb_espRowHeader)
+        self.lb_hwRowHeader = QLabel(self)
+        self.lb_hwRowHeader.setText("Hardware:")
+        self.hl_topBar.addWidget(self.lb_hwRowHeader)
 
         # add HardwareDevice button
         self.bt_addHardwareDevice = QPushButton(self)
@@ -105,15 +105,16 @@ class MainWindow(QMainWindow):
         # help button
         self.bt_openGithub = QPushButton(self)
         self.bt_openGithub.setMaximumWidth(60)
+        self.bt_openGithub.setToolTip("Open Github")
         self.bt_openGithub.setText("Help")
         self.bt_openGithub.clicked.connect(lambda: webbrowser.open(
-            "https://github.com/lebaston100/vrc-patpatpat"
-            "?tab=readme-ov-file#vrc-patpatpat"))
+            "https://github.com/lebaston100/vrc-patpatpat#vrc-patpatpat"))
         self.hl_topBar.addWidget(self.bt_openGithub)
 
         # open log window button
         self.bt_openLogWindow = QPushButton(self)
         self.bt_openLogWindow.setMaximumWidth(60)
+        self.bt_openLogWindow.setToolTip("Open Log Window")
         self.bt_openLogWindow.setText("Log")
         self.bt_openLogWindow.clicked.connect(
             partial(self.openSingleWindow, "LogWindow"))
@@ -201,12 +202,12 @@ class MainWindow(QMainWindow):
             row.deleteLater()
         self._hwRows = {}
         for id, device in devices.items():
-            newRow = HardwareEspRow(device._configKey,
-                                    self.server.hwManager.hardwareDevices[id],
-                                    self.hardwareAreaWidgetContent)
-            device.uiBatteryStateChanged.connect(newRow.lb_espBat.setFloat)
-            device.uiRssiStateChanged.connect(newRow.lb_espRssi.setNum)
-            device.deviceConnectionChanged.connect(newRow.lb_espCon.setState)
+            newRow = HardwareDeviceRow(device._configKey,
+                                       self.server.hwManager.hardwareDevices[id],
+                                       self.hardwareAreaWidgetContent)
+            device.uiBatteryStateChanged.connect(newRow.lb_hwBat.setFloat)
+            device.uiRssiStateChanged.connect(newRow.lb_hwRssi.setNum)
+            device.deviceConnectionChanged.connect(newRow.lb_hwCon.setState)
             self.hardwareAreaWidgetContentLayout.addWidget(newRow)
             self._hwRows[id] = newRow
 
@@ -300,7 +301,8 @@ class BaseRow(QFrame):
     @QSlot()
     def _openSettingsWindow(self,
                             win: type[ContactGroupSettings] |
-                            type[EspSettingsDialog], configKey: str):
+                            type[HardwareDeviceSettingsDialog],
+                            configKey: str):
         if self._settingsWindow:
             self._settingsWindow.raise_()
             self._settingsWindow.activateWindow()
@@ -353,7 +355,7 @@ class ExpandedWidgetDataRowBase(QHBoxLayout):
         self.sliderLocked = False
 
 
-class HardwareEspRow(BaseRow):
+class HardwareDeviceRow(BaseRow):
     """A independent hardware row inside the scroll area."""
 
     def __init__(self, configKey: str, deviceRef: HardwareDevice,
@@ -365,7 +367,7 @@ class HardwareEspRow(BaseRow):
         self._updateStaticText()
 
     def buildUi(self) -> None:
-        self.hl_espTopRow = QHBoxLayout()
+        self.hl_hwTopRow = QHBoxLayout()
 
         # all size policys that we need
         sizePolicy_FixedMaximum = QSizePolicy(
@@ -380,44 +382,44 @@ class HardwareEspRow(BaseRow):
         font11.setPointSize(11)
 
         # The connection status label (symbol)
-        self.lb_espCon = StatefulLabel(("\u2716", "\u2705", "\u231B"), self)
-        self.lb_espCon.setSizePolicy(sizePolicy_FixedMaximum)
-        self.lb_espCon.setState(2)
-        self.hl_espTopRow.addWidget(self.lb_espCon)
+        self.lb_hwCon = StatefulLabel(("\u2716", "\u2705", "\u231B"), self)
+        self.lb_hwCon.setSizePolicy(sizePolicy_FixedMaximum)
+        self.lb_hwCon.setState(2)
+        self.hl_hwTopRow.addWidget(self.lb_hwCon)
 
-        # The esp name, mac and ip label
-        self.lb_espIdMac = StaticLabel(
-            "ESP ", "", "", self)
-        self.lb_espIdMac.setSizePolicy(sizePolicy_PreferredMaximum)
-        self.lb_espIdMac.setFont(font10)
-        self.hl_espTopRow.addWidget(self.lb_espIdMac)
+        # The hw name, mac and ip label
+        self.lb_hwIdMac = StaticLabel(
+            "HW ", "", "", self)
+        self.lb_hwIdMac.setSizePolicy(sizePolicy_PreferredMaximum)
+        self.lb_hwIdMac.setFont(font10)
+        self.hl_hwTopRow.addWidget(self.lb_hwIdMac)
 
-        # the esp wifi rssi label
-        self.lb_espRssi = StaticLabel("Wifi: ", "-", " dbm", self)
-        self.lb_espRssi.setSizePolicy(sizePolicy_PreferredMaximum)
-        self.lb_espRssi.setFont(font10)
-        self.hl_espTopRow.addWidget(self.lb_espRssi)
+        # the hw wifi rssi label
+        self.lb_hwRssi = StaticLabel("Wifi: ", "-", " dbm", self)
+        self.lb_hwRssi.setSizePolicy(sizePolicy_PreferredMaximum)
+        self.lb_hwRssi.setFont(font10)
+        self.hl_hwTopRow.addWidget(self.lb_hwRssi)
 
-        # the esp battery level label
-        self.lb_espBat = StaticLabel("Battery: ", "- ", " V", self)
-        self.lb_espBat.setSizePolicy(sizePolicy_PreferredMaximum)
-        self.lb_espBat.setFont(font10)
-        self.hl_espTopRow.addWidget(self.lb_espBat)
+        # the hw battery level label
+        self.lb_hwBat = StaticLabel("Battery: ", "- ", " V", self)
+        self.lb_hwBat.setSizePolicy(sizePolicy_PreferredMaximum)
+        self.lb_hwBat.setFont(font10)
+        self.hl_hwTopRow.addWidget(self.lb_hwBat)
 
         # spacer
-        self.spc_espRow_1 = QSpacerItem(
+        self.spc_hwRow_1 = QSpacerItem(
             10, 2, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-        self.hl_espTopRow.addItem(self.spc_espRow_1)
+        self.hl_hwTopRow.addItem(self.spc_hwRow_1)
 
         # the button to create/destroy the control sub-widget
-        self.bt_espExpand = ToggleButton(
+        self.bt_hwExpand = ToggleButton(
             ("\u02C5", "\u02C4"), parent=self)
-        self.bt_espExpand.setMaximumWidth(40)
-        self.bt_espExpand.setFont(font11)
-        self.bt_espExpand.setToolTip("Expand")
-        self.bt_espExpand.toggledOn.connect(self._openExpandingWidget)
-        self.bt_espExpand.toggledOff.connect(self._deleteExpandingWidget)
-        self.hl_espTopRow.addWidget(self.bt_espExpand)
+        self.bt_hwExpand.setMaximumWidth(40)
+        self.bt_hwExpand.setFont(font11)
+        self.bt_hwExpand.setToolTip("Expand")
+        self.bt_hwExpand.toggledOn.connect(self._openExpandingWidget)
+        self.bt_hwExpand.toggledOff.connect(self._deleteExpandingWidget)
+        self.hl_hwTopRow.addWidget(self.bt_hwExpand)
 
         # button to delete HardwareDevice
         self.bt_deleteDevice = QPushButton(self)
@@ -426,20 +428,20 @@ class HardwareEspRow(BaseRow):
         self.bt_deleteDevice.setToolTip("Delete Hardware Device")
         self.bt_deleteDevice.setText("\u274C")
         self.bt_deleteDevice.clicked.connect(self._handleDeviceDelete)
-        self.hl_espTopRow.addWidget(self.bt_deleteDevice)
+        self.hl_hwTopRow.addWidget(self.bt_deleteDevice)
 
-        # button to open the esp settings dialog
-        self.bt_openEspSettings = QPushButton(self)
-        self.bt_openEspSettings.setMaximumWidth(40)
-        self.bt_openEspSettings.setFont(font11)
-        self.bt_openEspSettings.setToolTip("Configure")
-        self.bt_openEspSettings.setText("\ud83d\udd27")
-        self.bt_openEspSettings.clicked.connect(
+        # button to open the hw settings dialog
+        self.bt_openHwSettings = QPushButton(self)
+        self.bt_openHwSettings.setMaximumWidth(40)
+        self.bt_openHwSettings.setFont(font11)
+        self.bt_openHwSettings.setToolTip("Configure")
+        self.bt_openHwSettings.setText("\ud83d\udd27")
+        self.bt_openHwSettings.clicked.connect(
             partial(self._openSettingsWindow,
-                    EspSettingsDialog, self._configKey))
-        self.hl_espTopRow.addWidget(self.bt_openEspSettings)
+                    HardwareDeviceSettingsDialog, self._configKey))
+        self.hl_hwTopRow.addWidget(self.bt_openHwSettings)
 
-        self.selfLayout.addLayout(self.hl_espTopRow)
+        self.selfLayout.addLayout(self.hl_hwTopRow)
 
     def _updateStaticText(self) -> None:
         id = config.get(f"{self._configKey}.id")
@@ -449,11 +451,11 @@ class HardwareEspRow(BaseRow):
         connAddr = config.get(f"{self._configKey}.lastIp") if \
             connType == HardwareConnectionType.OSC else \
             config.get(f"{self._configKey}.serialPort")
-        self.lb_espIdMac.setText(f"{id} '{name}' ({mac}/{connAddr})")
+        self.lb_hwIdMac.setText(f"{id} '{name}' ({mac}/{connAddr})")
 
     def _openExpandingWidget(self) -> None:
         """Create the expanding widget and initialize it."""
-        widget = EspMoreInfoWidget(self)
+        widget = HardwareDeviceMoreInfoWidget(self)
         widget.connect(self._deviceRef)
         self.createExpandingWidget(widget)
 
@@ -468,9 +470,9 @@ class HardwareEspRow(BaseRow):
                 config.delete(self._configKey)
 
 
-class EspMoreInfoWidget(QWidget):
+class HardwareDeviceMoreInfoWidget(QWidget):
     def __init__(self, *args, **kwargs) -> None:
-        """Initialize EspMoreInfoWidget."""
+        """Initialize HardwareDeviceMoreInfoWidget."""
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
         self.buildUi()
@@ -657,6 +659,16 @@ class ContactGroupRow(BaseRow):
             10, 2, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         self.hl_groupTopRow.addItem(self.spc_groupRow_1)
 
+        if self.visualizerType:
+            # the open visualizer button if supported
+            self.bt_openVisualizer = QPushButton(self)
+            self.bt_openVisualizer.setMaximumWidth(40)
+            self.bt_openVisualizer.setFont(font11)
+            self.bt_openVisualizer.setToolTip("Open visualizer")
+            self.bt_openVisualizer.setText("\ud83d\udcc8")
+            self.bt_openVisualizer.clicked.connect(self._openVisualizerWindow)
+            self.hl_groupTopRow.addWidget(self.bt_openVisualizer)
+
         # the group info expand button
         self.bt_groupExpand = ToggleButton(
             ("\u02C5", "\u02C4"), parent=self)
@@ -667,16 +679,6 @@ class ContactGroupRow(BaseRow):
         self.bt_groupExpand.toggledOff.connect(
             self._deleteExpandingWidget)
         self.hl_groupTopRow.addWidget(self.bt_groupExpand)
-
-        if self.visualizerType:
-            # the open visualizer button if supported
-            self.bt_openVisualizer = QPushButton(self)
-            self.bt_openVisualizer.setMaximumWidth(40)
-            self.bt_openVisualizer.setFont(font11)
-            self.bt_openVisualizer.setToolTip("Open visualizer")
-            self.bt_openVisualizer.setText("\ud83d\udcc8")
-            self.bt_openVisualizer.clicked.connect(self._openVisualizerWindow)
-            self.hl_groupTopRow.addWidget(self.bt_openVisualizer)
 
         # button to delete ContactGroup
         self.bt_deleteGroup = QPushButton(self)

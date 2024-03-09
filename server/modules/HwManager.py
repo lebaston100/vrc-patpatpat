@@ -54,12 +54,13 @@ class HwManager(QObject):
 
     def writeSpeed(self, hwId: int = 0, channelId: int = 0,
                    value: float | int = 0) -> None:
-        """Write speed from motor into esp's state buffer
+        """Write speed from motor into HardwareDevice's state buffer
 
         Args:
-            hwId (int, optional): The destined esp. Defaults to 0.
-            channelId (int, optional): The destined esp's channel.
+            hwId (int, optional): The destined HardwareDevice.
                 Defaults to 0.
+            channelId (int, optional): The destined HardwareDevice's
+                channel. Defaults to 0.
             value (float | int, optional): The value to write.
                 Defaults to 0.
         """

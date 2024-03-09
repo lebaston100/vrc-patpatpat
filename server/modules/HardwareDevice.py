@@ -182,7 +182,7 @@ class OscCommunicationAdapterImpl(IHardwareCommunicationAdapter, QObject):
         interface to work.
 
         Args:
-            settings (dict): The settings dict for this esp
+            settings (dict): The settings dict for this HardwareDevice
         """
         try:
             self.close()

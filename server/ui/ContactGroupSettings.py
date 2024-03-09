@@ -41,15 +41,12 @@ class ContactGroupSettings(QWidget, OptionAdapter):
         """
         # the widget and it's layout
         self.setWindowTitle("Contact Group Settings")
-        self.setObjectName(__class__.__name__)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.resize(980, 500)
         self.selfLayout = QVBoxLayout(self)
-        self.selfLayout.setObjectName("selfLayout")
 
         # the tab widget
         self.mainTabWidget = QTabWidget(self)
-        self.mainTabWidget.setObjectName("mainTabWidget")
 
         # add all 4 tabs to the tab widget
         self.tab_general = TabGeneral(self._configKey)
@@ -69,7 +66,6 @@ class ContactGroupSettings(QWidget, OptionAdapter):
 
         # save/cancel buttons
         self.bt_saveCancelButtons = QDialogButtonBox(self)
-        self.bt_saveCancelButtons.setObjectName("bt_saveCancelButtons")
         self.bt_saveCancelButtons.setStandardButtons(
             QDialogButtonBox.StandardButton.Cancel
             | QDialogButtonBox.StandardButton.Save)
@@ -131,11 +127,9 @@ class TabGeneral(QWidget, OptionAdapter):
         """Initialize UI elements."""
         # the tab's layout
         self.selfLayout = QFormLayout(self)
-        self.selfLayout.setObjectName("selfLayout")
 
         # the group name
         self.le_groupName = QLineEdit(self)
-        self.le_groupName.setObjectName("le_groupName")
         self.le_groupName.setMaxLength(35)
         self.addOpt("name", self.le_groupName)
 
@@ -173,11 +167,9 @@ class TabMotors(QWidget):
         """Initialize UI elements."""
         # the tab's layout
         self.selfLayout = QVBoxLayout(self)
-        self.selfLayout.setObjectName("selfLayout")
 
         # the table
         self.tv_motorsTable = QTableView(self)
-        self.tv_motorsTable.setObjectName("tv_motorsTable")
         self.tv_motorsTable.setSizeAdjustPolicy(
             QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
         self.tv_motorsTable.setHorizontalScrollMode(
@@ -227,8 +219,6 @@ class TabMotors(QWidget):
 
         # the bar below the table
         self.hl_tabMotorsBelowTableBar = QHBoxLayout()
-        self.hl_tabMotorsBelowTableBar.setObjectName(
-            "hl_tabMotorsBelowTableBar")
 
         # horizontal spacer
         self.spacer1 = QSpacerItem(
@@ -237,7 +227,6 @@ class TabMotors(QWidget):
 
         # the add button
         self.pb_addMotor = QPushButton(self)
-        self.pb_addMotor.setObjectName("pb_addMotor")
         self.pb_addMotor.setMaximumSize(QSize(40, 16777215))
         self.pb_addMotor.setText("\u2795")
         self.pb_addMotor.clicked.connect(self.handleAddButton)
@@ -287,11 +276,9 @@ class TabColliderPoints(QWidget):
         """Initialize UI elements."""
         # the tab's layout
         self.selfLayout = QVBoxLayout(self)
-        self.selfLayout.setObjectName("selfLayout")
 
         # the table
         self.tv_colliderPointsTable = QTableView(self)
-        self.tv_colliderPointsTable.setObjectName("tv_colliderPointsTable")
         self.tv_colliderPointsTable.setSizeAdjustPolicy(
             QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
         self.tv_colliderPointsTable.setHorizontalScrollMode(
@@ -330,8 +317,6 @@ class TabColliderPoints(QWidget):
 
         # the bar below the table
         self.hl_tabColliderPointsBelowTableBar = QHBoxLayout()
-        self.hl_tabColliderPointsBelowTableBar.setObjectName(
-            "hl_tabMotorsBelowTableBar")
 
         # horizontal spacer
         self.spacer1 = QSpacerItem(
@@ -340,7 +325,6 @@ class TabColliderPoints(QWidget):
 
         # the add button
         self.pb_addColliderPoint = QPushButton(self)
-        self.pb_addColliderPoint.setObjectName("pb_addColliderPoint")
         self.pb_addColliderPoint.setMaximumSize(QSize(40, 16777215))
         self.pb_addColliderPoint.setText("\u2795")
         self.pb_addColliderPoint.clicked.connect(self.handleAddButton)
@@ -392,13 +376,11 @@ class TabSolver(QWidget, OptionAdapter):
         """Initialize UI elements."""
         # the tab's layout
         self.selfLayout = QFormLayout(self)
-        self.selfLayout.setObjectName("selfLayout")
 
         # the solver name
         self.cb_solverType = QComboBox(self)
         for type in SolverType:
             self.cb_solverType.addItem(type)
-        self.cb_solverType.setObjectName("cb_solverType")
         self.cb_solverType.currentTextChanged.connect(self.changeSolver)
         self.addOpt("solverType", self.cb_solverType)
         self.selfLayout.addRow("Solver Type:", self.cb_solverType)
@@ -485,8 +467,6 @@ class MLATSolverSettings(BaseSolverSettingsRow):
 
         # upper sphere check
         self.cb_allowOnlyUpperSphereHalf = QCheckBox(self)
-        self.cb_allowOnlyUpperSphereHalf.setObjectName(
-            "cb_allowOnlyUpperSphereHalf")
         self.cb_allowOnlyUpperSphereHalf.setText(
             "Only allow upper sphere half")
         self.addOpt("MLAT_enableHalfSphereCheck",
@@ -495,7 +475,6 @@ class MLATSolverSettings(BaseSolverSettingsRow):
 
         # contact only (on/off instead of pwm, might be better in the contact point?)
         self.cb_contactOnly = QCheckBox(self)
-        self.cb_contactOnly.setObjectName("cb_contactOnly")
         self.cb_contactOnly.setText("Contact only")
         self.addOpt("contactOnly", self.cb_contactOnly, bool)
         self.selfLayout.addRow("", self.cb_contactOnly)
@@ -519,7 +498,6 @@ class SINGLEN2NSolverSettings(BaseSolverSettingsRow):
 
         # contact only (on/off instead of pwm, might be better in the contact point?)
         self.cb_contactOnly = QCheckBox(self)
-        self.cb_contactOnly.setObjectName("cb_contactOnly")
         self.cb_contactOnly.setText("Contact only")
         self.addOpt("contactOnly", self.cb_contactOnly, bool)
         self.selfLayout.addRow("", self.cb_contactOnly)

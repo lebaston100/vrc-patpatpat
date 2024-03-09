@@ -13,8 +13,8 @@ class HeartbeatMessage:
     """An incoming Heartbeat message.
 
     Attributes:
-        mac (str): The (wifi) mac of the sending esp
-        uptime (int): The uptime of the esp in seconds
+        mac (str): The (wifi) mac of the sending hardware device
+        uptime (int): The uptime of the hardware device in seconds
         vccBat (int): The current battery voltage
         rssi (int): The wifi rssi
         sourceAddr (list[str, int]): The ip/port of the osc socket
@@ -38,10 +38,10 @@ class DiscoveryResponseMessage:
     """An incoming response to a device discovery request.
 
     Attributes:
-        mac (str): The (wifi) mac of the sending esp
+        mac (str): The (wifi) mac of the sending hardware device
         hostname (str): The hardware devices hostname
         numMotors (int): The max amount of output channels
-            as configured in the esp
+            as configured in the hardware device
         sourceType (str): The origin of the message, "OSC" or "SlipSerial"
         sourceAddr (str): The osc device ip or serial port name
         ts (int): The time the object was created (aka received)

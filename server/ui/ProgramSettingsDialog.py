@@ -33,15 +33,12 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
         """Initialize UI elements."""
         # the widget and it's layout
         self.setWindowTitle("Program Settings")
-        self.setObjectName(__class__.__name__)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.resize(415, 164)
         self.selfLayout = QFormLayout(self)
-        self.selfLayout.setObjectName("selfLayout")
 
         # VRChat osc send ip
         self.le_vrcOscReceiveAddress = QLineEdit(self)
-        self.le_vrcOscReceiveAddress.setObjectName("le_vrcOscReceiveAddress")
         self.le_vrcOscReceiveAddress.setInputMask("900.900.900.900")
         self.addOpt("vrcOscReceiveAddress", self.le_vrcOscReceiveAddress)
 
@@ -50,7 +47,6 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
 
         # VRChat osc send port
         self.sb_vrcOscSendPort = QSpinBox(self)
-        self.sb_vrcOscSendPort.setObjectName("sb_vrcOscSendPort")
         self.sb_vrcOscSendPort.setMaximum(65535)
         self.addOpt("vrcOscSendPort", self.sb_vrcOscSendPort, dataType=int)
 
@@ -58,7 +54,6 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
 
         # VRChat osc receive port
         self.sb_vrcOscReceivePort = QSpinBox(self)
-        self.sb_vrcOscReceivePort.setObjectName("sb_vrcOscReceivePort")
         self.sb_vrcOscReceivePort.setMaximum(65535)
         self.addOpt("vrcOscReceivePort",
                     self.sb_vrcOscReceivePort, dataType=int)
@@ -74,7 +69,6 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
 
         # main tps
         self.sb_tps = QSpinBox(self)
-        self.sb_tps.setObjectName("sb_tps")
         self.sb_tps.setMinimum(1)
         self.sb_tps.setMaximum(100)
         self.addOpt("mainTps", self.sb_tps, dataType=int)
@@ -85,7 +79,6 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
         self.cb_logLevel = QComboBox(self)
         for level in LoggerClass.getLoggingLevelStrings():
             self.cb_logLevel.addItem(level)
-        self.cb_logLevel.setObjectName("cb_logLevel")
         self.addOpt("logLevel", self.cb_logLevel)
 
         self.selfLayout.addRow("Log Level:", self.cb_logLevel)
@@ -97,7 +90,6 @@ class ProgramSettingsDialog(QWidget, OptionAdapter):
 
         # save/cancel buttons
         self.bt_saveCancelButtons = QDialogButtonBox(self)
-        self.bt_saveCancelButtons.setObjectName("bt_saveCancelButtons")
         self.bt_saveCancelButtons.setStandardButtons(
             QDialogButtonBox.StandardButton.Cancel
             | QDialogButtonBox.StandardButton.Save)

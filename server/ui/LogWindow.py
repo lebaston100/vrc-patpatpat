@@ -39,15 +39,12 @@ class LogWindow(QWidget):
         """Initialize UI elements."""
         # the widget and it's layout
         self.setWindowTitle("Log Window")
-        self.setObjectName(__class__.__name__)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.resize(1380, 650)
         self.LogWindowWidgetLayout = QVBoxLayout(self)
-        self.LogWindowWidgetLayout.setObjectName("LogWindowWidgetLayout")
 
         # log textbox
         self.te_logView = QPlainTextEdit(self)
-        self.te_logView.setObjectName("te_logView")
         sizePolicy = QSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.MinimumExpanding)
         self.te_logView.setSizePolicy(sizePolicy)
@@ -60,7 +57,6 @@ class LogWindow(QWidget):
 
         # the footer row with the usable ui elements
         self.footerRowLayout = QHBoxLayout()
-        self.footerRowLayout.setObjectName("footerRowLayout")
 
         # spacer to push buttons to the right
         self.spacer1 = QSpacerItem(40, 20,
@@ -73,12 +69,10 @@ class LogWindow(QWidget):
         for level in LoggerClass.getLoggingLevelStrings():
             self.cb_logLevel.addItem(level)
         self.cb_logLevel.setCurrentText(initialLogLevel)
-        self.cb_logLevel.setObjectName("cb_logLevel")
         self.footerRowLayout.addWidget(self.cb_logLevel)
 
         # the clear log button
         self.pb_clearLog = QPushButton(self)
-        self.pb_clearLog.setObjectName("pb_clearLog")
         self.pb_clearLog.setText("Clear Log")
         self.footerRowLayout.addWidget(self.pb_clearLog)
 

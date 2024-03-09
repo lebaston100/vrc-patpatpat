@@ -27,7 +27,6 @@ class MLATVisualizerWindow(QWidget):
     def buildUi(self) -> None:
         """Initialize UI elements."""
         self.setWindowTitle(f"{self._contactGroupRef._name} - 3D Visualizer")
-        self.setObjectName(__class__.__name__)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.resize(500, 500)
 
