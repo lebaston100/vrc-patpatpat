@@ -2,17 +2,18 @@
 """
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtCore import pyqtSignal as Signal
 from PyQt6.QtGui import QCloseEvent
 from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDialogButtonBox,
                              QFormLayout, QLabel, QLineEdit, QSizePolicy,
                              QSpacerItem, QSpinBox, QWidget)
 
-from modules import OptionAdapter, config
+from modules.GlobalConfig import GlobalConfigSingleton
+from modules.OptionAdapter import OptionAdapter
 from ui.UiHelpers import handleClosePrompt
-from utils import LoggerClass
+from utils.Logger import LoggerClass
 
 logger = LoggerClass.getSubLogger(__name__)
+config = GlobalConfigSingleton.getInstance()
 
 
 class ProgramSettingsDialog(QWidget, OptionAdapter):

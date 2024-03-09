@@ -11,9 +11,11 @@ from pythonosc.osc_server import BlockingOSCUDPServer
 from pythonosc.udp_client import SimpleUDPClient
 
 from modules.GlobalConfig import GlobalConfigSingleton
-from utils import LoggerClass, threadAsStr
+from utils.Logger import LoggerClass
+from utils.threadToStr import threadAsStr
 
 logger = LoggerClass.getSubLogger(__name__)
+config = GlobalConfigSingleton.getInstance()
 
 
 class IVrcConnector():
@@ -54,7 +56,7 @@ class VrcConnectionWorker(QObject):
         self._connector = connector
         self.dispatcher = VrcOscDispatcher(self._connector)
 
-    def loadSettings(self, config: GlobalConfigSingleton) -> None:
+    def loadSettings(self) -> None:
         self._oscRxPort = config.get("program.vrcOscSendPort", 9000)
         self._oscTxIp = config.get("program.vrcOscReceiveAddress", "127.0.0.1")
         self._oscTxPort = config.get("program.vrcOscReceivePort", 9001)
@@ -105,13 +107,12 @@ class VrcConnectionWorker(QObject):
 
 
 class VrcConnectorImpl(IVrcConnector, QObject):
-    def __init__(self, config: GlobalConfigSingleton, *args, **kwargs) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__()
         self._lastVrcMessage: datetime | None = None
         self.currentDataState = False
-        self.config = config
         self.worker = VrcConnectionWorker(self)
-        self.worker.loadSettings(self.config)
+        self.worker.loadSettings()
         self.workerThread = QThread()
 
         self.workerThread.started.connect(self.worker.startOscServer)
@@ -121,7 +122,7 @@ class VrcConnectorImpl(IVrcConnector, QObject):
         self._timer.timeout.connect(self._timerEvent)
         self._timer.start(1000)
 
-        self.config.configRootUpdateDone.connect(self._oscGeneralConfigChanged)
+        config.configRootUpdateDone.connect(self._oscGeneralConfigChanged)
 
     def _receivedOsc(self, client: tuple, addr: str, params: list) -> None:
         """Just a test function that prints if osc event was fired."""
@@ -188,7 +189,7 @@ class VrcConnectorImpl(IVrcConnector, QObject):
 
     def _oscGeneralConfigChanged(self, root: str) -> None:
         if root.startswith("program."):
-            self.worker.loadSettings(self.config)
+            self.worker.loadSettings()
             self.restart()
 
 

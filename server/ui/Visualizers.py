@@ -1,4 +1,5 @@
 from itertools import cycle
+
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import pyqtSlot as QSlot
 from PyQt6.QtDataVisualization import (Q3DCamera, Q3DScatter, QScatter3DSeries,
@@ -8,8 +9,8 @@ from PyQt6.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QSizePolicy,
                              QVBoxLayout, QWidget)
 
 from modules.ContactGroup import ContactGroup
-from utils import LoggerClass
 from utils.Enums import SolverType
+from utils.Logger import LoggerClass
 
 logger = LoggerClass.getSubLogger(__name__)
 

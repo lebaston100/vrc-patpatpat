@@ -6,7 +6,7 @@ class TestFileHelper:
         """Test that the module imports and can be created"""
         from pathlib import Path
         try:
-            from utils import FileHelper
+            from utils.ConfigHandler import FileHelper
             h = FileHelper(Path("test.conf").as_posix())
         except Exception:
             assert False
@@ -15,7 +15,7 @@ class TestFileHelper:
     def createFileHelper(self):
         """Return a class-persistant FileHper to test on"""
         from pathlib import Path
-        from utils import FileHelper
+        from utils.ConfigHandler import FileHelper
         path = Path("test/test.conf")
         yield FileHelper(path.as_posix())
         path.unlink()

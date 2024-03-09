@@ -5,7 +5,7 @@ class TestLoggerClass:
     def test_LoggerClass_init(self):
         """Test that the module imports and can be created"""
         try:
-            from utils import LoggerClass
+            from utils.Logger import LoggerClass
             logger = LoggerClass()
         except Exception:
             assert False
@@ -14,19 +14,19 @@ class TestLoggerClass:
         """Tests that we get a valid Logger object"""
         import logging
 
-        from utils import LoggerClass
+        from utils.Logger import LoggerClass
         assert isinstance(LoggerClass.getRootLogger(), logging.Logger)
 
     def test_gettingSubLogger(self):
         """Tests that we get a valid Logger object"""
         import logging
 
-        from utils import LoggerClass
+        from utils.Logger import LoggerClass
         assert isinstance(LoggerClass.getSubLogger("test"), logging.Logger)
 
     def test_gettingLoggingLevelStrings(self):
         """Test that we get a proper list with the right values"""
-        from utils import LoggerClass
+        from utils.Logger import LoggerClass
         assert list(LoggerClass.getLoggingLevelStrings()) == [
             'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
 

@@ -9,7 +9,8 @@ Typical usage example:
 
 from PyQt6.QtWidgets import QLabel
 
-from utils import LoggerClass
+from utils.Logger import LoggerClass
+
 logger = LoggerClass.getSubLogger(__name__)
 
 

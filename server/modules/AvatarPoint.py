@@ -1,7 +1,7 @@
 from PyQt6.QtCore import QObject
 
 from modules.Points import Sphere3D
-from utils import LoggerClass
+from utils.Logger import LoggerClass
 
 logger = LoggerClass.getSubLogger(__name__)
 
@@ -20,7 +20,7 @@ class AvatarPointSphere(Sphere3D):
 
     def vrcContact(self, time: float, params: list):
         """The callback run by the ContactGroupManager when new data
-        from VRC comes in for this contact receiver
+        from VRC comes in for this contact receiver.
 
         Args:
             time (float): The osc message creation time

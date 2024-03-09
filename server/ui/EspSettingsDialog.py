@@ -8,11 +8,13 @@ from PyQt6.QtWidgets import (QComboBox, QDialogButtonBox, QFormLayout,
                              QLineEdit, QSizePolicy, QSpacerItem, QSpinBox,
                              QWidget)
 
-from modules import OptionAdapter, config
+from modules.GlobalConfig import GlobalConfigSingleton
+from modules.OptionAdapter import OptionAdapter
 from ui.UiHelpers import handleClosePrompt
-from utils import LoggerClass
+from utils.Logger import LoggerClass
 
 logger = LoggerClass.getSubLogger(__name__)
+config = GlobalConfigSingleton.getInstance()
 
 
 class EspSettingsDialog(QWidget, OptionAdapter):

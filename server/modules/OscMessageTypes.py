@@ -4,7 +4,8 @@ This module houses all possibel OSC connection messages as dataclasses
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from utils import HardwareConnectionType
+
+from utils.Enums import HardwareConnectionType
 
 
 @dataclass(frozen=True)

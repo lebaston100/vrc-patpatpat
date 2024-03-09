@@ -3,11 +3,12 @@ import sys
 
 from PyQt6.QtWidgets import QApplication
 
-from modules import ServerSingleton, config
-from ui import MainWindow
-from utils import LoggerClass
+from modules.GlobalConfig import GlobalConfigSingleton
+from utils.Logger import LoggerClass
 
+config = GlobalConfigSingleton.fromFile("config.conf")
 logger = LoggerClass.getRootLogger(filename="patpatpat.log")
+
 
 # set initial logging level for root and child loggers from config
 logLevel = config.get("program.logLevel", "INFO")
@@ -46,6 +47,8 @@ def checkConfigVersion() -> bool:
 
 
 if __name__ == "__main__":
+    from modules.Server import ServerSingleton
+    from ui.MainWindow import MainWindow
     logger.info(f"Starting vrc-patpatpat v{SEMVER}")
 
     # check config version and exit if upgrade did not work

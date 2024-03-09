@@ -8,12 +8,14 @@ Typical usage example:
 """
 
 import re
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
-from PyQt6.QtCore import QMutex, QObject
+from PyQt6.QtCore import QMutex, QObject, pyqtBoundSignal
 from PyQt6.QtCore import pyqtSignal as QSignal
-from PyQt6.QtCore import pyqtBoundSignal
-from utils import FileHelper, LoggerClass, PathReader
+
+from utils.ConfigHandler import FileHelper
+from utils.Logger import LoggerClass
+from utils.PathReader import PathReader
 
 logger = LoggerClass.getSubLogger(__name__)
 
@@ -29,14 +31,13 @@ class GlobalConfigSingleton(QObject):
         configPathHasChanged (QSignal): Signal for config path change.
         configPathWasDeleted (QSignal): Signal for config path deletion.
     """
-
     __instance = None
     configPathHasChanged = QSignal(str)
     configRootUpdateDone = QSignal(str)
     configPathWasDeleted = QSignal(str)
 
     @classmethod
-    def getInstance(cls: type[T]) -> Optional[T]:
+    def getInstance(cls: type[T]) -> T:
         """Get the singleton instance.
 
         Returns:
@@ -284,10 +285,6 @@ class GlobalConfigSingleton(QObject):
         """
         self._emitSignalsForPath(self._configPathDeletedSignals, removedPath)
 
-
-# any work to find out what the config would need to be done here
-# this is a globally available class INSTANCE, not the class itself
-config = GlobalConfigSingleton.fromFile("config.conf")
 
 if __name__ == "__main__":
     print("There is no point running this file directly")

@@ -9,7 +9,7 @@ Typical usage example:
 from PyQt6.QtCore import pyqtSignal as Signal
 from PyQt6.QtWidgets import QPushButton
 
-from utils import LoggerClass
+from utils.Logger import LoggerClass
 
 logger = LoggerClass.getSubLogger(__name__)
 

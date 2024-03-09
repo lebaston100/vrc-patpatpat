@@ -5,7 +5,6 @@ from copy import deepcopy
 from typing import Any, cast
 
 from PyQt6.QtCore import QAbstractTableModel, QModelIndex, QSize, Qt, QVariant
-from PyQt6.QtCore import pyqtSignal as Signal
 from PyQt6.QtGui import QCloseEvent
 from PyQt6.QtWidgets import (QAbstractItemView, QAbstractScrollArea, QCheckBox,
                              QComboBox, QDialogButtonBox, QFormLayout, QFrame,
@@ -13,14 +12,16 @@ from PyQt6.QtWidgets import (QAbstractItemView, QAbstractScrollArea, QCheckBox,
                              QSizePolicy, QSpacerItem, QSpinBox, QTableView,
                              QTabWidget, QVBoxLayout, QWidget)
 
-from modules import OptionAdapter, config
-from ui.CustomLabel import StaticLabel
+from modules.GlobalConfig import GlobalConfigSingleton
+from modules.OptionAdapter import OptionAdapter
 from ui.Delegates import FloatSpinBoxDelegate, IntSpinBoxDelegate
 from ui.UiHelpers import handleClosePrompt, handleDeletePrompt
-from utils import LoggerClass, PathReader
 from utils.Enums import SolverType
+from utils.Logger import LoggerClass
+from utils.PathReader import PathReader
 
 logger = LoggerClass.getSubLogger(__name__)
+config = GlobalConfigSingleton.getInstance()
 
 
 class ContactGroupSettings(QWidget, OptionAdapter):
@@ -36,7 +37,7 @@ class ContactGroupSettings(QWidget, OptionAdapter):
 
     def buildUi(self) -> None:
         """Initialize UI elements.
-        All of the tabs are in their own subclass.
+        All tabs are in their own subclasses.
         """
         # the widget and it's layout
         self.setWindowTitle("Contact Group Settings")

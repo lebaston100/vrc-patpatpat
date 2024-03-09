@@ -4,7 +4,7 @@ from PyQt6.QtCore import QObject
 from PyQt6.QtCore import pyqtSignal as QSignal
 
 from modules.Points import Sphere3D
-from utils import LoggerClass
+from utils.Logger import LoggerClass
 
 logger = LoggerClass.getSubLogger(__name__)
 

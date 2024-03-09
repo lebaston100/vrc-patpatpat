@@ -6,11 +6,13 @@ from PyQt6.QtCore import pyqtSignal as QSignal
 from PyQt6.QtCore import pyqtSlot as QSlot
 from pythonosc.udp_client import SimpleUDPClient
 
-from modules.GlobalConfig import config
+from modules.GlobalConfig import GlobalConfigSingleton
 from modules.OscMessageTypes import HeartbeatMessage
-from utils import HardwareConnectionType, LoggerClass
+from utils.Enums import HardwareConnectionType
+from utils.Logger import LoggerClass
 
 logger = LoggerClass.getSubLogger(__name__)
+config = GlobalConfigSingleton.getInstance()
 
 
 class HardwareDevice(QObject):

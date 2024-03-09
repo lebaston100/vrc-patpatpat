@@ -11,12 +11,15 @@ from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import BlockingOSCUDPServer
 from pythonosc.udp_client import SimpleUDPClient
 
-from modules import config
+from modules.GlobalConfig import GlobalConfigSingleton
 from modules.HardwareDevice import HardwareDevice
 from modules.OscMessageTypes import DiscoveryResponseMessage, HeartbeatMessage
-from utils import HardwareConnectionType, LoggerClass, threadAsStr
+from utils.Enums import HardwareConnectionType
+from utils.Logger import LoggerClass
+from utils.threadToStr import threadAsStr
 
 logger = LoggerClass.getSubLogger(__name__)
+config = GlobalConfigSingleton.getInstance()
 
 
 class HwManager(QObject):

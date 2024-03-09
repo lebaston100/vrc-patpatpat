@@ -8,17 +8,26 @@ from PyQt6.QtCore import pyqtSignal as QSignal
 from PyQt6.QtCore import pyqtSlot as QSlot
 from PyQt6.QtGui import QCloseEvent, QFont
 from PyQt6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMainWindow,
-                             QPushButton, QScrollArea, QSizePolicy, QSlider,
-                             QSpacerItem, QSplitter, QVBoxLayout, QWidget)
+                             QPushButton, QSizePolicy, QSlider, QSpacerItem,
+                             QSplitter, QVBoxLayout, QWidget)
 
-import ui
-from modules import ContactGroup, HardwareDevice, ServerSingleton, config
-from ui import ContactGroupSettings, EspSettingsDialog
-from ui.Visualizers import VisualizerFactory
+from modules.ContactGroup import ContactGroup
+from modules.GlobalConfig import GlobalConfigSingleton
+from modules.HardwareDevice import HardwareDevice
+from modules.Server import ServerSingleton
+from ui.ContactGroupSettings import ContactGroupSettings
+from ui.CustomLabel import StatefulLabel, StaticLabel
+from ui.EspSettingsDialog import EspSettingsDialog
+from ui.LogWindow import LogWindow
+from ui.ProgramSettingsDialog import ProgramSettingsDialog
+from ui.ToggleButton import ToggleButton
 from ui.UiHelpers import handleDeletePrompt
-from utils import HardwareConnectionType, LoggerClass
+from ui.Visualizers import VisualizerFactory
+from utils.Enums import HardwareConnectionType
+from utils.Logger import LoggerClass
 
 logger = LoggerClass.getSubLogger(__name__)
+config = GlobalConfigSingleton.getInstance()
 
 
 class MainWindow(QMainWindow):
@@ -159,9 +168,9 @@ class MainWindow(QMainWindow):
             window = None
             match windowReference:
                 case "LogWindow":
-                    window = ui.LogWindow(LoggerClass.getRootLogger())
+                    window = LogWindow(LoggerClass.getRootLogger())
                 case "ProgramSettingsDialog":
-                    window = ui.ProgramSettingsDialog()
+                    window = ProgramSettingsDialog()
             if window:
                 window.destroyed.connect(
                     partial(self.closedSingleWindow, windowReference))
@@ -371,26 +380,26 @@ class HardwareEspRow(BaseRow):
         font11.setPointSize(11)
 
         # The connection status label (symbol)
-        self.lb_espCon = ui.StatefulLabel(("\u2716", "\u2705", "\u231B"), self)
+        self.lb_espCon = StatefulLabel(("\u2716", "\u2705", "\u231B"), self)
         self.lb_espCon.setSizePolicy(sizePolicy_FixedMaximum)
         self.lb_espCon.setState(2)
         self.hl_espTopRow.addWidget(self.lb_espCon)
 
         # The esp name, mac and ip label
-        self.lb_espIdMac = ui.StaticLabel(
+        self.lb_espIdMac = StaticLabel(
             "ESP ", "", "", self)
         self.lb_espIdMac.setSizePolicy(sizePolicy_PreferredMaximum)
         self.lb_espIdMac.setFont(font10)
         self.hl_espTopRow.addWidget(self.lb_espIdMac)
 
         # the esp wifi rssi label
-        self.lb_espRssi = ui.StaticLabel("Wifi: ", "-", " dbm", self)
+        self.lb_espRssi = StaticLabel("Wifi: ", "-", " dbm", self)
         self.lb_espRssi.setSizePolicy(sizePolicy_PreferredMaximum)
         self.lb_espRssi.setFont(font10)
         self.hl_espTopRow.addWidget(self.lb_espRssi)
 
         # the esp battery level label
-        self.lb_espBat = ui.StaticLabel("Battery: ", "- ", " V", self)
+        self.lb_espBat = StaticLabel("Battery: ", "- ", " V", self)
         self.lb_espBat.setSizePolicy(sizePolicy_PreferredMaximum)
         self.lb_espBat.setFont(font10)
         self.hl_espTopRow.addWidget(self.lb_espBat)
@@ -401,7 +410,7 @@ class HardwareEspRow(BaseRow):
         self.hl_espTopRow.addItem(self.spc_espRow_1)
 
         # the button to create/destroy the control sub-widget
-        self.bt_espExpand = ui.ToggleButton(
+        self.bt_espExpand = ToggleButton(
             ("\u02C5", "\u02C4"), parent=self)
         self.bt_espExpand.setMaximumWidth(40)
         self.bt_espExpand.setFont(font11)
@@ -479,7 +488,7 @@ class EspMoreInfoWidget(QWidget):
         self.selfLayout.addWidget(self.line)
 
         # the motors label
-        self.lb_motorsRow = ui.StaticLabel("Motors: ", "", "", self)
+        self.lb_motorsRow = StaticLabel("Motors: ", "", "", self)
         self.selfLayout.addWidget(self.lb_motorsRow)
 
         # a horizontal row for the buttons
@@ -541,7 +550,7 @@ class HardwareMotorChannelRow(ExpandedWidgetDataRowBase):
 
     def buildUi(self) -> None:
         # Motor number
-        self.lb_motorNum = ui.StaticLabel("Channel ", str(self.rowId))
+        self.lb_motorNum = StaticLabel("Channel ", str(self.rowId))
         self.addWidget(self.lb_motorNum)
 
         # the pwm slider
@@ -553,7 +562,7 @@ class HardwareMotorChannelRow(ExpandedWidgetDataRowBase):
         self.addWidget(self.hsld_motorVal)
 
         # the pwm number
-        self.lb_motorVal = ui.StaticLabel("PWM: ", "0")
+        self.lb_motorVal = StaticLabel("PWM: ", "0")
         self.addWidget(self.lb_motorVal)
 
         # enable slider locking while mouse has it grabbed
@@ -619,12 +628,12 @@ class ContactGroupRow(BaseRow):
         font11.setPointSize(11)
 
         # the name label
-        self.lb_contactGroupName = ui.StaticLabel("Name: ", "", "", self)
+        self.lb_contactGroupName = StaticLabel("Name: ", "", "", self)
         # self.lb_contactGroupName.setScaledContents(True)
         self.hl_groupTopRow.addWidget(self.lb_contactGroupName)
 
         # the vrc data label
-        self.lb_groupHasIncomingData = ui.StatefulLabel(
+        self.lb_groupHasIncomingData = StatefulLabel(
             ("VRC Data: \u274C", "VRC Data: \u2705", "VRC Data: \u231B"), self)
         self.lb_groupHasIncomingData.setState(2)
 
@@ -639,7 +648,7 @@ class ContactGroupRow(BaseRow):
         self.hl_groupTopRow.addWidget(self.hsld_strength)
 
         # the strength number
-        self.lb_strength = ui.StaticLabel("Strength: ", "-", "%")
+        self.lb_strength = StaticLabel("Strength: ", "-", "%")
         self.hsld_strength.valueChanged.connect(self.lb_strength.setNum)
         self.hl_groupTopRow.addWidget(self.lb_strength)
 
@@ -649,7 +658,7 @@ class ContactGroupRow(BaseRow):
         self.hl_groupTopRow.addItem(self.spc_groupRow_1)
 
         # the group info expand button
-        self.bt_groupExpand = ui.ToggleButton(
+        self.bt_groupExpand = ToggleButton(
             ("\u02C5", "\u02C4"), parent=self)
         self.bt_groupExpand.setMaximumWidth(40)
         self.bt_groupExpand.setFont(font11)
@@ -794,10 +803,10 @@ class PointDetailsRow(ExpandedWidgetDataRowBase):
         super().__init__(*args, **kwargs)
 
     def buildUi(self) -> None:
-        self.lb_groupPointName = ui.StaticLabel(
+        self.lb_groupPointName = StaticLabel(
             "Name: ", self._name, parent=self.parent())
         self.addWidget(self.lb_groupPointName, 0, Qt.AlignmentFlag.AlignLeft)
-        self.lb_groupPointValue = ui.StaticLabel(
+        self.lb_groupPointValue = StaticLabel(
             "Value: ", "-", parent=self.parent())
         self.addWidget(self.lb_groupPointValue, 0, Qt.AlignmentFlag.AlignLeft)
         self.addStretch(1)

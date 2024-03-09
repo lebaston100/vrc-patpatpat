@@ -35,7 +35,7 @@ Example:
 from copy import deepcopy
 from functools import reduce
 
-from utils import LoggerClass
+from utils.Logger import LoggerClass
 
 logger = LoggerClass.getSubLogger(__name__)
 

@@ -7,13 +7,16 @@ from PyQt6.QtCore import pyqtSignal as QSignal
 from PyQt6.QtCore import pyqtSlot as QSlot
 from PyQt6.QtGui import QVector3D
 
-from modules import config
 from modules.AvatarPoint import AvatarPointSphere
+from modules.GlobalConfig import GlobalConfigSingleton
 from modules.Motor import Motor
 from modules.Solver import SolverFactory
-from utils import ConfigTemplate, LoggerClass, threadAsStr
+from utils.ConfigTemplate import ConfigTemplate
+from utils.Logger import LoggerClass
+from utils.threadToStr import threadAsStr
 
 logger = LoggerClass.getSubLogger(__name__)
+config = GlobalConfigSingleton.getInstance()
 
 
 class ContactGroup(QObject):

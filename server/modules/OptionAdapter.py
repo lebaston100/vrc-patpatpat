@@ -3,7 +3,7 @@ from typing import Any, cast
 from PyQt6.QtWidgets import (QCheckBox, QComboBox, QLineEdit, QRadioButton,
                              QSlider, QSpinBox)
 
-from utils import LoggerClass
+from utils.Logger import LoggerClass
 
 logger = LoggerClass.getSubLogger(__name__)
 

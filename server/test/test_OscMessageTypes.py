@@ -6,13 +6,13 @@ class TestOscMessageTypes:
     def test_init(self):
         """Test that the module imports and classes can be created"""
         try:
-            from modules import HeartbeatMessage
+            from modules.OscMessageTypes import HeartbeatMessage
             HeartbeatMessage()
         except Exception:
             assert False
 
         try:
-            from modules import DiscoveryResponseMessage
+            from modules.OscMessageTypes import DiscoveryResponseMessage
             DiscoveryResponseMessage()
         except Exception:
             assert False
@@ -26,14 +26,14 @@ class TestOscMessageTypes:
     @pytest.fixture()
     def validHeartbeatMessage(self, HeartbeatMessageData):
         """Yield a class-persistant HeartbeatMessage to test on"""
-        from modules import HeartbeatMessage
+        from modules.OscMessageTypes import HeartbeatMessage
         yield HeartbeatMessage(*HeartbeatMessageData[1],
                                sourceAddr=HeartbeatMessageData[2])
 
     def test_HeartbeatMessage(self, validHeartbeatMessage,
                               HeartbeatMessageData):
         from dataclasses import FrozenInstanceError
-        from modules import HeartbeatMessage
+        from modules.OscMessageTypes import HeartbeatMessage
         from datetime import datetime
 
         """Test if it can check it's own message"""
@@ -60,7 +60,7 @@ class TestOscMessageTypes:
     @pytest.fixture()
     def validDiscoveryResponseMessage(self, DiscoveryResponseMessageData):
         """Yield a class-persistant DiscoveryResponseMessage to test on"""
-        from modules import DiscoveryResponseMessage
+        from modules.OscMessageTypes import DiscoveryResponseMessage
         yield DiscoveryResponseMessage(*DiscoveryResponseMessageData[1],
                                        sourceType=DiscoveryResponseMessageData[2],
                                        sourceAddr=DiscoveryResponseMessageData[3])
@@ -68,7 +68,7 @@ class TestOscMessageTypes:
     def test_DiscoveryResponseMessage(self, validDiscoveryResponseMessage,
                                       DiscoveryResponseMessageData):
         from dataclasses import FrozenInstanceError
-        from modules import DiscoveryResponseMessage
+        from modules.OscMessageTypes import DiscoveryResponseMessage
 
         """Test if it can check it's own message"""
         assert DiscoveryResponseMessage.isType(

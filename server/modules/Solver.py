@@ -1,5 +1,5 @@
-from statistics import mean
 import time
+from statistics import mean
 
 from multilateration import Engine, Point
 from PyQt6.QtCore import QObject
@@ -7,13 +7,14 @@ from PyQt6.QtCore import pyqtSignal as QSignal
 from PyQt6.QtCore import pyqtSlot as QSlot
 from PyQt6.QtGui import QVector3D
 
-from modules import config
 from modules.AvatarPoint import AvatarPointSphere
+from modules.GlobalConfig import GlobalConfigSingleton
 from modules.Motor import Motor
-from utils import LoggerClass, SolverType
-from utils.Enums import VisualizerType
+from utils.Enums import SolverType, VisualizerType
+from utils.Logger import LoggerClass
 
 logger = LoggerClass.getSubLogger(__name__)
+config = GlobalConfigSingleton.getInstance()
 
 
 class ISolver(QObject):

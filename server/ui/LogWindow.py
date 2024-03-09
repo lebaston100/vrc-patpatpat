@@ -6,10 +6,11 @@ from PyQt6.QtWidgets import (QComboBox, QHBoxLayout, QPlainTextEdit,
                              QPushButton, QSizePolicy, QSpacerItem,
                              QVBoxLayout, QWidget)
 
-from modules import config
-from utils import LoggerClass, SignalLogHandler
+from modules.GlobalConfig import GlobalConfigSingleton
+from utils.Logger import LoggerClass, SignalLogHandler
 
 logger = LoggerClass.getSubLogger(__name__)
+config = GlobalConfigSingleton.getInstance()
 
 
 class LogWindow(QWidget):

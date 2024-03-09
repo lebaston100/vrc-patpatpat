@@ -2,13 +2,15 @@ from typing import TypeVar
 
 from PyQt6.QtCore import QObject, QThread
 
-from modules import config
 from modules.ContactGroup import ContactGroupManager
+from modules.GlobalConfig import GlobalConfigSingleton
 from modules.HwManager import HwManager
 from modules.VrcConnector import VrcConnectorImpl
-from utils import LoggerClass, threadAsStr
+from utils.Logger import LoggerClass
+from utils.threadToStr import threadAsStr
 
 logger = LoggerClass.getSubLogger(__name__)
+config = GlobalConfigSingleton.getInstance()
 
 T = TypeVar('T', bound='ServerSingleton')
 
@@ -23,7 +25,6 @@ class ServerSingleton(QObject):
         Returns:
             ServerSingleton: Singleton instance.
         """
-
         return cls.__instance
 
     def __init__(self, *args, **kwargs) -> None:
@@ -35,7 +36,7 @@ class ServerSingleton(QObject):
         logger.debug(f"Creating {__class__.__name__} in thread "
                      f"{threadAsStr(QThread.currentThread())}")
 
-        self.vrcOscConnector = VrcConnectorImpl(config)
+        self.vrcOscConnector = VrcConnectorImpl()
         self.vrcOscConnector.connect()
 
         self.hwManager = HwManager()
