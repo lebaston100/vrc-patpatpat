@@ -1,4 +1,3 @@
-paho-mqtt==2.0.0
 PyQt6==6.6.1
 PyQt6-DataVisualization==6.6.0
 python-osc==1.8.3

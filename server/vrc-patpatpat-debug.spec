@@ -51,6 +51,7 @@ isCI = bool(os.getenv("CI"))
 serverpath = "server/" if isCI else ""
 rootpath = "" if isCI else "../"
 shutil.copyfile(f"{serverpath}config.conf", f"{DISTPATH}/config.conf")
+shutil.copyfile(f"{serverpath}firewall.bat", f"{DISTPATH}/firewall.bat")
 shutil.copyfile(f"{rootpath}README.md", f"{DISTPATH}/README.md")
 shutil.copyfile(f"{rootpath}LICENSE", f"{DISTPATH}/LICENSE")
 shutil.copytree(f"{rootpath}firmware", f"{DISTPATH}/firmware")
