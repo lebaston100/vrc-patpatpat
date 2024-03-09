@@ -513,8 +513,8 @@ class SINGLEN2NSolverSettings(BaseSolverSettingsRow):
         # min max setting
         self.cb_minmax = QComboBox(self)
         self.cb_minmax.addItems(["Min", "Max", "Mean"])
-        self.addOpt("SINGLEN2N_minMaxMode", self.cb_minmax)
-        self.selfLayout.addRow("Min/Max Mode:", self.cb_minmax)
+        self.addOpt("SINGLEN2N_mode", self.cb_minmax)
+        self.selfLayout.addRow("Mode:", self.cb_minmax)
 
         # contact only (on/off instead of pwm, might be better in the contact point?)
         self.cb_contactOnly = QCheckBox(self)

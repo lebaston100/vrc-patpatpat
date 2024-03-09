@@ -80,5 +80,5 @@ class ConfigTemplate:
         "solverType": "Single n:n",
         "strength": 100,
         "contactOnly": False,
-        "SINGLEN2N_minMaxMode": "Mean"
+        "SINGLEN2N_mode": "Mean"
     }
