@@ -68,7 +68,7 @@ class MainWindow(QMainWindow):
         self.setMaximumWidth(2000)
         self.setMinimumWidth(600)
         sizePolicy = QSizePolicy(
-            QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred)
+            QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Minimum)
         self.setSizePolicy(sizePolicy)
         self.theCentralWidet = QWidget(self)
         self.selfLayout = QVBoxLayout(self.theCentralWidet)
@@ -185,6 +185,12 @@ class MainWindow(QMainWindow):
             del self._singleWindows[windowReference]
         logger.debug(f"Current windows: {str(self._singleWindows)}")
 
+    def _handleRowResize(self, state: bool) -> None:
+        if state:
+            return
+        windowSize = self.size()
+        self.resize(QSize(windowSize.width(), 100))
+
     def _pollHwList(self) -> None:
         """Trigger initial HardwareDevice row loading after startup"""
         self._handleHwListChange(self.server.hwManager.hardwareDevices)
@@ -208,6 +214,7 @@ class MainWindow(QMainWindow):
             device.uiBatteryStateChanged.connect(newRow.lb_hwBat.setFloat)
             device.uiRssiStateChanged.connect(newRow.lb_hwRssi.setNum)
             device.deviceConnectionChanged.connect(newRow.lb_hwCon.setState)
+            newRow.widgetExpansionStateChanged.connect(self._handleRowResize)
             self.hardwareAreaWidgetContentLayout.addWidget(newRow)
             self._hwRows[id] = newRow
 
@@ -233,6 +240,7 @@ class MainWindow(QMainWindow):
                 newRow.lb_groupHasIncomingData.setState)
             newRow.hsld_strength.valueChanged.connect(
                 group.strengthSliderValueChanged)
+            newRow.widgetExpansionStateChanged.connect(self._handleRowResize)
             group.openSettings.connect(newRow.openSettingsWindow)
             self.contactGroupAreaWidgetContentLayout.addWidget(
                 newRow)
