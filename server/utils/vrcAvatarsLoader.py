@@ -9,6 +9,9 @@ import pathlib
 from dataclasses import dataclass, field
 from typing import Self
 
+vrcInternals = ["VRCEmote", "InStation", "Seated", "GestureRightWeight", "GestureLeftWeight", "GestureRight", "GestureLeft", "Viseme", "IsOnFriendsList", "EyeHeightAsMeters", "EyeHeightAsPercent",
+                "ScaleModified", "ScaleFactorInverse", "ScaleFactor", "VelocityMagnitude", "Earmuffs", "Voice", "MuteSelf", "VRMode", "TrackingType", "Upright", "AFK", "Grounded", "AngularY", "VelocityZ", "VelocityY", "VelocityX"]
+
 
 @dataclass
 class VrcAvatar:
