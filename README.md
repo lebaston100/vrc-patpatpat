@@ -38,7 +38,7 @@ Misc:
 
 - [x] Simple osc recorder and player (for dev) (server/tools/oscRecReplayer.py)
 - [x] Design dev pcb (v1 dev board manufactured and built, v2 dev board design done)
-- [ ] Rewrite readme
+- [ ] Rewrite readme (in progress)
 - [ ] Add CI pytest job for server (more tests need to be written)
 - [ ] Add CI build job for server (needs improvement)
 
