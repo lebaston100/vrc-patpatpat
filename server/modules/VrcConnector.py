@@ -198,10 +198,6 @@ A drop-in replacement of the original osc dispatcher modified
 to have less overhead to faster handle the data coming from vrc
 """
 
-
-logger = LoggerClass.getSubLogger(__name__)
-
-
 class VrcOscDispatcher(Dispatcher):
     """A custom dispatcher for OSC messages.
 

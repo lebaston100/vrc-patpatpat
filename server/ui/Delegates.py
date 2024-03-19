@@ -33,7 +33,9 @@ Note:
 """
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QDoubleSpinBox, QItemDelegate, QSpinBox
+from PyQt6.QtCore import pyqtSignal as QSignal
+from PyQt6.QtWidgets import (QDoubleSpinBox, QHBoxLayout, QItemDelegate,
+                             QLineEdit, QPushButton, QSpinBox, QWidget)
 
 
 class FloatSpinBoxDelegate(QItemDelegate):
@@ -97,4 +99,48 @@ class IntSpinBoxDelegate(QItemDelegate):
         """Write value from editor into models data."""
         spinBox.interpretText()
         value = spinBox.value()
+        model.setData(index, value, Qt.ItemDataRole.EditRole)
+
+
+class LineEditMoreButtonEditWidget(QWidget):
+    buttonClicked = QSignal(int)
+
+    def __init__(self, rowId, parent=None):
+        super().__init__(parent)
+        self.rowId = rowId
+
+        self.selfLayout = QHBoxLayout(self)
+        self.selfLayout.setContentsMargins(0, 0, 0, 0)
+        self.lineEdit = QLineEdit(self)
+        self.button = QPushButton("...", self)
+        self.button.setMaximumWidth(28)
+
+        self.selfLayout.addWidget(self.lineEdit)
+        self.selfLayout.addWidget(self.button)
+
+        self.button.clicked.connect(self.emitSignal)
+
+    def emitSignal(self):
+        self.buttonClicked.emit(self.rowId)
+
+
+class LineEditMoreButtonDelegate(QItemDelegate):
+    """Custom Item Delegate using a QLineEdit and QPushButton."""
+    buttonClicked = QSignal(int)
+
+    def createEditor(self, parent, option, index):
+        """Create a custom widget as the editor."""
+        editor = LineEditMoreButtonEditWidget(index.row(), parent)
+        editor.buttonClicked.connect(self.buttonClicked)
+        return editor
+
+    def setEditorData(self, widget: LineEditMoreButtonEditWidget, index) -> None:
+        """Set the data for the editor."""
+        value = index.model().data(index, Qt.ItemDataRole.EditRole)
+        widget.lineEdit.setText(value)
+        widget.lineEdit.selectAll()
+
+    def setModelData(self, widget: LineEditMoreButtonEditWidget, model, index) -> None:
+        """Write value from editor into models data."""
+        value = widget.lineEdit.text()
         model.setData(index, value, Qt.ItemDataRole.EditRole)

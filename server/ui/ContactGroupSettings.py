@@ -2,9 +2,11 @@
 """
 
 from copy import deepcopy
+import random
 from typing import Any, cast
 
 from PyQt6.QtCore import QAbstractTableModel, QModelIndex, QSize, Qt, QVariant
+from PyQt6.QtCore import pyqtSignal as QSignal
 from PyQt6.QtGui import QCloseEvent
 from PyQt6.QtWidgets import (QAbstractItemView, QAbstractScrollArea, QCheckBox,
                              QComboBox, QDialogButtonBox, QFormLayout, QFrame,
@@ -14,11 +16,13 @@ from PyQt6.QtWidgets import (QAbstractItemView, QAbstractScrollArea, QCheckBox,
 
 from modules.GlobalConfig import GlobalConfigSingleton
 from modules.OptionAdapter import OptionAdapter
-from ui.Delegates import FloatSpinBoxDelegate, IntSpinBoxDelegate
+from ui.Delegates import (LineEditMoreButtonDelegate, FloatSpinBoxDelegate,
+                          IntSpinBoxDelegate)
 from ui.UiHelpers import handleClosePrompt, handleDeletePrompt
 from utils.Enums import SolverType
 from utils.Logger import LoggerClass
 from utils.PathReader import PathReader
+from utils.VrcAvatarsLoader import getVrcAvatars, vrcInternals
 
 logger = LoggerClass.getSubLogger(__name__)
 config = GlobalConfigSingleton.getInstance()
@@ -55,8 +59,8 @@ class ContactGroupSettings(QWidget, OptionAdapter):
         self.tab_motors = TabMotors(self._configKey)
         self.mainTabWidget.addTab(self.tab_motors, "Motors")
 
-        self.tab_colliderPoints = TabColliderPoints(self._configKey)
-        self.mainTabWidget.addTab(self.tab_colliderPoints, "Collider Points")
+        self.tab_contactPoints = TabContactPoints(self._configKey)
+        self.mainTabWidget.addTab(self.tab_contactPoints, "Contact Points")
 
         self.tab_solver = TabSolver(self._configKey)
         self.mainTabWidget.addTab(self.tab_solver, "Solver")
@@ -81,13 +85,13 @@ class ContactGroupSettings(QWidget, OptionAdapter):
         emitUpdateSignal = False
         if (self.tab_general.hasUnsavedOptions()
                 or self.tab_motors.hasUnsavedOptions()
-                or self.tab_colliderPoints.hasUnsavedOptions()
+                or self.tab_contactPoints.hasUnsavedOptions()
                 or self.tab_solver.hasUnsavedOptions()):
             emitUpdateSignal = True
 
         self.tab_general.saveOptions()
         self.tab_motors.saveOptions()
-        self.tab_colliderPoints.saveOptions()
+        self.tab_contactPoints.saveOptions()
         self.tab_solver.saveOptions()
 
         if emitUpdateSignal:
@@ -107,7 +111,7 @@ class ContactGroupSettings(QWidget, OptionAdapter):
         # check and warn for unsaved changes
         if (self.tab_general.hasUnsavedOptions()
                 or self.tab_motors.hasUnsavedOptions()
-                or self.tab_colliderPoints.hasUnsavedOptions()
+                or self.tab_contactPoints.hasUnsavedOptions()
                 or self.tab_solver.hasUnsavedOptions()):
             handleClosePrompt(self, event)
 
@@ -260,9 +264,9 @@ class TabMotors(QWidget):
         self.motorsTableModel.settingsWereChanged = False
 
 
-class TabColliderPoints(QWidget):
+class TabContactPoints(QWidget):
     def __init__(self, configKey: str, *args, **kwargs) -> None:
-        """Create the "collider points" tab with it's content."""
+        """Create the "Contact points" tab with it's content."""
 
         logger.debug(f"Creating {__class__.__name__}")
         super().__init__(*args, **kwargs)
@@ -278,71 +282,89 @@ class TabColliderPoints(QWidget):
         self.selfLayout = QVBoxLayout(self)
 
         # the table
-        self.tv_colliderPointsTable = QTableView(self)
-        self.tv_colliderPointsTable.setSizeAdjustPolicy(
+        self.tv_contactPointsTable = QTableView(self)
+        self.tv_contactPointsTable.setSizeAdjustPolicy(
             QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
-        self.tv_colliderPointsTable.setHorizontalScrollMode(
+        self.tv_contactPointsTable.setHorizontalScrollMode(
             QAbstractItemView.ScrollMode.ScrollPerPixel)
-        self.tv_colliderPointsTable.setCornerButtonEnabled(False)
-        self.tv_colliderPointsTable.setSelectionMode(
+        self.tv_contactPointsTable.setCornerButtonEnabled(False)
+        self.tv_contactPointsTable.setSelectionMode(
             QTableView.SelectionMode.SingleSelection)
-        cast(QHeaderView, self.tv_colliderPointsTable.verticalHeader()
+        cast(QHeaderView, self.tv_contactPointsTable.verticalHeader()
              ).setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
-        cast(QHeaderView, self.tv_colliderPointsTable.verticalHeader()
+        cast(QHeaderView, self.tv_contactPointsTable.verticalHeader()
              ).sectionClicked.connect(self.handleSelectionDelete)
-        cast(QHeaderView, self.tv_colliderPointsTable.horizontalHeader()
+        cast(QHeaderView, self.tv_contactPointsTable.horizontalHeader()
              ).setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        cast(QHeaderView, self.tv_colliderPointsTable.horizontalHeader()
+        cast(QHeaderView, self.tv_contactPointsTable.horizontalHeader()
              ).setSelectionMode(QHeaderView.SelectionMode.NoSelection)
 
         # Setup the table model
-        self.colliderPointsTableModel = SettingsTableModel(self._data)
-        self.colliderPointsTableModel.setHorizontalHeaderLabels(
+        self.contactPointsTableModel = SettingsTableModel(self._data)
+        self.contactPointsTableModel.setHorizontalHeaderLabels(
             "Name", "ContactReceiver Name", "X", "Y", "Z", "Radius")
-        self.colliderPointsTableModel.setSettingsOrder(
+        self.contactPointsTableModel.setSettingsOrder(
             "name", "receiverId", "xyz.0", "xyz.1", "xyz.2", "r")
-        self.colliderPointsTableModel.setSettingsDataTypes(
-            str, str, float, float, float, float)
+        self.contactPointsTableModel.setSettingsDataTypes(
+            str, contactName, float, float, float, float)
 
         # Assign the right delegate to the columns
         self.floatSpinBoxDelegate = FloatSpinBoxDelegate(4, -20.0, 20.0)
-        for i, item in enumerate(self.colliderPointsTableModel
+        self.contactNameDelegate = LineEditMoreButtonDelegate()
+        self.contactNameDelegate.buttonClicked.connect(
+            self._handleContactNamePopupClick)
+        for i, item in enumerate(self.contactPointsTableModel
                                  .getSettingsDataTypes()):
             if item == float:
-                self.tv_colliderPointsTable.setItemDelegateForColumn(
+                self.tv_contactPointsTable.setItemDelegateForColumn(
                     i, self.floatSpinBoxDelegate)
+            elif item == contactName:
+                self.tv_contactPointsTable.setItemDelegateForColumn(
+                    i, self.contactNameDelegate)
 
-        self.tv_colliderPointsTable.setModel(self.colliderPointsTableModel)
-        self.selfLayout.addWidget(self.tv_colliderPointsTable)
+        self.tv_contactPointsTable.setModel(self.contactPointsTableModel)
+        self.selfLayout.addWidget(self.tv_contactPointsTable)
 
         # the bar below the table
-        self.hl_tabColliderPointsBelowTableBar = QHBoxLayout()
+        self.hl_tabContactPointsBelowTableBar = QHBoxLayout()
 
         # horizontal spacer
         self.spacer1 = QSpacerItem(
             40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        self.hl_tabColliderPointsBelowTableBar.addItem(self.spacer1)
+        self.hl_tabContactPointsBelowTableBar.addItem(self.spacer1)
 
         # the add button
-        self.pb_addColliderPoint = QPushButton(self)
-        self.pb_addColliderPoint.setMaximumSize(QSize(40, 16777215))
-        self.pb_addColliderPoint.setText("\u2795")
-        self.pb_addColliderPoint.clicked.connect(self.handleAddButton)
-        self.hl_tabColliderPointsBelowTableBar.addWidget(
-            self.pb_addColliderPoint)
+        self.pb_addContactPoint = QPushButton(self)
+        self.pb_addContactPoint.setMaximumSize(QSize(40, 16777215))
+        self.pb_addContactPoint.setText("\u2795")
+        self.pb_addContactPoint.clicked.connect(self.handleAddButton)
+        self.hl_tabContactPointsBelowTableBar.addWidget(
+            self.pb_addContactPoint)
 
-        self.selfLayout.addLayout(self.hl_tabColliderPointsBelowTableBar)
+        self.selfLayout.addLayout(self.hl_tabContactPointsBelowTableBar)
+
+    def _handleContactNamePopupClick(self, index: int) -> None:
+        self.selWin = VrcContactReceiverNameSelectionWindow(index)
+        self.selWin.selectedOption.connect(self._handleContactNamePopupInsert)
+        self.selWin.show()
+
+    def _handleContactNamePopupInsert(self, rowId: int, name: str) -> None:
+        self.contactPointsTableModel.setData(
+            self.contactPointsTableModel.index(rowId, 1), name)
+        if hasattr(self, "selWin") and self.selWin:
+            self.selWin.close()
+        self.selWin = None
 
     def handleSelectionDelete(self, index: int) -> None:
-        col1 = self.colliderPointsTableModel.data(
-            self.colliderPointsTableModel.index(index, 0),
+        col1 = self.contactPointsTableModel.data(
+            self.contactPointsTableModel.index(index, 0),
             Qt.ItemDataRole.DisplayRole)
         promptResult = handleDeletePrompt(self, col1)
         if promptResult:
-            self.colliderPointsTableModel.removeRows(index, 1)
+            self.contactPointsTableModel.removeRows(index, 1)
 
     def handleAddButton(self) -> None:
-        self.colliderPointsTableModel.insertRows(0)
+        self.contactPointsTableModel.insertRows(0)
 
     def hasUnsavedOptions(self) -> bool:
         """Check if this tab has unsaved options.
@@ -351,12 +373,12 @@ class TabColliderPoints(QWidget):
             bool: True if there are modified options otherwise False.
         """
         # only need to look at the table
-        return self.colliderPointsTableModel.settingsWereChanged
+        return self.contactPointsTableModel.settingsWereChanged
 
     def saveOptions(self) -> None:
         """Save the options from this tab."""
         config.set(self._configKey, self._data)
-        self.colliderPointsTableModel.settingsWereChanged = False
+        self.contactPointsTableModel.settingsWereChanged = False
 
 
 class TabSolver(QWidget, OptionAdapter):
@@ -515,8 +537,12 @@ class SolverSettingsFactory:
                 return SINGLEN2NSolverSettings
 
 
+class contactName(str):
+    pass
+
+
 type validValueTypes = type[str] | type[int] | type[float] \
-    | type[bool] | type[list] | type[dict]
+    | type[bool] | type[list] | type[dict] | type[contactName]
 
 
 class SettingsTableModel(QAbstractTableModel):
@@ -531,7 +557,7 @@ class SettingsTableModel(QAbstractTableModel):
     """
 
     def __init__(self, data: dict) -> None:
-        """Initializes the ColliderPointSettingsTableModel.
+        """Initializes the ContactPointSettingsTableModel.
 
         Args:
             data (dict): The data for the table.
@@ -574,7 +600,11 @@ class SettingsTableModel(QAbstractTableModel):
 
         if role in (Qt.ItemDataRole.DisplayRole,
                     Qt.ItemDataRole.EditRole):
-            return self._getRowColConfigVal(index)
+            data = self._getRowColConfigVal(index)
+            if isinstance(data, contactName):
+                # special handling for contactName type
+                return str(data)
+            return data
 
     def setData(self, index: QModelIndex, value: Any,
                 role: int = Qt.ItemDataRole.EditRole) -> bool:
@@ -694,6 +724,68 @@ class SettingsTableModel(QAbstractTableModel):
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         """Add ItemIsEditable flag to the cell."""
         return super().flags(index) | Qt.ItemFlag.ItemIsEditable
+
+
+class VrcContactReceiverNameSelectionWindow(QWidget):
+    selectedOption = QSignal(int, str)
+
+    def __init__(self, rowId: int, *args, **kwargs) -> None:
+        """Initialize contact name selection window."""
+
+        logger.debug(f"Creating {__class__.__name__}")
+        super().__init__(*args, **kwargs)
+
+        self._avatars = getVrcAvatars()
+        self._rowId = rowId
+        self.buildUi()
+        self._loadAvatarOptions()
+
+    def buildUi(self) -> None:
+        """Initialize UI elements."""
+        self.setWindowTitle("Contact Receiver Selection")
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        self.setFixedSize(439, 115)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
+
+        self.selfLayout = QFormLayout(self)
+        self.cb_avatar = QComboBox(self)
+        self.cb_avatar.setMaxVisibleItems(20)
+        self.cb_avatar.currentTextChanged.connect(
+            self._avatarSelectionChanged)
+        self.selfLayout.addRow("Avatar", self.cb_avatar)
+
+        self.cb_parameter = QComboBox(self)
+        self.cb_parameter.setMaxVisibleItems(20)
+        self.selfLayout.addRow("Parameter", self.cb_parameter)
+
+        self.pb_insertName = QPushButton(self)
+        self.pb_insertName.setText(random.choice(
+            ["Use this Contact Parameter", "UwU!"]))
+        self.pb_insertName.setToolTip(
+            "Select this Contact Parameter")
+        self.pb_insertName.clicked.connect(self._saveAndClose)
+        self.selfLayout.addRow(self.pb_insertName)
+
+    def _loadAvatarOptions(self) -> None:
+        self.cb_avatar.addItems([avatar.name for avatar in self._avatars])
+
+    def _avatarSelectionChanged(self, name: str) -> None:
+        self.cb_parameter.clear()
+        self.cb_parameter.addItems(self._getAvatarContactNames(name))
+
+    def _getAvatarContactNames(self, name: str) -> list:
+        avatars = (avatar for avatar in self._avatars if avatar.name == name)
+        selected = next(avatars, None)
+        if selected:
+            return [param["address"][19:] for param
+                    in selected.outputParameters
+                    if param["address"][19:] not in vrcInternals]
+        return []
+
+    def _saveAndClose(self):
+        self.selectedOption.emit(self._rowId,
+                                 self.cb_parameter.currentText())
 
 
 if __name__ == "__main__":
